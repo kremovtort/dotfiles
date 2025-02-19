@@ -22,7 +22,7 @@ return {
     event = "VeryLazy",
     opts = {},
   },
-  
+
   {
     "echasnovski/mini.ai",
     event = "VeryLazy",
