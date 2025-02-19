@@ -22,5 +22,13 @@
         "input_cost_per_token": 0.00000011,
         "output_cost_per_token": 0.00000044,
         "mode": "chat"
+    },
+    "openrouter/perplexity/sonar-reasoning": {
+        "litellm_provider": "openrouter",
+        "max_tokens": 127000,
+        "max_output_tokens": 127000,
+        "input_cost_per_token": 0.0000001,
+        "output_cost_per_token": 0.0000005,
+        "mode": "chat"
     }
 }
