@@ -108,6 +108,8 @@
       bind-key -T copy-mode-vi v send -X begin-selection
       bind-key -T copy-mode-vi V send -X select-line
       bind-key -T copy-mode-vi y send -X copy-selection
+      bind-key -T copy-mode-vi i send-keys -X cancel
+      bind-key -T copy-mode-vi a send-keys -X cancel
     '';
   };
 
