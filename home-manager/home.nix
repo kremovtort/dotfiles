@@ -5,7 +5,7 @@
   # manage.
   home.username = "kremovtort";
   home.homeDirectory = "/home/kremovtort";
-  
+
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.
@@ -26,7 +26,7 @@
     pkgs.pipx
     pkgs.uv
     pkgs.wezterm
-    
+
     # zsh
     pkgs.zsh-completions
     pkgs.zsh-fzf-tab
@@ -51,28 +51,16 @@
     # '';
   };
 
-  # Home Manager can also manage your environment variables through
-  # 'home.sessionVariables'. These will be explicitly sourced when using a
-  # shell provided by Home Manager. If you don't want to manage your shell
-  # through Home Manager then you have to manually source 'hm-session-vars.sh'
-  # located at either
-  #
-  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  /etc/profiles/per-user/kremovtort/etc/profile.d/hm-session-vars.sh
-  #
   home.shell.enableZshIntegration = true;
 
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin"
   ];
-  
+
+  home.sessionVariables = {
+    EDITOR = "code";
+  };
+
   i18n.glibcLocales = pkgs.glibcLocales.override {
     allLocales = false;
     locales = [
@@ -81,18 +69,14 @@
     ];
   };
 
-  home.sessionVariables = {
-    EDITOR = "code";
-  };
-
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
-  
+
   programs.zoxide = {
     enable = true;
     enableZshIntegration = true;
   };
-  
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;
@@ -105,33 +89,33 @@
     shellAliases = {
       hm = "home-manager";
     };
-    
+
     initExtra = "
       source ${pkgs.zsh-fast-syntax-highlighting}/share/zsh/site-functions/fast-syntax-highlighting.plugin.zsh
       source ${pkgs.zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
     ";
   };
-  
+
   programs.fzf = {
     enable = true;
     enableZshIntegration = true;
   };
-  
+
   programs.starship = {
     enable = true;
     enableZshIntegration = true;
   };
-  
+
   programs.direnv = {
     enable = true;
     enableZshIntegration = true;
   };
-  
+
   programs.eza = {
     enable = true;
     enableZshIntegration = true;
   };
-  
+
   programs.git = {
     enable = true;
     difftastic = {
@@ -140,11 +124,11 @@
     userName = "Alexander Makarov";
     userEmail = "i@kremovtort.ru";
   };
-  
+
   programs.man = {
     enable = true;
   };
-  
+
   programs.tmux = {
     enable = true;
     baseIndex = 1;
