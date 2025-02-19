@@ -100,6 +100,8 @@
     prefix = "C-Space";
     terminal = "screen-256color";
     extraConfig = ''
+      set-option -g renumber-windows on
+
       unbind '%'
       unbind '"'
       bind '-' split-window
