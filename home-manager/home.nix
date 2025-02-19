@@ -27,6 +27,7 @@
     ".aider.model.metadata.json".source = ~/dotfiles/aider/.aider.model.metadata.json;
     ".aider.model.settings.yml".source = ~/dotfiles/aider/.aider.model.settings.yml;
     ".config/nvim/".source = ~/dotfiles/nvim;
+    ".config/starship.toml".source = ~/dotfiles/starship.toml;
   };
 
   home.shell.enableZshIntegration = true;
