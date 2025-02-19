@@ -8,3 +8,6 @@
 - name: openrouter/mistralai/codestral-2501
   edit_format: diff-fenced
   use_repo_map: true
+- name: openrouter/perplexity/sonar-reasoning
+  edit_format: diff-fenced
+  use_repo_map: true
