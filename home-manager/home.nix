@@ -90,10 +90,10 @@
       hm = "home-manager";
     };
 
-    initExtra = "
+    initExtra = ''
       source ${pkgs.zsh-fast-syntax-highlighting}/share/zsh/site-functions/fast-syntax-highlighting.plugin.zsh
       source ${pkgs.zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
-    ";
+    '';
   };
 
   programs.fzf = {
@@ -135,21 +135,41 @@
     clock24 = true;
     customPaneNavigationAndResize = true;
     disableConfirmationPrompt = true;
-    historyLimit = 10000;
+    historyLimit = 50000;
+    keyMode = "vi";
     mouse = true;
     newSession = true;
     plugins = with pkgs; [
       tmuxPlugins.yank
-      tmuxPlugins.prefix-highlight
       tmuxPlugins.better-mouse-mode
-      tmuxPlugins.tmux-fzf
       tmuxPlugins.mode-indicator
+      {
+        plugin = tmuxPlugins.tmux-fzf;
+        extraConfig = ''
+          TMUX_FZF_OPTIONS="-p -w 70% -h 70% -m"
+        '';
+      }
       {
         plugin = tmuxPlugins.catppuccin;
         extraConfig = "set -g @catppuccin_flavor 'mocha'";
       }
     ];
     prefix = "C-Space";
-    extraConfig = "set -g default-terminal 'tmux-256color'";
+    terminal = "screen-256color";
+    extraConfig = ''
+      unbind '%'
+      unbind '"'
+      bind '-' split-window
+      bind '|' split-window -h
+
+      set-window-option -g mode-keys vi
+      bind-key -T copy-mode-vi v send -X begin-selection
+      bind-key -T copy-mode-vi V send -X select-line
+      bind-key -T copy-mode-vi y send -X copy-selection
+    '';
+  };
+
+  programs.less = {
+    enable = true;
   };
 }
