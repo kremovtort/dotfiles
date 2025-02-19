@@ -1,4 +1,5 @@
 ---
 model: openrouter/openai/o3-mini-high
 editor-model: openrouter/mistralai/codestral-2501
-map-tokens: 4096
+map-tokens: 2048
+gitignore: false

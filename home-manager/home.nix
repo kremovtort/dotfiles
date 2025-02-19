@@ -6,6 +6,9 @@
   home.username = "kremovtort";
   home.homeDirectory = "/home/kremovtort";
 
+  # Let Home Manager install and manage itself.
+  programs.home-manager.enable = true;
+
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.
@@ -37,7 +40,7 @@
   # plain files is through 'home.file'.
   home.file = {
     ".aider.conf.yml".source = ~/dotfiles/aider/.aider.conf.yml;
-    ".aider.metadata.json".source = ~/dotfiles/aider/.aider.metadata.json;
+    ".aider.model.metadata.json".source = ~/dotfiles/aider/.aider.model.metadata.json;
     ".aider.model.settings.yml".source = ~/dotfiles/aider/.aider.model.settings.yml;
     # # Building this configuration will create a copy of 'dotfiles/screenrc' in
     # # the Nix store. Activating the configuration will then make '~/.screenrc' a
@@ -68,9 +71,6 @@
       "ru_RU.UTF-8/UTF-8"
     ];
   };
-
-  # Let Home Manager install and manage itself.
-  programs.home-manager.enable = true;
 
   programs.zoxide = {
     enable = true;
