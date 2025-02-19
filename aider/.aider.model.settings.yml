@@ -1,0 +1,10 @@
+---
+- name: openrouter/google/gemini-2.0-flash-001
+  edit_format: diff-fenced
+  use_repo_map: true
+- name: openrouter/openai/o3-mini-high
+  edit_format: diff-fenced
+  use_repo_map: true
+- name: openrouter/mistralai/codestral-2501
+  edit_format: diff-fenced
+  use_repo_map: true
