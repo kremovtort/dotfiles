@@ -26,6 +26,7 @@
     ".aider.conf.yml".source = ~/dotfiles/aider/.aider.conf.yml;
     ".aider.model.metadata.json".source = ~/dotfiles/aider/.aider.model.metadata.json;
     ".aider.model.settings.yml".source = ~/dotfiles/aider/.aider.model.settings.yml;
+    ".config/nvim/".source = ~/dotfiles/nvim;
   };
 
   home.shell.enableZshIntegration = true;
