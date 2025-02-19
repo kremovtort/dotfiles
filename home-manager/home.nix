@@ -129,9 +129,10 @@
     autosuggestion.enable = true;
     envExtra = "source /etc/profile.d/nix-daemon.sh";
     shellAliases = { hm = "home-manager"; };
-    initExtra = ''
-      source ${pkgs.zsh-fast-syntax-highlighting}/share/zsh/site-functions/fast-syntax-highlighting.plugin.zsh
-      source ${pkgs.zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
-    '';
+    plugins = [
+      { name = "zsh-completions"; src = pkgs.zsh-completions.src; }
+      { name = "fast-syntax-highlighting"; src = pkgs.zsh-fast-syntax-highlighting.src; }
+      { name = "fzf-tab"; src = pkgs.zsh-fzf-tab.src; }
+    ];
   };
 }
