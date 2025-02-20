@@ -9,12 +9,16 @@
   home.packages = [
     pkgs.aider-chat
     pkgs.docker
+    pkgs.gnumake
+    pkgs.just
     pkgs.lazydocker
     pkgs.lazygit
     pkgs.neovim
     pkgs.nil
     pkgs.ripgrep
     pkgs.pipx
+    pkgs.python3
+    pkgs.shellcheck
     pkgs.uv
     pkgs.wezterm
     pkgs.zsh-completions
@@ -55,6 +59,7 @@
   programs.fzf = {
     enable = true;
     enableZshIntegration = true;
+    tmux.enableShellIntegration = true;
   };
 
   programs.git = {
@@ -80,6 +85,10 @@
   programs.starship = {
     enable = true;
     enableZshIntegration = true;
+  };
+
+  programs.tealdeer = {
+    enable = true;
   };
 
   programs.tmux = {
@@ -142,5 +151,13 @@
       { name = "fast-syntax-highlighting"; src = pkgs.zsh-fast-syntax-highlighting.src; }
       { name = "fzf-tab"; src = pkgs.zsh-fzf-tab.src; }
     ];
+    initExtra = ''
+      export FZF_DEFAULT_OPTS=" \
+        --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+        --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+        --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
+        --color=selected-bg:#45475a \
+        --multi --prompt='❯ ' --marker='+'"
+    '';
   };
 }
