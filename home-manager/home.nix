@@ -42,6 +42,9 @@
   programs.direnv = {
     enable = true;
     enableZshIntegration = true;
+    nix-direnv = {
+      enable = true;
+    };
   };
 
   programs.eza = {
@@ -67,6 +70,11 @@
 
   programs.man = {
     enable = true;
+  };
+
+  programs.nix-your-shell = {
+    enable = true;
+    enableZshIntegration = true;
   };
 
   programs.starship = {
@@ -98,7 +106,7 @@
       }
     ];
     prefix = "C-Space";
-    terminal = "screen-256color";
+    terminal = "tmux-256color";
     extraConfig = ''
       set-option -g renumber-windows on
 
