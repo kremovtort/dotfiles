@@ -3,45 +3,49 @@
 {
   home.username = "kremovtort";
   home.homeDirectory = "/home/kremovtort";
-  programs.home-manager.enable = true;
   home.stateVersion = "24.11";
+  programs.home-manager.enable = true;
 
   home.packages = [
     pkgs.aider-chat
     pkgs.docker
+    pkgs.gcc
     pkgs.gnumake
     pkgs.just
     pkgs.lazydocker
     pkgs.lazygit
     pkgs.neovim
+    pkgs.nerd-fonts.jetbrains-mono
     pkgs.nil
     pkgs.ripgrep
     pkgs.pipx
     pkgs.python3
     pkgs.shellcheck
-    pkgs.uv
+    pkgs.vscode-fhs
     pkgs.wezterm
     pkgs.zsh-completions
-    pkgs.zsh-fzf-tab
     pkgs.zsh-fast-syntax-highlighting
+    pkgs.zsh-fzf-tab
   ];
 
   home.file = {
-    ".aider.conf.yml".source = ~/dotfiles/aider/.aider.conf.yml;
-    ".aider.model.metadata.json".source = ~/dotfiles/aider/.aider.model.metadata.json;
-    ".aider.model.settings.yml".source = ~/dotfiles/aider/.aider.model.settings.yml;
-    ".config/nvim/".source = ~/dotfiles/nvim;
-    ".config/starship.toml".source = ~/dotfiles/starship.toml;
+    ".aider.conf.yml".source = ../aider/.aider.conf.yml;
+    ".aider.model.metadata.json".source = ../aider/.aider.model.metadata.json;
+    ".aider.model.settings.yml".source = ../aider/.aider.model.settings.yml;
+    ".wezterm.lua".source = ../.wezterm.lua;
+    ".config/nvim/".source = ../nvim;
+    ".config/starship.toml".source = ../starship.toml;
   };
 
   home.shell.enableZshIntegration = true;
   home.sessionPath = ["${config.home.homeDirectory}/.local/bin"];
   home.sessionVariables.EDITOR = "code";
-
-  i18n.glibcLocales = pkgs.glibcLocales.override {
-    allLocales = false;
-    locales = ["en_US.UTF-8/UTF-8" "ru_RU.UTF-8/UTF-8"];
-  };
+  home.sessionVariables.XDG_DATA_DIRS = builtins.concatStringsSep ":" [
+    "$XDG_DATA_DIRS"
+    "/usr/share"
+    "/var/lib/flatpak/exports/share"
+    "$HOME/.local/share/flatpak/exports/share"
+  ];
 
   programs.direnv = {
     enable = true;
@@ -69,13 +73,9 @@
     userEmail = "i@kremovtort.ru";
   };
 
-  programs.less = {
-    enable = true;
-  };
+  programs.less.enable = true;
 
-  programs.man = {
-    enable = true;
-  };
+  programs.man.enable = true;
 
   programs.nix-your-shell = {
     enable = true;
@@ -87,9 +87,7 @@
     enableZshIntegration = true;
   };
 
-  programs.tealdeer = {
-    enable = true;
-  };
+  programs.tealdeer.enable = true;
 
   programs.tmux = {
     enable = true;
@@ -144,8 +142,10 @@
     enableVteIntegration = true;
     autocd = true;
     autosuggestion.enable = true;
-    envExtra = "source /etc/profile.d/nix-daemon.sh";
-    shellAliases = { hm = "home-manager"; };
+    shellAliases = {
+      hm = "home-manager";
+      hms = "home-manager switch --flake ${config.home.homeDirectory}/dotfiles";
+    };
     plugins = [
       { name = "zsh-completions"; src = pkgs.zsh-completions.src; }
       { name = "fast-syntax-highlighting"; src = pkgs.zsh-fast-syntax-highlighting.src; }
