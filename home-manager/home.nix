@@ -2,46 +2,46 @@
 
 {
   home.username = "kremovtort";
-  home.homeDirectory = "/home/kremovtort";
+  home.homeDirectory = "/Users/kremovtort";
+  nixpkgs.config.allowUnfree = true;
+  
   programs.home-manager.enable = true;
   home.stateVersion = "24.11";
 
   home.packages = [
-    pkgs.aider-chat
+    pkgs.alt-tab-macos
+    pkgs.colima
     pkgs.docker
     pkgs.gnumake
-    pkgs.just
-    pkgs.lazydocker
-    pkgs.lazygit
+    pkgs.ice-bar
+    pkgs.maccy
+    pkgs.monitorcontrol
     pkgs.neovim
+    pkgs.nerd-fonts.jetbrains-mono
     pkgs.nil
     pkgs.ripgrep
-    pkgs.pipx
-    pkgs.python3
     pkgs.shellcheck
-    pkgs.uv
-    pkgs.wezterm
     pkgs.zsh-completions
-    pkgs.zsh-fzf-tab
     pkgs.zsh-fast-syntax-highlighting
+    pkgs.zsh-fzf-tab
   ];
 
   home.file = {
-    ".aider.conf.yml".source = ~/dotfiles/aider/.aider.conf.yml;
-    ".aider.model.metadata.json".source = ~/dotfiles/aider/.aider.model.metadata.json;
-    ".aider.model.settings.yml".source = ~/dotfiles/aider/.aider.model.settings.yml;
-    ".config/nvim/".source = ~/dotfiles/nvim;
-    ".config/starship.toml".source = ~/dotfiles/starship.toml;
+    ".aider.conf.yml".source = ../aider/.aider.conf.yml;
+    ".aider.model.metadata.json".source = ../aider/.aider.model.metadata.json;
+    ".aider.model.settings.yml".source = ../aider/.aider.model.settings.yml;
+    ".config/nvim/".source = ../nvim;
+    ".config/starship.toml".source = ../starship.toml;
   };
 
   home.shell.enableZshIntegration = true;
-  home.sessionPath = ["${config.home.homeDirectory}/.local/bin"];
+  home.sessionPath = [
+    "/opt/homebrew/bin"
+    "${config.home.homeDirectory}/.local/bin"
+  ];
   home.sessionVariables.EDITOR = "code";
-
-  i18n.glibcLocales = pkgs.glibcLocales.override {
-    allLocales = false;
-    locales = ["en_US.UTF-8/UTF-8" "ru_RU.UTF-8/UTF-8"];
-  };
+  home.sessionVariables.arc = "~/arcadia";
+  home.sessionVariables.arcadia = "~/arcadia";
 
   programs.direnv = {
     enable = true;
@@ -54,6 +54,10 @@
   programs.eza = {
     enable = true;
     enableZshIntegration = true;
+  };
+
+  programs.firefox = {
+    enable = false;
   };
 
   programs.fzf = {
@@ -89,6 +93,12 @@
 
   programs.tealdeer = {
     enable = true;
+  };
+
+  programs.wezterm = {
+    enable = true;
+    enableZshIntegration = true;
+    extraConfig = builtins.readFile ../wezterm.lua;
   };
 
   programs.tmux = {
@@ -144,8 +154,10 @@
     enableVteIntegration = true;
     autocd = true;
     autosuggestion.enable = true;
-    envExtra = "source /etc/profile.d/nix-daemon.sh";
-    shellAliases = { hm = "home-manager"; };
+    shellAliases = {
+      hm = "home-manager";
+      ya = "$HOME/arcadia/ya";
+    };
     plugins = [
       { name = "zsh-completions"; src = pkgs.zsh-completions.src; }
       { name = "fast-syntax-highlighting"; src = pkgs.zsh-fast-syntax-highlighting.src; }
