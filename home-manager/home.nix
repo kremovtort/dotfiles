@@ -27,9 +27,6 @@ in {
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
-    
-    # Add razer-macos
-    # (lib.mkIf isDarwin razerMacos)
   ];
 
   home.file = {
@@ -44,6 +41,8 @@ in {
   home.sessionPath = [
     "/opt/homebrew/bin"
     "${config.home.homeDirectory}/.local/bin"
+    "${config.home.homeDirectory}/arcadia"
+    "/codenv/arcadia"
   ];
   home.sessionVariables.EDITOR = "code";
   home.sessionVariables.arc = "~/arcadia";
@@ -156,10 +155,6 @@ in {
     enableVteIntegration = true;
     autocd = true;
     autosuggestion.enable = true;
-    shellAliases = {
-      hm = "home-manager";
-      ya = "$HOME/arcadia/ya";
-    };
     plugins = [
       { name = "zsh-completions"; src = pkgs.zsh-completions.src; }
       { name = "fast-syntax-highlighting"; src = pkgs.zsh-fast-syntax-highlighting.src; }
