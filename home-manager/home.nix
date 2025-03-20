@@ -1,21 +1,24 @@
-{ config, pkgs, ... }:
-
-{
+{ config, pkgs, lib, system, ... }:
+let
+  isDarwin = system == "aarch64-darwin";
+in {
   home.username = "kremovtort";
-  home.homeDirectory = "/Users/kremovtort";
+  home.homeDirectory = if isDarwin
+    then "/Users/kremovtort"
+    else "/home/kremovtort";
   nixpkgs.config.allowUnfree = true;
   
   programs.home-manager.enable = true;
   home.stateVersion = "24.11";
 
   home.packages = [
-    pkgs.alt-tab-macos
-    pkgs.colima
+    (lib.mkIf isDarwin pkgs.alt-tab-macos)
+    (lib.mkIf isDarwin pkgs.colima)
     pkgs.docker
     pkgs.gnumake
-    pkgs.ice-bar
-    pkgs.maccy
-    pkgs.monitorcontrol
+    (lib.mkIf isDarwin pkgs.ice-bar)
+    (lib.mkIf isDarwin pkgs.maccy)
+    (lib.mkIf isDarwin pkgs.monitorcontrol)
     pkgs.neovim
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nil
@@ -24,6 +27,9 @@
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
+    
+    # Add razer-macos
+    # (lib.mkIf isDarwin razerMacos)
   ];
 
   home.file = {
@@ -54,10 +60,6 @@
   programs.eza = {
     enable = true;
     enableZshIntegration = true;
-  };
-
-  programs.firefox = {
-    enable = false;
   };
 
   programs.fzf = {

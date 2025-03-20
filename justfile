@@ -4,5 +4,5 @@ switch:
 
 upgrade:
     nix flake update --flake .
-    brew upgrade
     just switch
+    brew upgrade
