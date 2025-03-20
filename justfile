@@ -1,8 +1,8 @@
 switch:
-    darwin-rebuild switch --flake .
+    if [ "$(uname)" = "Darwin" ]; then darwin-rebuild switch --flake .; fi
     home-manager switch --flake .
 
 upgrade:
     nix flake update --flake .
     just switch
-    brew upgrade
+    if [ "$(uname)" = "Darwin" ]; then brew upgrade; fi
