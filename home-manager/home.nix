@@ -12,13 +12,9 @@ in {
   home.stateVersion = "24.11";
 
   home.packages = [
-    (lib.mkIf isDarwin pkgs.alt-tab-macos)
-    (lib.mkIf isDarwin pkgs.colima)
+    pkgs.bottom
     pkgs.docker
     pkgs.gnumake
-    (lib.mkIf isDarwin pkgs.ice-bar)
-    (lib.mkIf isDarwin pkgs.maccy)
-    (lib.mkIf isDarwin pkgs.monitorcontrol)
     pkgs.neovim
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nil
@@ -27,6 +23,13 @@ in {
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
+
+    (lib.mkIf isDarwin pkgs.alt-tab-macos)
+    (lib.mkIf isDarwin pkgs.colima)
+    (lib.mkIf isDarwin pkgs.ice-bar)
+    (lib.mkIf isDarwin pkgs.maccy)
+    (lib.mkIf isDarwin pkgs.monitorcontrol)
+    (lib.mkIf isDarwin pkgs.swiftdefaultapps)
   ];
 
   home.file = {
