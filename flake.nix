@@ -20,6 +20,7 @@
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.just
+            pkgs.lua-language-server
             home-manager.packages.${system}.home-manager
           ] ++ (if isDarwin then [nix-darwin.packages.${system}.darwin-rebuild] else []);
         };

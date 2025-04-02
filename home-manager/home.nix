@@ -25,7 +25,6 @@ in {
     pkgs.zsh-fzf-tab
 
     (lib.mkIf isDarwin pkgs.alt-tab-macos)
-    (lib.mkIf isDarwin pkgs.colima)
     (lib.mkIf isDarwin pkgs.ice-bar)
     (lib.mkIf isDarwin pkgs.maccy)
     (lib.mkIf isDarwin pkgs.monitorcontrol)
@@ -36,7 +35,7 @@ in {
     ".aider.conf.yml".source = ../aider/.aider.conf.yml;
     ".aider.model.metadata.json".source = ../aider/.aider.model.metadata.json;
     ".aider.model.settings.yml".source = ../aider/.aider.model.settings.yml;
-    ".config/nvim/".source = ../nvim;
+    ".config/nvim/".source = ../lazyvim;
     ".config/starship.toml".source = ../starship.toml;
   };
 
@@ -158,6 +157,9 @@ in {
     enableVteIntegration = true;
     autocd = true;
     autosuggestion.enable = true;
+    shellAliases = {
+      "codenv" = "ya tool codenv";
+    };
     plugins = [
       { name = "zsh-completions"; src = pkgs.zsh-completions.src; }
       { name = "fast-syntax-highlighting"; src = pkgs.zsh-fast-syntax-highlighting.src; }

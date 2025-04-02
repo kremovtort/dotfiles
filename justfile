@@ -18,4 +18,9 @@ upgrade:
     just switch
     brew update
     brew upgrade
-    brew upgrade --cask --greedy --force
+    brew upgrade --cask
+
+[linux]
+[macos]
+configure-nvim:
+  XDG_CONFIG_HOME=$(realpath "$(dirname "$0")") NVIM_APPNAME=lazyvim nvim

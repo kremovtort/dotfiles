@@ -15,11 +15,12 @@
     }
   ];
   casks = [
-    "affine"
     "karabiner-elements"
+    "obsidian"
     "ollama"
+    "podman-desktop"
     "scroll-reverser"
-    "telegram-desktop"
+    "telegram"
     "visual-studio-code"
     "yandex-music"
     "zen-browser"
