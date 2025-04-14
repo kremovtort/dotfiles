@@ -1,4 +1,4 @@
-{ _pkgs, ... }: {
+{ ... }: {
   environment.systemPackages = [ ];
 
   homebrew = import ./homebrew.nix;
@@ -6,6 +6,7 @@
   # Necessary for using flakes on this system.
   nix.enable = false;
   nix.settings.experimental-features = "nix-command flakes";
+  # nix-rosetta-builder.onDemand = true;
   
   services.jankyborders = {
     enable = true;

@@ -1,4 +1,4 @@
-{ config, pkgs, lib, system, ... }:
+{ pkgs, lib, system, catppuccin-ghostty, ... }:
 let
   isDarwin = system == "aarch64-darwin";
 in {
@@ -12,8 +12,10 @@ in {
   home.stateVersion = "24.11";
 
   home.packages = [
+    pkgs.bat
     pkgs.bottom
     pkgs.docker
+    pkgs.fd
     pkgs.gnumake
     pkgs.neovim
     pkgs.nerd-fonts.jetbrains-mono
@@ -24,6 +26,7 @@ in {
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
 
+    (lib.mkIf isDarwin pkgs.podman)
     (lib.mkIf isDarwin pkgs.alt-tab-macos)
     (lib.mkIf isDarwin pkgs.ice-bar)
     (lib.mkIf isDarwin pkgs.maccy)
@@ -35,27 +38,33 @@ in {
     ".aider.conf.yml".source = ../aider/.aider.conf.yml;
     ".aider.model.metadata.json".source = ../aider/.aider.model.metadata.json;
     ".aider.model.settings.yml".source = ../aider/.aider.model.settings.yml;
-    ".config/nvim/".source = ../lazyvim;
+    ".clickhouse-client".source = ../clickhouse-client;
+    ".config/nvim/".source = ../nvim;
     ".config/starship.toml".source = ../starship.toml;
+    ".config/ghostty/config".text = ''
+      theme = catppuccin-mocha.conf
+      font-family = JetBrainsMono Nerd Font Mono
+    '';
+    ".config/ghostty/themes/catppuccin-mocha.conf".source = "${catppuccin-ghostty}/themes/catppuccin-mocha.conf";
   };
 
   home.shell.enableZshIntegration = true;
   home.sessionPath = [
     "/opt/homebrew/bin"
-    "${config.home.homeDirectory}/.local/bin"
-    "${config.home.homeDirectory}/arcadia"
+    "\${HOME}/.local/bin"
+    "\${HOME}/arcadia"
     "/codenv/arcadia"
   ];
   home.sessionVariables.EDITOR = "code";
-  home.sessionVariables.arc = "~/arcadia";
-  home.sessionVariables.arcadia = "~/arcadia";
+  home.sessionVariables.ARC = "\${HOME}/arcadia";
+  home.sessionVariables.ARCADIA = "\${HOME}/arcadia";
+  home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
+  home.sessionVariables.LC_ALL = "en_US.UTF-8";
 
   programs.direnv = {
     enable = true;
     enableZshIntegration = true;
-    nix-direnv = {
-      enable = true;
-    };
+    nix-direnv. enable = true;
   };
 
   programs.eza = {
@@ -68,7 +77,7 @@ in {
     enableZshIntegration = true;
     tmux.enableShellIntegration = true;
   };
-
+  
   programs.git = {
     enable = true;
     difftastic.enable = true;
@@ -76,13 +85,8 @@ in {
     userEmail = "i@kremovtort.ru";
   };
 
-  programs.less = {
-    enable = true;
-  };
-
-  programs.man = {
-    enable = true;
-  };
+  programs.less.enable = true;
+  programs.man.enable = true;
 
   programs.nix-your-shell = {
     enable = true;
@@ -94,84 +98,14 @@ in {
     enableZshIntegration = true;
   };
 
-  programs.tealdeer = {
-    enable = true;
-  };
+  programs.tealdeer.enable = true;
 
-  programs.wezterm = {
-    enable = true;
-    enableZshIntegration = true;
-    extraConfig = builtins.readFile ../wezterm.lua;
-  };
-
-  programs.tmux = {
-    enable = true;
-    baseIndex = 1;
-    clock24 = true;
-    customPaneNavigationAndResize = true;
-    disableConfirmationPrompt = true;
-    historyLimit = 50000;
-    keyMode = "vi";
-    mouse = true;
-    newSession = true;
-    plugins = with pkgs; [
-      tmuxPlugins.yank
-      tmuxPlugins.better-mouse-mode
-      tmuxPlugins.mode-indicator
-      {
-        plugin = tmuxPlugins.tmux-fzf;
-        extraConfig = "TMUX_FZF_OPTIONS=\"-p -w 70% -h 70% -m\"";
-      }
-      {
-        plugin = tmuxPlugins.catppuccin;
-        extraConfig = "set -g @catppuccin_flavor 'mocha'";
-      }
-    ];
-    prefix = "C-Space";
-    terminal = "tmux-256color";
-    extraConfig = ''
-      set-option -g renumber-windows on
-
-      unbind '%'
-      unbind '"'
-      bind '-' split-window
-      bind '|' split-window -h
-
-      set-window-option -g mode-keys vi
-      bind-key -T copy-mode-vi v send -X begin-selection
-      bind-key -T copy-mode-vi V send -X select-line
-      bind-key -T copy-mode-vi y send -X copy-selection
-      bind-key -T copy-mode-vi i send-keys -X cancel
-      bind-key -T copy-mode-vi a send-keys -X cancel
-    '';
-  };
+  programs.tmux = import ./tmux.nix { inherit pkgs; };
 
   programs.zoxide = {
     enable = true;
     enableZshIntegration = true;
   };
 
-  programs.zsh = {
-    enable = true;
-    enableCompletion = true;
-    enableVteIntegration = true;
-    autocd = true;
-    autosuggestion.enable = true;
-    shellAliases = {
-      "codenv" = "ya tool codenv";
-    };
-    plugins = [
-      { name = "zsh-completions"; src = pkgs.zsh-completions.src; }
-      { name = "fast-syntax-highlighting"; src = pkgs.zsh-fast-syntax-highlighting.src; }
-      { name = "fzf-tab"; src = pkgs.zsh-fzf-tab.src; }
-    ];
-    initExtra = ''
-      export FZF_DEFAULT_OPTS=" \
-        --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
-        --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
-        --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
-        --color=selected-bg:#45475a \
-        --multi --prompt='❯ ' --marker='+'"
-    '';
-  };
+  programs.zsh = import ./zsh.nix { inherit pkgs; };
 }

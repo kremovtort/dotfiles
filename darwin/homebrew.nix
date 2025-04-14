@@ -15,6 +15,8 @@
     }
   ];
   casks = [
+    "cursor"
+    "ghostty"
     "karabiner-elements"
     "obsidian"
     "ollama"

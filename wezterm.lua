@@ -174,6 +174,7 @@ return {
 		top = 0,
 		bottom = 0,
 	},
+	mux_enable_ssh_agent = false,
 	window_decorations = "TITLE | RESIZE",
 	hide_tab_bar_if_only_one_tab = true,
 	detect_password_input = true,

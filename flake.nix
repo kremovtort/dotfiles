@@ -3,15 +3,26 @@
 
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nix-darwin.url = "github:LnL7/nix-darwin/master";
-    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # nix-rosetta-builder = {
+    #   url = "github:cpick/nix-rosetta-builder";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
+    catppuccin-ghostty = {
+      url = "github:catppuccin/ghostty";
+      flake = false;
+    };
   };
 
-  outputs = { nixpkgs, nix-darwin, home-manager, flake-utils, ... }:
+  outputs = { nixpkgs, nix-darwin, home-manager, flake-utils, catppuccin-ghostty, ... }:
     flake-utils.lib.eachSystem [ "aarch64-darwin" "x86_64-linux" ] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -31,6 +42,7 @@
         modules = [ ./home-manager/home.nix ];
         extraSpecialArgs = {
           system = "aarch64-darwin";
+          inherit catppuccin-ghostty;
         };
       };
       
@@ -39,11 +51,15 @@
         modules = [ ./home-manager/home.nix ];
         extraSpecialArgs = {
           system = "x86_64-linux";
+          inherit catppuccin-ghostty;
         };
       };
 
       darwinConfigurations.kremovtort-OSX = nix-darwin.lib.darwinSystem {
-        modules = [ ./darwin/configuration.nix ];
+        modules = [
+          # nix-rosetta-builder.darwinModules.default
+          ./darwin/configuration.nix
+        ];
       };
     };
 }

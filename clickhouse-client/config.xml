@@ -1,0 +1,14 @@
+<config>
+  <openSSL>
+    <client>
+      <loadDefaultCAFile>true</loadDefaultCAFile>
+      <caConfig>/usr/local/share/ca-certificates/Yandex/RootCA.crt</caConfig>
+      <cacheSessions>true</cacheSessions>
+      <disableProtocols>sslv2,sslv3</disableProtocols>
+      <preferServerCiphers>true</preferServerCiphers>
+      <invalidCertificateHandler>
+        <name>RejectCertificateHandler</name>
+      </invalidCertificateHandler>
+    </client>
+  </openSSL>
+</config>
