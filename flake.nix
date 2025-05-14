@@ -12,17 +12,26 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # nix-rosetta-builder = {
-    #   url = "github:cpick/nix-rosetta-builder";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
+    nix-rosetta-builder = {
+      url = "github:cpick/nix-rosetta-builder";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     catppuccin-ghostty = {
       url = "github:catppuccin/ghostty";
       flake = false;
     };
   };
 
-  outputs = { nixpkgs, nix-darwin, home-manager, flake-utils, catppuccin-ghostty, ... }:
+  outputs =
+  {
+    nixpkgs,
+    nix-darwin,
+    # nix-rosetta-builder,
+    home-manager,
+    flake-utils,
+    catppuccin-ghostty,
+    ...
+  }:
     flake-utils.lib.eachSystem [ "aarch64-darwin" "x86_64-linux" ] (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};

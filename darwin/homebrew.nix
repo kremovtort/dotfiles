@@ -8,6 +8,7 @@
     upgrade = false;
   };
   brews = [
+    "swi-prolog"
     {
       name = "arc-launcher";
       start_service = true;
@@ -16,8 +17,10 @@
   ];
   casks = [
     "cursor"
+    "dockdoor"
     "ghostty"
     "karabiner-elements"
+    "monokle"
     "obsidian"
     "ollama"
     "podman-desktop"

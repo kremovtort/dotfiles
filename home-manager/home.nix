@@ -13,19 +13,30 @@ in {
 
   home.packages = [
     pkgs.bat
+    pkgs.bash-language-server
     pkgs.bottom
     pkgs.docker
     pkgs.fd
     pkgs.gnumake
+    pkgs.goose-cli
+    pkgs.kind
+    pkgs.kubectl
+    pkgs.kubernetes-helm
     pkgs.neovim
+    pkgs.nvimpager
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nil
     pkgs.ripgrep
     pkgs.shellcheck
+    pkgs.uv
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
+    (pkgs.writeShellScriptBin "nvim-pager" ''
+      ${pkgs.neovim}/bin/nvim -c "Man! $@"
+    '')
 
+    (lib.mkIf isDarwin pkgs.colima)
     (lib.mkIf isDarwin pkgs.podman)
     (lib.mkIf isDarwin pkgs.alt-tab-macos)
     (lib.mkIf isDarwin pkgs.ice-bar)
@@ -39,7 +50,7 @@ in {
     ".aider.model.metadata.json".source = ../aider/.aider.model.metadata.json;
     ".aider.model.settings.yml".source = ../aider/.aider.model.settings.yml;
     ".clickhouse-client".source = ../clickhouse-client;
-    ".config/nvim/".source = ../nvim;
+    ".config/nvim/".source = ../lazyvim;
     ".config/starship.toml".source = ../starship.toml;
     ".config/ghostty/config".text = ''
       theme = catppuccin-mocha.conf
@@ -51,15 +62,17 @@ in {
   home.shell.enableZshIntegration = true;
   home.sessionPath = [
     "/opt/homebrew/bin"
-    "\${HOME}/.local/bin"
     "\${HOME}/arcadia"
     "/codenv/arcadia"
+    "\${HOME}/.local/bin"
   ];
   home.sessionVariables.EDITOR = "code";
   home.sessionVariables.ARC = "\${HOME}/arcadia";
   home.sessionVariables.ARCADIA = "\${HOME}/arcadia";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
   home.sessionVariables.LC_ALL = "en_US.UTF-8";
+  home.sessionVariables.PAGER = "nvim +Man!";
+  home.sessionVariables.MANPAGER = "nvim +Man!";
 
   programs.direnv = {
     enable = true;
@@ -94,7 +107,7 @@ in {
   programs.nix-your-shell = {
     enable = true;
     enableZshIntegration = true;
-  };
+};
 
   programs.starship = {
     enable = true;

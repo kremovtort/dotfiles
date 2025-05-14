@@ -52,3 +52,7 @@ require("lazy").setup({
     },
   },
 })
+
+vim.schedule(function ()
+  vim.cmd("colorscheme catppuccin")
+end)

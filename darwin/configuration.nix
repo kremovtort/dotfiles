@@ -1,4 +1,4 @@
-{ ... }: {
+{ pkgs, ... }: {
   environment.systemPackages = [ ];
 
   homebrew = import ./homebrew.nix;
