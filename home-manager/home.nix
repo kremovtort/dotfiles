@@ -47,9 +47,6 @@ in {
   ];
 
   home.file = {
-    ".aider.conf.yml".source = "${flake-self}/aider/.aider.conf.yml";
-    ".aider.model.metadata.json".source = "${flake-self}/aider/.aider.model.metadata.json";
-    ".aider.model.settings.yml".source = "${flake-self}/aider/.aider.model.settings.yml";
     ".clickhouse-client".source = "${flake-self}/clickhouse-client";
     ".config/nvim/".source = "${flake-self}/lazyvim";
     ".config/starship.toml".source = "${flake-self}/starship.toml";

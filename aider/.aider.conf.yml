@@ -1,5 +1,0 @@
----
-model: openrouter/perplexity/sonar-reasoning
-editor-model: openrouter/mistralai/codestral-2501
-map-tokens: 2048
-gitignore: false
