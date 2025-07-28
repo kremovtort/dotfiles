@@ -53,6 +53,4 @@ require("lazy").setup({
   },
 })
 
-vim.schedule(function ()
-  vim.cmd("colorscheme catppuccin")
-end)
+require('langmapper').automapping({ global = true, buffer = true })
