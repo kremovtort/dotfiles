@@ -24,6 +24,7 @@
 
   outputs =
   {
+    self,
     nixpkgs,
     nix-darwin,
     # nix-rosetta-builder,
@@ -52,6 +53,7 @@
         extraSpecialArgs = {
           system = "aarch64-darwin";
           inherit catppuccin-ghostty;
+          flake-self = self;
         };
       };
       
@@ -61,6 +63,7 @@
         extraSpecialArgs = {
           system = "x86_64-linux";
           inherit catppuccin-ghostty;
+          flake-self = self;
         };
       };
 
