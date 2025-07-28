@@ -14,11 +14,6 @@ return {
     version = false, -- Never set this value to "*"! Never!
     opts = function()
       return {
-        provider = "deepseek_v3",
-        vendors = {
-          deepseek_r1 = openrouter("deepseek/deepseek-r1"),
-          deepseek_v3 = openrouter("deepseek/deepseek-chat-v3-0324")
-        }
       }
     end,
     build = "make",
