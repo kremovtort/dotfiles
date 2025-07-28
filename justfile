@@ -3,9 +3,16 @@ switch:
     home-manager switch --flake .
 
 [macos]
-switch:
-    darwin-rebuild switch --flake .
-    home-manager switch --flake .
+switch TARGET:
+    #!/usr/bin/env bash
+    if [[ -z "{{TARGET}}" ]]; then
+      sudo darwin-rebuild switch --flake .
+      home-manager switch --flake .
+    elif [[ "{{TARGET}}" == "home" ]]; then
+      home-manager switch --flake .
+    elif [[ "{{TARGET}}" == "darwin" ]]; then
+      sudo darwin-rebuild switch --flake .
+    fi
     
 [linux]
 upgrade:
@@ -18,7 +25,6 @@ upgrade:
     just switch
     brew update
     brew upgrade
-    brew upgrade --cask
 
 [linux]
 [macos]
