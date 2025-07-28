@@ -1,4 +1,4 @@
-{ pkgs, lib, system, catppuccin-ghostty, ... }:
+{ pkgs, lib, system, catppuccin-ghostty, flake-self, ... }:
 let
   isDarwin = system == "aarch64-darwin";
 in {
@@ -18,7 +18,8 @@ in {
     pkgs.docker
     pkgs.fd
     pkgs.gnumake
-    pkgs.goose-cli
+    pkgs.jjui
+    pkgs.jujutsu
     pkgs.kind
     pkgs.kubectl
     pkgs.kubernetes-helm
@@ -46,12 +47,19 @@ in {
   ];
 
   home.file = {
-    ".aider.conf.yml".source = ../aider/.aider.conf.yml;
-    ".aider.model.metadata.json".source = ../aider/.aider.model.metadata.json;
-    ".aider.model.settings.yml".source = ../aider/.aider.model.settings.yml;
-    ".clickhouse-client".source = ../clickhouse-client;
-    ".config/nvim/".source = ../lazyvim;
-    ".config/starship.toml".source = ../starship.toml;
+    ".aider.conf.yml".source = "${flake-self}/aider/.aider.conf.yml";
+    ".aider.model.metadata.json".source = "${flake-self}/aider/.aider.model.metadata.json";
+    ".aider.model.settings.yml".source = "${flake-self}/aider/.aider.model.settings.yml";
+    ".clickhouse-client".source = "${flake-self}/clickhouse-client";
+    ".config/nvim/".source = "${flake-self}/lazyvim";
+    ".config/starship.toml".source = "${flake-self}/starship.toml";
+    ".config/jj/config.toml".text = ''
+      "$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
+
+      [user]
+      name = "Alexander Makarov"
+      email = "i@kremovtort.ru"
+    '';
     ".config/ghostty/config".text = ''
       theme = catppuccin-mocha.conf
       font-family = JetBrainsMono Nerd Font Mono
