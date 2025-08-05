@@ -12,10 +12,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nix-rosetta-builder = {
-      url = "github:cpick/nix-rosetta-builder";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     catppuccin-ghostty = {
       url = "github:catppuccin/ghostty";
       flake = false;
@@ -66,10 +62,18 @@
           flake-self = self;
         };
       };
+      
+      homeConfigurations."kremovtort@devcontainer-aarch64" = home-manager.lib.homeManagerConfiguration {
+        pkgs = nixpkgs.legacyPackages.aarch64-linux;
+        modules = [ ./home-manager/home.nix ];
+        extraSpecialArgs = {
+          system = "aarch64-linux";
+          flake-self = self;
+        };
+      };
 
       darwinConfigurations.kremovtort-OSX = nix-darwin.lib.darwinSystem {
         modules = [
-          # nix-rosetta-builder.darwinModules.default
           ./darwin/configuration.nix
         ];
       };

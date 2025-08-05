@@ -1,6 +1,15 @@
 { pkgs, lib, system, catppuccin-ghostty, flake-self, ... }:
 let
   isDarwin = system == "aarch64-darwin";
+  darwinPkgs = map (pkg: lib.mkIf isDarwin pkg) [
+    pkgs.colima
+    pkgs.podman
+    pkgs.alt-tab-macos
+    pkgs.ice-bar
+    pkgs.maccy
+    pkgs.monitorcontrol
+    pkgs.swiftdefaultapps
+  ];
 in {
   home.username = "kremovtort";
   home.homeDirectory = if isDarwin
@@ -24,7 +33,6 @@ in {
     pkgs.kubectl
     pkgs.kubernetes-helm
     pkgs.neovim
-    pkgs.nvimpager
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nil
     pkgs.ripgrep
@@ -36,15 +44,7 @@ in {
     (pkgs.writeShellScriptBin "nvim-pager" ''
       ${pkgs.neovim}/bin/nvim -c "Man! $@"
     '')
-
-    (lib.mkIf isDarwin pkgs.colima)
-    (lib.mkIf isDarwin pkgs.podman)
-    (lib.mkIf isDarwin pkgs.alt-tab-macos)
-    (lib.mkIf isDarwin pkgs.ice-bar)
-    (lib.mkIf isDarwin pkgs.maccy)
-    (lib.mkIf isDarwin pkgs.monitorcontrol)
-    (lib.mkIf isDarwin pkgs.swiftdefaultapps)
-  ];
+  ] ++ darwinPkgs;
 
   home.file = {
     ".clickhouse-client".source = "${flake-self}/clickhouse-client";
