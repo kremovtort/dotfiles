@@ -2,7 +2,7 @@
   description = "My macos system Nix flake";
 
   inputs = {
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin = {
       url = "github:LnL7/nix-darwin/master";
@@ -18,64 +18,37 @@
     };
   };
 
-  outputs =
-  {
-    self,
-    nixpkgs,
-    nix-darwin,
-    # nix-rosetta-builder,
-    home-manager,
-    flake-utils,
-    catppuccin-ghostty,
-    ...
-  }:
-    flake-utils.lib.eachSystem [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        isDarwin = system == "aarch64-darwin";
-      in {
+  outputs = inputs @ { flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
+
+      perSystem = { config, self', inputs', pkgs, system, ... }: {
         devShells.default = pkgs.mkShell {
           packages = [
             pkgs.just
             pkgs.lua-language-server
-            home-manager.packages.${system}.home-manager
-          ] ++ (if isDarwin then [nix-darwin.packages.${system}.darwin-rebuild] else []);
+            inputs'.home-manager.packages.home-manager
+          ] ++ (if system == "aarch64-darwin" then [inputs'.nix-darwin.packages.darwin-rebuild] else []);
         };
-      }
-    ) // {
-      homeConfigurations."kremovtort@kremovtort-OSX" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.aarch64-darwin;
-        modules = [ ./home-manager/home.nix ];
-        extraSpecialArgs = {
-          system = "aarch64-darwin";
-          inherit catppuccin-ghostty;
-          flake-self = self;
-        };
-      };
-      
-      homeConfigurations.kremovtort = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        modules = [ ./home-manager/home.nix ];
-        extraSpecialArgs = {
-          system = "x86_64-linux";
-          inherit catppuccin-ghostty;
-          flake-self = self;
-        };
-      };
-      
-      homeConfigurations."kremovtort@devcontainer-aarch64" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.aarch64-linux;
-        modules = [ ./home-manager/home.nix ];
-        extraSpecialArgs = {
-          system = "aarch64-linux";
-          flake-self = self;
+        
+        homeConfigurations."kremovtort" = inputs'.home-manager.lib.homeManagerConfiguration {
+          pkgs = pkgs;
+          modules = [ ./home-manager/home.nix ];
+          extraSpecialArgs = {
+            system = system;
+            inputs = inputs';
+            flake-self = self';
+            catppuccin-ghostty = inputs.catppuccin-ghostty;
+          };
         };
       };
 
-      darwinConfigurations.kremovtort-OSX = nix-darwin.lib.darwinSystem {
-        modules = [
-          ./darwin/configuration.nix
-        ];
+      flake = { self, ... }: {
+        darwinConfigurations.kremovtort-OSX = inputs.nix-darwin.lib.darwinSystem {
+          modules = [
+            ./darwin/configuration.nix
+          ];
+        };
       };
     };
 }
