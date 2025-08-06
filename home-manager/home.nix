@@ -24,6 +24,7 @@ in {
     pkgs.bat
     pkgs.bash-language-server
     pkgs.bottom
+    pkgs.devcontainer
     pkgs.docker
     pkgs.fd
     pkgs.gnumake
