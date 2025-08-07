@@ -16,19 +16,14 @@
       flake = false;
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
-    make-shell.url = "github:nicknovitski/make-shell";
   };
 
   outputs = inputs @ { flake-parts, self, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
-      
-      imports = [
-        inputs.make-shell.flakeModules.default
-      ];
 
       perSystem = { config, self', inputs', pkgs, system, lib, ... }: {
-        make-shells.default = {
+        devShells.default = pkgs.mkShell {
           packages = [
             pkgs.just
             pkgs.lua-language-server
