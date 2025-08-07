@@ -23,12 +23,18 @@
       systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
 
       perSystem = { config, self', inputs', pkgs, system, lib, ... }: {
+        packages.just = inputs'.nixpkgs.legacyPackages.just;
+        packages.home-manager = inputs'.home-manager.packages.home-manager;
+        packages.darwin-rebuild = inputs'.nix-darwin.packages.darwin-rebuild;
+
         devShells.default = pkgs.mkShell {
           packages = [
+            pkgs.bash-language-server
             pkgs.just
             pkgs.lua-language-server
-            inputs'.home-manager.packages.home-manager
-          ] ++ (if system == "aarch64-darwin" then [inputs'.nix-darwin.packages.darwin-rebuild] else []);
+            pkgs.nil
+            pkgs.shellcheck
+          ];
         };
         
         legacyPackages.homeConfigurations."kremovtort" = inputs.home-manager.lib.homeManagerConfiguration {

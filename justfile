@@ -1,39 +1,46 @@
+[macos]
+darwin-rebuild-switch:
+  sudo nix run .#darwin-rebuild -- switch --flake .
+
+home-manager-switch:
+  nix run .#home-manager -- switch --flake .
+
 [linux]
-switch:
-    home-manager switch --flake .
+switch: setup-shell home-manager-switch
 
 [macos]
-switch TARGET:
-    #!/usr/bin/env bash
-    if [[ -z "{{TARGET}}" ]]; then
-      sudo darwin-rebuild switch --flake .
-      home-manager switch --flake .
-    elif [[ "{{TARGET}}" == "home" ]]; then
-      home-manager switch --flake .
-    elif [[ "{{TARGET}}" == "darwin" ]]; then
-      sudo darwin-rebuild switch --flake .
-    fi
-    
+switch TARGET="":
+  #!/usr/bin/env bash
+  just setup-shell
+  if [[ -z "{{TARGET}}" ]]; then
+    just darwin-rebuild-switch
+    just home-manager-switch
+  elif [[ "{{TARGET}}" == "home" ]]; then
+    just home-manager-switch
+  elif [[ "{{TARGET}}" == "darwin" ]]; then
+    just darwin-rebuild-switch
+  fi
+
 [linux]
 upgrade:
-    nix flake update --flake .
-    just switch
+  nix flake update --flake .
+  just switch
 
 [macos]
 upgrade:
-    nix flake update --flake .
-    just switch
-    brew update
-    brew upgrade
+  nix flake update --flake .
+  just switch
+  brew update
+  brew upgrade
 
-[linux]
-[macos]
 configure-nvim:
   XDG_CONFIG_HOME=$(realpath "$(dirname "$0")") NVIM_APPNAME=lazyvim nvim
 
-[macos]
-run-nix-builder:
-    mkdir -p keys && ssh-keygen -t ed25519 -f keys/client-key -N ""
-    docker run -d --name nix-builder -p 3022:22 \
-        -v $PWD/keys/client-key.pub:/etc/ssh/authorized_keys.d/client \
-        nixos/nix sleep infinity
+setup-shell:
+  #!/usr/bin/env sh
+  if [ ! -d "/etc/nixos" ] && [ "$(uname)" != "Darwin" ]; then
+    if ! grep -qx "${HOME}/.nix-profile/bin/zsh" /etc/shells; then
+      echo "${HOME}/.nix-profile/bin/zsh" | sudo tee -a /etc/shells
+    fi
+    sudo chsh -s "${HOME}/.nix-profile/bin/zsh" "${USER}"
+  fi

@@ -1,4 +1,4 @@
-{ _pkgs, ... }:
+{ pkgs, ... }:
 {
   system.primaryUser = "kremovtort";
 
@@ -37,5 +37,6 @@
   users.users.kremovtort = {
     name = "kremovtort";
     home = "/Users/kremovtort";
+    shell = pkgs.zsh;
   };
 }
