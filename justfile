@@ -6,12 +6,11 @@ home-manager-switch:
   nix run .#home-manager -- switch --flake .
 
 [linux]
-switch: setup-shell home-manager-switch
+switch: home-manager-switch setup-shell
 
 [macos]
 switch TARGET="":
   #!/usr/bin/env bash
-  just setup-shell
   if [[ -z "{{TARGET}}" ]]; then
     just darwin-rebuild-switch
     just home-manager-switch
@@ -20,6 +19,7 @@ switch TARGET="":
   elif [[ "{{TARGET}}" == "darwin" ]]; then
     just darwin-rebuild-switch
   fi
+  just setup-shell
 
 [linux]
 upgrade:

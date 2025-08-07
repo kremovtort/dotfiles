@@ -47,7 +47,7 @@
           };
         };
         
-        legacyPackages.darwinConfigurations.kremovtort-OSX = inputs.nix-darwin.lib.darwinSystem {
+        legacyPackages.darwinConfigurations."kremovtort-OSX" = inputs.nix-darwin.lib.darwinSystem {
           modules = [
             ./darwin/configuration.nix
           ];
