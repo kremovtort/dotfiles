@@ -2,7 +2,6 @@
   description = "My macos system Nix flake";
 
   inputs = {
-    flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-darwin = {
       url = "github:LnL7/nix-darwin/master";
@@ -16,14 +15,20 @@
       url = "github:catppuccin/ghostty";
       flake = false;
     };
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    make-shell.url = "github:nicknovitski/make-shell";
   };
 
-  outputs = inputs @ { flake-parts, ... }:
+  outputs = inputs @ { flake-parts, self, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
+      
+      imports = [
+        inputs.make-shell.flakeModules.default
+      ];
 
-      perSystem = { config, self', inputs', pkgs, system, ... }: {
-        devShells.default = pkgs.mkShell {
+      perSystem = { config, self', inputs', pkgs, system, lib, ... }: {
+        make-shells.default = {
           packages = [
             pkgs.just
             pkgs.lua-language-server
@@ -31,20 +36,17 @@
           ] ++ (if system == "aarch64-darwin" then [inputs'.nix-darwin.packages.darwin-rebuild] else []);
         };
         
-        homeConfigurations."kremovtort" = inputs'.home-manager.lib.homeManagerConfiguration {
-          pkgs = pkgs;
+        legacyPackages.homeConfigurations."kremovtort" = inputs.home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
           modules = [ ./home-manager/home.nix ];
           extraSpecialArgs = {
-            system = system;
-            inputs = inputs';
-            flake-self = self';
+            inherit system;
+            flake-self = self;
             catppuccin-ghostty = inputs.catppuccin-ghostty;
           };
         };
-      };
-
-      flake = { self, ... }: {
-        darwinConfigurations.kremovtort-OSX = inputs.nix-darwin.lib.darwinSystem {
+        
+        legacyPackages.darwinConfigurations.kremovtort-OSX = inputs.nix-darwin.lib.darwinSystem {
           modules = [
             ./darwin/configuration.nix
           ];
