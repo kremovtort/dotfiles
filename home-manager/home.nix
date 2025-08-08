@@ -2,8 +2,6 @@
 let
   isDarwin = system == "aarch64-darwin";
   darwinPkgs = map (pkg: lib.mkIf isDarwin pkg) [
-    pkgs.colima
-    pkgs.podman
     pkgs.alt-tab-macos
     pkgs.ice-bar
     pkgs.maccy
@@ -71,6 +69,7 @@ in {
     "\${HOME}/arcadia"
     "/codenv/arcadia"
     "\${HOME}/.local/bin"
+    "\${HOME}/.rd/bin"
   ];
   home.sessionVariables.EDITOR = "code";
   home.sessionVariables.ARC = "\${HOME}/arcadia";
@@ -79,6 +78,11 @@ in {
   home.sessionVariables.LC_ALL = "en_US.UTF-8";
   home.sessionVariables.PAGER = "nvim +Man!";
   home.sessionVariables.MANPAGER = "nvim +Man!";
+  
+  programs.atuin = {
+    enable = true;
+    enableZshIntegration = true;
+  };
 
   programs.direnv = {
     enable = true;
