@@ -82,6 +82,9 @@ in {
   programs.atuin = {
     enable = true;
     enableZshIntegration = true;
+    settings = {
+      auto_sync = true;
+    };
   };
 
   programs.direnv = {
