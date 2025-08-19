@@ -75,7 +75,7 @@ in {
     "\${HOME}/.local/bin"
     "\${HOME}/.rd/bin"
   ];
-  home.sessionVariables.EDITOR = "code";
+  home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.ARC = "\${HOME}/arcadia";
   home.sessionVariables.ARCADIA = "\${HOME}/arcadia";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
