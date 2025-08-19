@@ -43,6 +43,10 @@ in {
     (pkgs.writeShellScriptBin "nvim-pager" ''
       ${pkgs.neovim}/bin/nvim -c "Man! $@"
     '')
+    # for zoxide fzf preview
+    (pkgs.writeShellScriptBin "lla-for-fzf" ''
+      exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
+    '')
   ] ++ darwinPkgs;
 
   home.file = {

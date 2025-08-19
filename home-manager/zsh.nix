@@ -7,6 +7,8 @@
   autosuggestion.enable = true;
   shellAliases = {
     "codenv" = "ya tool codenv";
+    "cdi" = "zoxide query -a -i";
+    "zi" = ''cd "$(zoxide query -a -i)"'';
   };
   plugins = [
     { name = "zsh-completions"; src = pkgs.zsh-completions.src; }
@@ -20,5 +22,9 @@
       --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
       --color=selected-bg:#45475a \
       --multi --prompt='❯ ' --marker='+'"
+      
+    export _ZO_FZF_OPTS="$FZF_DEFAULT_OPTS --layout=reverse --preview='lla-for-fzf {}'"
+    
+    bindkey '^k' 'cd "$(zoxide query -a -i)"'
   '';
 }
