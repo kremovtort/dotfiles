@@ -26,6 +26,7 @@ in {
     pkgs.docker
     pkgs.fd
     pkgs.gnumake
+    pkgs.htop
     pkgs.jjui
     pkgs.jujutsu
     pkgs.kind
@@ -36,6 +37,7 @@ in {
     pkgs.nil
     pkgs.ripgrep
     pkgs.shellcheck
+    pkgs.tokei
     pkgs.uv
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
