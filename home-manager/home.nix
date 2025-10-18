@@ -53,7 +53,7 @@ in {
 
   home.file = {
     ".clickhouse-client".source = "${flake-self}/clickhouse-client";
-    ".config/nvim/".source = "${flake-self}/lazyvim";
+    ".config/nvim/".source = "${flake-self}/nvim";
     ".config/starship.toml".source = "${flake-self}/starship.toml";
     ".config/jj/config.toml".text = ''
       "$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
