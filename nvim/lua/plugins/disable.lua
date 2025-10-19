@@ -1,8 +1,8 @@
 local disabled_plugins = {
   "akinsho/bufferline.nvim",
   "jay-babu/mason-nvim-dap.nvim",
-  "williamboman/mason-lspconfig.nvim",
-  "williamboman/mason.nvim",
+  "mason-org/mason-lspconfig.nvim",
+  "mason-org/mason.nvim",
 }
 
 local M = {}
