@@ -11,10 +11,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    catppuccin-ghostty = {
-      url = "github:catppuccin/ghostty";
-      flake = false;
-    };
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
@@ -32,7 +28,7 @@
             pkgs.bash-language-server
             pkgs.just
             pkgs.lua-language-server
-            pkgs.nil
+            pkgs.nixd
             pkgs.shellcheck
           ];
         };
@@ -43,14 +39,11 @@
           extraSpecialArgs = {
             inherit system;
             flake-self = self;
-            catppuccin-ghostty = inputs.catppuccin-ghostty;
           };
         };
         
         legacyPackages.darwinConfigurations."kremovtort-OSX" = inputs.nix-darwin.lib.darwinSystem {
-          modules = [
-            ./darwin/configuration.nix
-          ];
+          modules = [ ./darwin/configuration.nix ];
         };
       };
     };

@@ -22,7 +22,7 @@
     export FZF_DEFAULT_OPTS=" \
       --color=$CATPUCCIN_COLORS_FZF \
       --multi --prompt='❯ ' --marker='+' --border=none"
-      
+
     export _ZO_FZF_OPTS="--color=$CATPUCCIN_COLORS_FZF --reverse --preview='lla-for-fzf {}' --height=~50% --prompt='❯ ' --preview-border=line"
   '';
 }

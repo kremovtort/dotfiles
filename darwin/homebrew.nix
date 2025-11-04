@@ -7,7 +7,6 @@
     upgrade = false;
   };
   brews = [
-    "swi-prolog"
     {
       name = "arc-launcher";
       start_service = true;

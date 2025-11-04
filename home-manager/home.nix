@@ -1,7 +1,7 @@
-{ pkgs, lib, system, catppuccin-ghostty, flake-self, ... }:
+{ pkgs, lib, system, flake-self, ... }:
 let
   isDarwin = system == "aarch64-darwin";
-  darwinPkgs = map (pkg: lib.mkIf isDarwin pkg) [
+  darwinPkgs = map (lib.mkIf isDarwin) [
     pkgs.alt-tab-macos
     pkgs.ice-bar
     pkgs.maccy
@@ -14,11 +14,12 @@ in {
     then "/Users/kremovtort"
     else "/home/kremovtort";
   nixpkgs.config.allowUnfree = true;
-  
+
   programs.home-manager.enable = true;
   home.stateVersion = "24.11";
 
   home.packages = [
+    pkgs.aichat
     pkgs.bat
     pkgs.bash-language-server
     pkgs.bottom
@@ -34,10 +35,12 @@ in {
     pkgs.kubernetes-helm
     pkgs.neovim
     pkgs.nerd-fonts.jetbrains-mono
-    pkgs.nil
+    pkgs.nixd
+    pkgs.nodejs
     pkgs.ripgrep
     pkgs.shellcheck
     pkgs.tokei
+    pkgs.tree-sitter
     pkgs.uv
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
@@ -62,11 +65,6 @@ in {
       name = "Alexander Makarov"
       email = "i@kremovtort.ru"
     '';
-    ".config/ghostty/config".text = ''
-      theme = catppuccin-mocha.conf
-      font-family = JetBrainsMono Nerd Font Mono
-    '';
-    ".config/ghostty/themes/catppuccin-mocha.conf".source = "${catppuccin-ghostty}/themes/catppuccin-mocha.conf";
   };
 
   home.shell.enableZshIntegration = true;
@@ -84,7 +82,7 @@ in {
   home.sessionVariables.LC_ALL = "en_US.UTF-8";
   home.sessionVariables.PAGER = "nvim +Man!";
   home.sessionVariables.MANPAGER = "nvim +Man!";
-  
+
   programs.atuin = {
     enable = true;
     enableZshIntegration = true;
@@ -92,6 +90,8 @@ in {
       auto_sync = true;
     };
   };
+  
+  programs.difftastic.enable = true;
 
   programs.direnv = {
     enable = true;
@@ -112,12 +112,11 @@ in {
     enableZshIntegration = true;
     tmux.enableShellIntegration = true;
   };
-  
+
   programs.git = {
     enable = true;
-    difftastic.enable = true;
-    userName = "Alexander Makarov";
-    userEmail = "i@kremovtort.ru";
+    settings.user.name = "Alexander Makarov";
+    settings.user.email = "i@kremovtort.ru";
   };
 
   programs.less.enable = true;
@@ -143,4 +142,10 @@ in {
   };
 
   programs.zsh = import ./zsh.nix { inherit pkgs; };
+  
+  programs.wezterm = {
+    enable = true;
+    enableZshIntegration = true;
+    extraConfig = builtins.readFile ../wezterm.lua;
+  };
 }
