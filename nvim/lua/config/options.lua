@@ -14,9 +14,13 @@ local en_shift = [[~QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>]]
 local ru_shift = [[ËЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ]]
 
 vim.opt.spell = false
+vim.opt.breakindent = true
+vim.opt.breakindentopt = "shift:4"
 
 vim.opt.langmap = vim.fn.join({
   -- | `to` should be first     | `from` should be second
-  escape(ru_shift) .. ';' .. escape(en_shift),
-  escape(ru) .. ';' .. escape(en),
-}, ',')
+  escape(ru_shift)
+    .. ";"
+    .. escape(en_shift),
+  escape(ru) .. ";" .. escape(en),
+}, ",")

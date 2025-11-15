@@ -3,6 +3,7 @@ local disabled_plugins = {
   "jay-babu/mason-nvim-dap.nvim",
   "mason-org/mason-lspconfig.nvim",
   "mason-org/mason.nvim",
+  "mfussenegger/nvim-lint",
 }
 
 local M = {}

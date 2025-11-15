@@ -183,5 +183,5 @@ return {
 	use_resize_increments = false,
 	use_fancy_tab_bar = false,
 	tab_max_width = 20,
-	max_fps = 165,
+	max_fps = 120,
 }
