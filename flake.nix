@@ -29,7 +29,9 @@
             pkgs.just
             pkgs.lua-language-server
             pkgs.nixd
+            pkgs.statix
             pkgs.shellcheck
+            pkgs.stylua
           ];
         };
         
