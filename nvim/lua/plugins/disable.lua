@@ -4,6 +4,7 @@ local disabled_plugins = {
   "mason-org/mason-lspconfig.nvim",
   "mason-org/mason.nvim",
   "mfussenegger/nvim-lint",
+  "folke/neoconf.nvim",
 }
 
 local M = {}

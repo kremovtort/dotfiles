@@ -5,4 +5,9 @@ return {
       colorscheme = "catppuccin-mocha",
     },
   },
+
+  {
+    "petertriho/nvim-scrollbar",
+    opts = {},
+  },
 }
