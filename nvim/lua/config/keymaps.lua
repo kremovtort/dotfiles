@@ -12,6 +12,13 @@ if vim.g.vscode then
   vim.keymap.set("n", "za", '<Cmd>call VSCodeNotify("editor.toggleFold")<CR>', { noremap = true, silent = true })
 end
 
-vim.keymap.set({ "n", "x", "o" }, "s", "<Plug>(leap-forward)")
-vim.keymap.set({ "n", "x", "o" }, "S", "<Plug>(leap-backward)")
 vim.keymap.set("t", "<C-x>", "<C-\\><C-n>")
+vim.keymap.set({ "n", "x", "o", "i" }, "<C-x><C-[>", function()
+  require("edgy").toggle("left")
+end, { desc = "Toggle edgy.nvim on the left side of the editor" })
+vim.keymap.set({ "n", "x", "o", "i" }, "<C-x><C-]>", function()
+  require("edgy").toggle("right")
+end)
+vim.keymap.set({ "n", "x", "o", "i" }, "<C-x><C-'>", function()
+  require("edgy").toggle("bottom")
+end)
