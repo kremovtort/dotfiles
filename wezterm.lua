@@ -138,6 +138,12 @@ end
 
 local function get_current_working_dir(tab)
 	local current_dir = tab.active_pane.current_working_dir
+	if current_dir == nil then
+		return "?"
+	end
+	if type(current_dir) == "userdata" then
+		current_dir = tostring(current_dir)
+	end
 	local HOME_DIR = string.format("file://%s", os.getenv("HOME"))
 
 	return current_dir == HOME_DIR and "~" or string.format("%s", string.gsub(current_dir, "(.*[/\\])(.*)", "%2"))
@@ -163,7 +169,7 @@ wezterm.on("update-right-status", function(window)
 	}))
 end)
 
-return {
+local config = {
 	font = wezterm.font("JetbrainsMono Nerd Font"),
 	font_size = 12,
 	color_scheme = "Catppuccin Mocha",
@@ -184,4 +190,45 @@ return {
 	use_fancy_tab_bar = false,
 	tab_max_width = 20,
 	max_fps = 120,
+	mouse_bindings = {
+		{
+			event = { Down = { streak = 1, button = "Left" } },
+			mods = "SUPER",
+			action = wezterm.action.OpenLinkAtMouseCursor,
+		},
+	},
+	enable_kitty_graphics = true,
+	keys = {
+		{
+			key = "h",
+			mods = "CTRL|SHIFT",
+			action = wezterm.action.ActivatePaneDirection("Left"),
+		},
+		{
+			key = "j",
+			mods = "CTRL|SHIFT",
+			action = wezterm.action.ActivatePaneDirection("Down"),
+		},
+		{
+			key = "k",
+			mods = "CTRL|SHIFT",
+			action = wezterm.action.ActivatePaneDirection("Up"),
+		},
+		{
+			key = "l",
+			mods = "CTRL|SHIFT",
+			action = wezterm.action.ActivatePaneDirection("Right"),
+		},
+	},
 }
+
+local toggle_terminal = wezterm.plugin.require("https://github.com/zsh-sage/toggle_terminal.wez")
+toggle_terminal.apply_to_config(config, {
+	direction = "Down",
+	size = { Percent = 35 },
+	zoom = {
+		auto_zoom_invoker_pane = true,
+	},
+})
+
+return config
