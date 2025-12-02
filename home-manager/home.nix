@@ -55,7 +55,10 @@ in {
 
   home.file = {
     ".clickhouse-client".source = "${flake-self}/clickhouse-client";
-    ".config/nvim/".source = "${flake-self}/nvim";
+    ".config/nvim/" = {
+      source = "${flake-self}/nvim";
+      recursive = true;
+    };
     ".config/starship.toml".source = "${flake-self}/starship.toml";
     ".config/jj/config.toml".text = ''
       "$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
@@ -153,7 +156,7 @@ in {
     # Equivalent to what you would put into `~/.paneru` (See Configuration options below).
     settings = {
       options = {
-        focus_follows_mouse = true;
+        focus_follows_mouse = false;
         preset_column_widths = [
           0.25
           0.33
