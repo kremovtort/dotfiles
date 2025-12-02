@@ -10,6 +10,13 @@ if vim.g.vscode then
   vim.keymap.set("n", "zo", '<Cmd>call VSCodeNotify("editor.unfold")<CR>', { noremap = true, silent = true })
   vim.keymap.set("n", "zO", '<Cmd>call VSCodeNotify("editor.unfoldRecursively")<CR>', { noremap = true, silent = true })
   vim.keymap.set("n", "za", '<Cmd>call VSCodeNotify("editor.toggleFold")<CR>', { noremap = true, silent = true })
+  
+  -- Remap error navigation keys
+  vim.keymap.set("n", "]e", '<Cmd>call VSCodeNotify("editor.action.marker.next")<CR>', { noremap = true, silent = true })
+  vim.keymap.set("n", "[e", '<Cmd>call VSCodeNotify("editor.action.marker.prev")<CR>', { noremap = true, silent = true })
+  vim.keymap.set("n", "]E", '<Cmd>call VSCodeNotify("editor.action.marker.nextInFiles")<CR>', { noremap = true, silent = true })
+  vim.keymap.set("n", "[E", '<Cmd>call VSCodeNotify("editor.action.marker.prevInFiles")<CR>', { noremap = true, silent = true })
+  vim.keymap.set("n", "<C-w>q", '<Cmd>call VSCodeNotify("workbench.action.closeEditorsInGroup")<CR>', { noremap = true, silent = true })
 end
 
 vim.keymap.set("t", "<C-x>", "<C-\\><C-n>")
