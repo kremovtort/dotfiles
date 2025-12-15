@@ -1,10 +1,11 @@
 { pkgs, lib, system, flake-self, ... }:
 let
   isDarwin = system == "aarch64-darwin";
+  userName = "Alexander Makarov";
+  userEmail = "i@kremovtort.ru";
   darwinPkgs = map (lib.mkIf isDarwin) [
     pkgs.alt-tab-macos
     pkgs.ice-bar
-    pkgs.maccy
     pkgs.monitorcontrol
     pkgs.swiftdefaultapps
   ];
@@ -27,12 +28,11 @@ in {
     pkgs.fd
     pkgs.gnumake
     pkgs.htop
-    pkgs.jjui
-    pkgs.jujutsu
     pkgs.kind
     pkgs.kubectl
     pkgs.kubernetes-helm
     pkgs.neovim
+    pkgs.nvimpager
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nixd
     pkgs.nodejs
@@ -41,12 +41,10 @@ in {
     pkgs.tokei
     pkgs.tree-sitter
     pkgs.uv
+    pkgs.zjstatus
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
-    (pkgs.writeShellScriptBin "nvim-pager" ''
-      ${pkgs.neovim}/bin/nvim -c "Man! $@"
-    '')
     # for zoxide fzf preview
     (pkgs.writeShellScriptBin "lla-for-fzf" ''
       exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
@@ -60,13 +58,6 @@ in {
       recursive = true;
     };
     ".config/starship.toml".source = "${flake-self}/starship.toml";
-    ".config/jj/config.toml".text = ''
-      "$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json"
-
-      [user]
-      name = "Alexander Makarov"
-      email = "i@kremovtort.ru"
-    '';
   };
 
   home.shell.enableZshIntegration = true;
@@ -82,18 +73,23 @@ in {
   home.sessionVariables.ARCADIA = "\${HOME}/arcadia";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
   home.sessionVariables.LC_ALL = "en_US.UTF-8";
-  home.sessionVariables.PAGER = "nvim +Man!";
-  home.sessionVariables.MANPAGER = "nvim +Man!";
+  home.sessionVariables.PAGER = "nvimpager";
+  home.sessionVariables.MANPAGER = "nvimpager";
 
   programs.atuin = {
     enable = true;
     enableZshIntegration = true;
     settings = {
       auto_sync = true;
+      invert = true;
     };
   };
   
-  programs.difftastic.enable = true;
+  programs.delta = {
+    enable = true;
+    enableGitIntegration = true;
+    enableJujutsuIntegration = true;
+  };
 
   programs.direnv = {
     enable = true;
@@ -115,10 +111,32 @@ in {
     tmux.enableShellIntegration = true;
   };
 
+  programs.ghostty = {
+    enable = true;
+    enableZshIntegration = true;
+    package = if isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+    settings = {
+      theme = "Catppuccin Mocha";
+      shell-integration-features = true;
+      font-family = "JetBrainsMono Nerd Font Mono";
+      font-size = 12;
+      macos-titlebar-style = "tabs";
+    };
+  };
+
   programs.git = {
     enable = true;
-    settings.user.name = "Alexander Makarov";
-    settings.user.email = "i@kremovtort.ru";
+    settings.user.name = userName;
+    settings.user.email = userEmail;
+  };
+  
+  programs.jjui.enable = true;
+  
+  programs.jujutsu = {
+    enable = true;
+    settings.user.name = userName;
+    settings.user.email = userEmail;
+    settings.revsets.log = "present(@) | ancestors(@, 16) | ancestors(@.., 16)";
   };
 
   programs.less.enable = true;
@@ -143,7 +161,7 @@ in {
     enableZshIntegration = true;
   };
 
-  programs.zsh = import ./zsh.nix { inherit pkgs; };
+  programs.zsh = import ./zsh.nix { inherit pkgs lib; };
   
   programs.wezterm = {
     enable = true;
@@ -151,39 +169,7 @@ in {
     extraConfig = builtins.readFile ../wezterm.lua;
   };
 
-  services.paneru = lib.mkIf isDarwin {
-    enable = true;
-    # Equivalent to what you would put into `~/.paneru` (See Configuration options below).
-    settings = {
-      options = {
-        focus_follows_mouse = false;
-        preset_column_widths = [
-          0.25
-          0.33
-          0.5
-          0.66
-          0.75
-          1
-        ];
-        swipe_gesture_fingers = 3;
-        animation_speed = 10000;
-      };
-      bindings = {
-        window_focus_west = "cmd + ctrl - h";
-        window_focus_east = "cmd + ctrl - l";
-        window_focus_north = "cmd + ctrl - k";
-        window_focus_south = "cmd + ctrl - j";
-        window_swap_west = "alt + ctrl - h";
-        window_swap_east = "alt + ctrl - l";
-        window_swap_first = "alt + shift - h";
-        window_swap_last = "alt + shift - l";
-        window_center = "alt - c";
-        window_resize = "alt - r";
-        window_manage = "cmd + alt - t";
-        window_stack = "alt + ctrl - ]";
-        window_unstack = "alt + ctrl + shift - ]";
-        quit = "ctrl + alt - q";
-      };
-    };
-  };
+  programs.zellij = import ./zellij.nix { inherit pkgs; };
+
+  services.paneru = lib.mkIf isDarwin (import ./paneru.nix {});
 }

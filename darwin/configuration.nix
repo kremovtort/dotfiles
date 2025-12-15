@@ -11,15 +11,6 @@
   nix.settings.experimental-features = "nix-command flakes";
   # nix-rosetta-builder.onDemand = true;
 
-  services.jankyborders = {
-    enable = true;
-    width = 6.0;
-    hidpi = true;
-    blur_radius = 10.0;
-    active_color = "0x70FFFFFF";
-    inactive_color = "0x00FFFFFF";
-  };
-
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
   system.stateVersion = 6;

@@ -12,20 +12,32 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     paneru = {
-      url = "github:karinushka/paneru/testing";
+      url = "github:karinushka/paneru";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
+    zjstatus.url = "github:dj95/zjstatus";
   };
 
   outputs = inputs @ { flake-parts, self, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
 
+
       perSystem = { config, self', inputs', pkgs, system, lib, ... }: {
+        _module.args.pkgs = import inputs.nixpkgs {
+          inherit system;
+          overlays = [
+            (final: prev: {
+              zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
+            })
+          ];
+          config = { };
+        };
         packages.just = inputs'.nixpkgs.legacyPackages.just;
         packages.home-manager = inputs'.home-manager.packages.home-manager;
         packages.darwin-rebuild = inputs'.nix-darwin.packages.darwin-rebuild;
+
 
         devShells.default = pkgs.mkShell {
           packages = [
