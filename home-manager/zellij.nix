@@ -19,53 +19,48 @@
             bind "Ctrl Space" { SwitchToMode "Tmux"; }
         }
 
-        // Normal mode
-        normal {
-            bind "Ctrl Space" { SwitchToMode "Tmux"; }
-        }
-
         // Tmux mode - similar to tmux prefix behavior
-        // Each binding returns to Normal mode after action (auto-exit)
+        // Each binding returns to Locked mode after action (auto-exit)
         tmux {
-            bind "Esc" { SwitchToMode "Normal"; }
-            bind "Ctrl Space" { SwitchToMode "Normal"; }
+            bind "Esc" { SwitchToMode "Locked"; }
+            bind "Ctrl Space" { SwitchToMode "Locked"; }
 
             // Splits like tmux: - for horizontal, | for vertical
-            bind "-" { NewPane "Down"; SwitchToMode "Normal"; }
-            bind "|" { NewPane "Right"; SwitchToMode "Normal"; }
+            bind "-" { NewPane "Down"; SwitchToMode "Locked"; }
+            bind "|" { NewPane "Right"; SwitchToMode "Locked"; }
 
             // Pane navigation with hjkl (like tmux with vi mode)
-            bind "h" { MoveFocus "Left"; SwitchToMode "Normal"; }
-            bind "j" { MoveFocus "Down"; SwitchToMode "Normal"; }
-            bind "k" { MoveFocus "Up"; SwitchToMode "Normal"; }
-            bind "l" { MoveFocus "Right"; SwitchToMode "Normal"; }
+            bind "h" { MoveFocus "Left"; SwitchToMode "Locked"; }
+            bind "j" { MoveFocus "Down"; SwitchToMode "Locked"; }
+            bind "k" { MoveFocus "Up"; SwitchToMode "Locked"; }
+            bind "l" { MoveFocus "Right"; SwitchToMode "Locked"; }
 
-            // Pane resize
+            // Pane resize (stay in tmux mode for continuous resize)
             bind "H" { Resize "Increase Left"; }
             bind "J" { Resize "Increase Down"; }
             bind "K" { Resize "Increase Up"; }
             bind "L" { Resize "Increase Right"; }
 
             // Tab management (baseIndex = 1 equivalent)
-            bind "c" { NewTab; SwitchToMode "Normal"; }
-            bind "1" { GoToTab 1; SwitchToMode "Normal"; }
-            bind "2" { GoToTab 2; SwitchToMode "Normal"; }
-            bind "3" { GoToTab 3; SwitchToMode "Normal"; }
-            bind "4" { GoToTab 4; SwitchToMode "Normal"; }
-            bind "5" { GoToTab 5; SwitchToMode "Normal"; }
-            bind "6" { GoToTab 6; SwitchToMode "Normal"; }
-            bind "7" { GoToTab 7; SwitchToMode "Normal"; }
-            bind "8" { GoToTab 8; SwitchToMode "Normal"; }
-            bind "9" { GoToTab 9; SwitchToMode "Normal"; }
-            bind "n" { GoToNextTab; SwitchToMode "Normal"; }
-            bind "p" { GoToPreviousTab; SwitchToMode "Normal"; }
+            bind "c" { NewTab; SwitchToMode "Locked"; }
+            bind "1" { GoToTab 1; SwitchToMode "Locked"; }
+            bind "2" { GoToTab 2; SwitchToMode "Locked"; }
+            bind "3" { GoToTab 3; SwitchToMode "Locked"; }
+            bind "4" { GoToTab 4; SwitchToMode "Locked"; }
+            bind "5" { GoToTab 5; SwitchToMode "Locked"; }
+            bind "6" { GoToTab 6; SwitchToMode "Locked"; }
+            bind "7" { GoToTab 7; SwitchToMode "Locked"; }
+            bind "8" { GoToTab 8; SwitchToMode "Locked"; }
+            bind "9" { GoToTab 9; SwitchToMode "Locked"; }
+            bind "n" { GoToNextTab; SwitchToMode "Locked"; }
+            bind "p" { GoToPreviousTab; SwitchToMode "Locked"; }
 
             // Close pane/tab
-            bind "x" { CloseFocus; SwitchToMode "Normal"; }
-            bind "X" { CloseTab; SwitchToMode "Normal"; }
+            bind "x" { CloseFocus; SwitchToMode "Locked"; }
+            bind "X" { CloseTab; SwitchToMode "Locked"; }
 
             // Zoom pane (like tmux z)
-            bind "z" { ToggleFocusFullscreen; SwitchToMode "Normal"; }
+            bind "z" { ToggleFocusFullscreen; SwitchToMode "Locked"; }
 
             // Detach (like tmux d)
             bind "d" { Detach; }
@@ -82,8 +77,9 @@
 
         // Scroll mode with vi-like bindings
         scroll {
-            bind "Esc" { SwitchToMode "Normal"; }
-            bind "Ctrl c" { SwitchToMode "Normal"; }
+            bind "Esc" { SwitchToMode "Locked"; }
+            bind "Ctrl c" { SwitchToMode "Locked"; }
+            bind "q" { SwitchToMode "Locked"; }
             
             // Vi navigation
             bind "j" "Down" { ScrollDown; }
@@ -98,15 +94,13 @@
             // Search
             bind "/" { SwitchToMode "EnterSearch"; Search "down"; }
             bind "?" { SwitchToMode "EnterSearch"; Search "up"; }
-            
-            // Enter copy mode
-            bind "v" { SwitchToMode "EnterSearch"; }
         }
 
         // Search mode
         search {
-            bind "Esc" { SwitchToMode "Normal"; }
-            bind "Ctrl c" { SwitchToMode "Normal"; }
+            bind "Esc" { SwitchToMode "Locked"; }
+            bind "Ctrl c" { SwitchToMode "Locked"; }
+            bind "q" { SwitchToMode "Locked"; }
             bind "n" { Search "down"; }
             bind "N" { Search "up"; }
             bind "j" "Down" { ScrollDown; }
@@ -117,25 +111,20 @@
 
         entersearch {
             bind "Esc" { SwitchToMode "Scroll"; }
-            bind "Ctrl c" { SwitchToMode "Normal"; }
+            bind "Ctrl c" { SwitchToMode "Locked"; }
             bind "Enter" { SwitchToMode "Search"; }
         }
 
         // Rename tab mode
         renametab {
-            bind "Esc" { UndoRenameTab; SwitchToMode "Normal"; }
-            bind "Enter" { SwitchToMode "Normal"; }
+            bind "Esc" { UndoRenameTab; SwitchToMode "Locked"; }
+            bind "Enter" { SwitchToMode "Locked"; }
         }
 
         // Session mode
         session {
-            bind "Esc" { SwitchToMode "Normal"; }
+            bind "Esc" { SwitchToMode "Locked"; }
             bind "d" { Detach; }
-        }
-
-        // Shared bindings across modes
-        shared_except "locked" {
-            bind "Ctrl Space" { SwitchToMode "Tmux"; }
         }
     }
 
