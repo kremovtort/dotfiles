@@ -137,6 +137,7 @@ in {
     settings.user.name = userName;
     settings.user.email = userEmail;
     settings.revsets.log = "present(@) | ancestors(@, 16) | ancestors(@.., 16)";
+    settings.ui.diff-editor = ["nvim" "-c" "DiffEditor $left $right $output"];
   };
 
   programs.less.enable = true;
