@@ -12,11 +12,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     paneru = {
-      url = "github:karinushka/paneru";
+      url = "github:karinushka/paneru/testing";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
     zjstatus.url = "github:dj95/zjstatus";
+    karabinix.url = "github:pepegar/karabinix";
   };
 
   outputs = inputs @ { flake-parts, self, ... }:
@@ -54,11 +55,12 @@
         legacyPackages.homeConfigurations."kremovtort" = inputs.home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [
+            inputs.karabinix.homeManagerModules.karabinix
             inputs.paneru.homeModules.paneru
             ./home-manager/home.nix
           ];
           extraSpecialArgs = {
-            inherit system;
+            inherit system inputs;
             flake-self = self;
           };
         };

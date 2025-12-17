@@ -1,4 +1,4 @@
-{ pkgs, lib, system, flake-self, ... }:
+{ pkgs, lib, system, flake-self, inputs, ... }:
 let
   isDarwin = system == "aarch64-darwin";
   userName = "Alexander Makarov";
@@ -8,8 +8,13 @@ let
     pkgs.ice-bar
     pkgs.monitorcontrol
     pkgs.swiftdefaultapps
+    inputs.paneru.packages.${system}.paneru
   ];
 in {
+  imports = [
+    ./karabiner.nix
+  ];
+
   home.username = "kremovtort";
   home.homeDirectory = if isDarwin
     then "/Users/kremovtort"
