@@ -121,16 +121,6 @@ in {
               "basic.to_if_held_down_threshold_milliseconds" = 500;
             };
             rules = [
-              (mkRule "Fn tap to switch language (short timeout)" [
-                (mkManipulator {
-                  from = mkFromEvent { key_code = "fn"; };
-                  to = [ (mkToEvent { key_code = "fn"; lazy = true; }) ];
-                  to_if_alone = [ (mkToEvent { key_code = keyCodes.spacebar; modifiers = [ "left_option" ]; }) ];
-                  parameters = {
-                    "basic.to_if_alone_timeout_milliseconds" = 200;
-                  };
-                })
-              ])
               (mkRule "F19 to switch language" [
                 (mkManipulator {
                   from = mkFromEvent { key_code = keyCodes.f19; };
