@@ -18,12 +18,12 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
+    openspec-flake.url = "github:kremovtort/openspec-flake";
   };
 
   outputs = inputs @ { flake-parts, self, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
-
 
       perSystem = { config, self', inputs', pkgs, system, lib, ... }: {
         _module.args.pkgs = import inputs.nixpkgs {
@@ -38,7 +38,6 @@
         packages.just = inputs'.nixpkgs.legacyPackages.just;
         packages.home-manager = inputs'.home-manager.packages.home-manager;
         packages.darwin-rebuild = inputs'.nix-darwin.packages.darwin-rebuild;
-
 
         devShells.default = pkgs.mkShell {
           packages = [

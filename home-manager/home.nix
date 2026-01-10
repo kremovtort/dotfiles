@@ -4,8 +4,6 @@ let
   userName = "Alexander Makarov";
   userEmail = "i@kremovtort.ru";
   darwinPkgs = map (lib.mkIf isDarwin) [
-    pkgs.alt-tab-macos
-    pkgs.ice-bar
     pkgs.monitorcontrol
     pkgs.swiftdefaultapps
     inputs.paneru.packages.${system}.paneru
@@ -54,6 +52,7 @@ in {
     (pkgs.writeShellScriptBin "lla-for-fzf" ''
       exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
     '')
+    inputs.openspec-flake.packages.${system}.default
   ] ++ darwinPkgs;
 
   home.file = {
