@@ -19,13 +19,17 @@
     zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
     openspec-flake.url = "github:kremovtort/openspec-flake";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ { flake-parts, self, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ];
 
-      perSystem = { config, self', inputs', pkgs, system, lib, ... }: {
+      perSystem = { inputs', pkgs, system, ... }: {
         _module.args.pkgs = import inputs.nixpkgs {
           inherit system;
           overlays = [
@@ -56,6 +60,7 @@
           modules = [
             inputs.karabinix.homeManagerModules.karabinix
             inputs.paneru.homeModules.paneru
+            inputs.sops-nix.homeManagerModules.sops
             ./home-manager/home.nix
           ];
           extraSpecialArgs = {

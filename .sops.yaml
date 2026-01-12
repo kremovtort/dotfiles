@@ -1,0 +1,10 @@
+# SOPS configuration
+# Replace YOUR_AGE_PUBLIC_KEY with your actual public key after running:
+#   sops-age-keychain generate
+# or
+#   sops-age-keychain public
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    age: >-
+      age1rg9vtq3avupkp5c73lwm3v5zchhcwm7cmhytdrwqq5gsynjtu5hsxx7xcs

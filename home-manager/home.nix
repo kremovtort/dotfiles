@@ -11,6 +11,8 @@ let
 in {
   imports = [
     ./karabiner.nix
+    ./opencode.nix
+    ./sops.nix
   ];
 
   home.username = "kremovtort";
