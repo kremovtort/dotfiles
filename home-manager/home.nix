@@ -1,4 +1,4 @@
-{ pkgs, lib, system, flake-self, inputs, ... }:
+{ config, pkgs, lib, system, flake-self, inputs, ... }:
 let
   isDarwin = system == "aarch64-darwin";
   userName = "Alexander Makarov";
@@ -11,6 +11,7 @@ let
 in {
   imports = [
     ./karabiner.nix
+    ./nixcats.nix
     ./opencode.nix
     ./sops.nix
   ];
@@ -36,7 +37,6 @@ in {
     pkgs.kind
     pkgs.kubectl
     pkgs.kubernetes-helm
-    pkgs.neovim
     pkgs.nvimpager
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nixd
@@ -59,10 +59,8 @@ in {
 
   home.file = {
     ".clickhouse-client".source = "${flake-self}/clickhouse-client";
-    ".config/nvim/" = {
-      source = "${flake-self}/nvim";
-      recursive = true;
-    };
+    ".config/nvim/".source =
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/nvim";
     ".config/starship.toml".source = "${flake-self}/starship.toml";
     ".config/ghostty/themes/catppuccin-espresso".source = "${flake-self}/catppuccin/ghostty-theme-catppuccin-espresso";
     ".config/opencode/themes/catppuccin-espresso.json".source = "${flake-self}/catppuccin/opencode-theme-catppuccin-espresso.json";
@@ -151,6 +149,9 @@ in {
 
   programs.less.enable = true;
   programs.man.enable = true;
+
+  # nixCats Neovim (built and wrapped via Nix; Lua config lives in this repo)
+  programs.nvim.enable = true;
 
   programs.nix-your-shell = {
     enable = true;

@@ -186,6 +186,21 @@
         "type": "github"
       }
     },
+    "nixCats": {
+      "locked": {
+        "lastModified": 1767604651,
+        "narHash": "sha256-itAnxzTpWpY1s3LA/oNngOuZDXT5U5JUZP5fApwx9gs=",
+        "owner": "BirdeeHub",
+        "repo": "nixCats-nvim",
+        "rev": "3c9bc4d7123e1b48d92f25ba505b889af541e897",
+        "type": "github"
+      },
+      "original": {
+        "owner": "BirdeeHub",
+        "repo": "nixCats-nvim",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1756386758,
@@ -287,11 +302,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1768306857,
-        "narHash": "sha256-p6KjrL2sXNqaz1R5DlKaYeq1p0m7O9iTfiwSYkLeHTw=",
+        "lastModified": 1768507086,
+        "narHash": "sha256-IC2a54tx1i8X26ZNXVThv66FxNUHSikaDdMlC2X/jRQ=",
         "owner": "kremovtort",
         "repo": "openspec-flake",
-        "rev": "ca15155bda4eeeb66ec8d0dfa3bc92fbe2af5850",
+        "rev": "6fa96e4e270e5ff45f3cb5359f6ec9bf0b464346",
         "type": "github"
       },
       "original": {
@@ -317,6 +332,38 @@
       "original": {
         "owner": "karinushka",
         "repo": "paneru",
+        "type": "github"
+      }
+    },
+    "plugins-lze": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1768099066,
+        "narHash": "sha256-Hzo+IEQbp6W9vh8oWk3zenHjOSqRnd0/NFlbDBInBII=",
+        "owner": "BirdeeHub",
+        "repo": "lze",
+        "rev": "ab1c3202c62fc19a33ede14a8b6fc66e772b91d7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "BirdeeHub",
+        "repo": "lze",
+        "type": "github"
+      }
+    },
+    "plugins-opencode-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1768483033,
+        "narHash": "sha256-TU0c6TAIi68WV2UlXnAAsC2vTso66MA+T56ulktis6Y=",
+        "owner": "sudo-tee",
+        "repo": "opencode.nvim",
+        "rev": "4cc98c03395f8d0d910e3a70ccb1ad948ce16e09",
+        "type": "github"
+      },
+      "original": {
+        "owner": "sudo-tee",
+        "repo": "opencode.nvim",
         "type": "github"
       }
     },
@@ -346,9 +393,12 @@
         "home-manager": "home-manager",
         "karabinix": "karabinix",
         "nix-darwin": "nix-darwin",
+        "nixCats": "nixCats",
         "nixpkgs": "nixpkgs_3",
         "openspec-flake": "openspec-flake",
         "paneru": "paneru",
+        "plugins-lze": "plugins-lze",
+        "plugins-opencode-nvim": "plugins-opencode-nvim",
         "sops-nix": "sops-nix",
         "zjstatus": "zjstatus"
       }

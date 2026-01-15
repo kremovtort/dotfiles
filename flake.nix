@@ -23,6 +23,17 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixCats = {
+      url = "github:BirdeeHub/nixCats-nvim";
+    };
+    plugins-opencode-nvim = {
+      url = "github:sudo-tee/opencode.nvim";
+      flake = false;
+    };
+    plugins-lze = {
+      url = "github:BirdeeHub/lze";
+      flake = false;
+    };
   };
 
   outputs = inputs @ { flake-parts, self, ... }:

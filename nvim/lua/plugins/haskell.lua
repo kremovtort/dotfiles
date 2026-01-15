@@ -1,21 +1,22 @@
 return {
   {
-    "mrcjkb/haskell-tools.nvim",
-    opts = {
-      hls = {
-        settings = {
-          haskell = {
-            plugin = {
-              importLens = {
-                globalOn = false,
+    "haskell-tools.nvim",
+    ft = { "haskell" },
+    before = function()
+      -- haskell-tools reads its config from this global
+      vim.g.haskell_tools = {
+        hls = {
+          settings = {
+            haskell = {
+              plugin = {
+                importLens = {
+                  globalOn = false,
+                },
               },
             },
           },
         },
-      },
-    },
-    config = function(_, opts)
-      vim.g.haskell_tools = opts
+      }
     end,
   },
 }
