@@ -14,14 +14,13 @@ let
     mkModifiers
     mkCondition;
 
-  # Вспомогательная функция для создания маппингов слоя
   mkLayerManipulators = modifier: [
     # Navigation
     { from = "h"; to = "left_arrow"; }
     { from = "j"; to = "down_arrow"; }
     { from = "k"; to = "up_arrow"; }
     { from = "l"; to = "right_arrow"; }
-    
+
     # Tab
     { from = "n"; to = "tab"; }
     { from = "p"; to = "tab"; toModifiers = [ "left_shift" ]; }
@@ -30,7 +29,7 @@ let
     { from = "spacebar"; to = "play_or_pause"; }
     { from = "z"; to = "rewind"; }
     { from = "x"; to = "fastforward"; }
-    
+
     # Volume
     { from = "comma"; to = "volume_down"; }
     { from = "period"; to = "volume_up"; }

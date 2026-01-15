@@ -78,6 +78,7 @@ in {
   home.sessionVariables.ARC = "\${HOME}/arcadia";
   home.sessionVariables.ARCADIA = "\${HOME}/arcadia";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
+  home.sessionVariables.DO_NOT_TRACK = "1";
   home.sessionVariables.LC_ALL = "en_US.UTF-8";
   home.sessionVariables.PAGER = "nvimpager";
   home.sessionVariables.MANPAGER = "nvimpager";
@@ -152,7 +153,7 @@ in {
   programs.nix-your-shell = {
     enable = true;
     enableZshIntegration = true;
-};
+  };
 
   programs.starship = {
     enable = true;

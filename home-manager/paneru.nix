@@ -1,5 +1,5 @@
 { ... }: {
-  enable = true;
+  enable = false;
   # Equivalent to what you would put into `~/.paneru` (See Configuration options below).
   settings = {
     options = {
@@ -13,8 +13,7 @@
         0.75
         1
       ];
-      swipe_gesture_fingers = 3;
-      animation_speed = 10000;
+      animation_speed = 500000;
     };
     bindings = {
       window_focus_west = "cmd + ctrl - h";
