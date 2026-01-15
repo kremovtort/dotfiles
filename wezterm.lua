@@ -44,16 +44,16 @@ local colors = {
 	text = "#CAD3F5",
 	subtext1 = "#B8C0E0",
 	subtext0 = "#A5ADCB",
-	overlay2 = "#939AB7",
-	overlay1 = "#8087A2",
-	overlay0 = "#6E738D",
-	surface2 = "#5B6078",
-	surface1 = "#494D64",
-	surface0 = "#363A4F",
+	overlay2 = "#8a8a8a",
+	overlay1 = "#757575",
+	overlay0 = "#606060",
+	surface2 = "#4c4c4c",
+	surface1 = "#3c3c3c",
+	surface0 = "#2c2c2c",
 
-	base = "#24273A",
-	mantle = "#1E2030",
-	crust = "#181926",
+	base = "#1c1c1c",
+	mantle = "#161616",
+	crust = "#101010",
 }
 
 local function get_process(tab)
@@ -169,10 +169,67 @@ wezterm.on("update-right-status", function(window)
 	}))
 end)
 
+-- Get built-in Catppuccin Mocha scheme and customize it
+local mocha = wezterm.color.get_builtin_schemes()["Catppuccin Mocha"]
+
+-- Create custom Catppuccin Espresso scheme with darker base colors
+local espresso = {}
+for k, v in pairs(mocha) do
+	espresso[k] = v
+end
+
+-- Override base colors
+espresso.background = "#1c1c1c"
+espresso.ansi[1] = "#101010"  -- black (crust)
+espresso.ansi[2] = "#f38ba8"  -- red (keep original)
+espresso.ansi[3] = "#a6e3a1"  -- green (keep original)
+espresso.ansi[4] = "#f9e2af"  -- yellow (keep original)
+espresso.ansi[5] = "#89b4fa"  -- blue (keep original)
+espresso.ansi[6] = "#f5c2e7"  -- magenta (keep original)
+espresso.ansi[7] = "#94e2d5"  -- cyan (keep original)
+espresso.ansi[8] = "#bac2de"  -- white (keep original)
+
+espresso.brights[1] = "#4c4c4c"  -- bright black (surface2)
+espresso.brights[2] = "#f38ba8"  -- bright red (keep original)
+espresso.brights[3] = "#a6e3a1"  -- bright green (keep original)
+espresso.brights[4] = "#f9e2af"  -- bright yellow (keep original)
+espresso.brights[5] = "#89b4fa"  -- bright blue (keep original)
+espresso.brights[6] = "#f5c2e7"  -- bright magenta (keep original)
+espresso.brights[7] = "#94e2d5"  -- bright cyan (keep original)
+espresso.brights[8] = "#8a8a8a"  -- bright white (overlay2)
+
+-- Override selection and cursor colors
+espresso.selection_bg = "#2c2c2c"  -- surface0
+espresso.selection_fg = "#cdd6f4"  -- text
+
+-- Override tab bar colors
+if espresso.tab_bar == nil then
+	espresso.tab_bar = {}
+end
+espresso.tab_bar.background = "#161616"  -- mantle
+espresso.tab_bar.inactive_tab = {
+	bg_color = "#161616",  -- mantle
+	fg_color = "#757575",  -- overlay1
+}
+espresso.tab_bar.active_tab = {
+	bg_color = "#1c1c1c",  -- base
+	fg_color = "#cdd6f4",  -- text
+}
+espresso.tab_bar.new_tab = {
+	bg_color = "#161616",  -- mantle
+	fg_color = "#757575",  -- overlay1
+}
+
+-- Override scrollbar colors
+espresso.scrollbar_thumb = "#2c2c2c"  -- surface0
+
 local config = {
 	font = wezterm.font("JetbrainsMono Nerd Font"),
 	font_size = 12,
-	color_scheme = "Catppuccin Mocha",
+	color_schemes = {
+		["Catppuccin Espresso"] = espresso,
+	},
+	color_scheme = "Catppuccin Espresso",
 	default_cursor_style = "SteadyBar",
 	window_padding = {
 		left = 0,

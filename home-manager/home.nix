@@ -64,6 +64,8 @@ in {
       recursive = true;
     };
     ".config/starship.toml".source = "${flake-self}/starship.toml";
+    ".config/ghostty/themes/catppuccin-espresso".source = "${flake-self}/catppuccin/ghostty-theme-catppuccin-espresso";
+    ".config/opencode/themes/catppuccin-espresso.json".source = "${flake-self}/catppuccin/opencode-theme-catppuccin-espresso.json";
   };
 
   home.shell.enableZshIntegration = true;
@@ -123,7 +125,7 @@ in {
     enableZshIntegration = true;
     package = if isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
     settings = {
-      theme = "Catppuccin Mocha";
+      theme = "catppuccin-espresso";
       shell-integration-features = true;
       font-family = "JetBrainsMono Nerd Font Mono";
       font-size = 12;
