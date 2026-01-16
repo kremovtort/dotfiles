@@ -37,11 +37,11 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 │   ├── tmux.nix           # Tmux configuration
 │   ├── zellij.nix         # Zellij terminal multiplexer
 │   └── zsh.nix            # Zsh shell configuration
-├── nvim/                  # Neovim configuration (LazyVim-based)
-│   ├── init.lua           # Entry point
-│   └── lua/
-│       ├── config/        # Core settings (options, keymaps, autocmds)
-│       └── plugins/       # Plugin configurations
+├── nvim-flake/            # Neovim configuration (NixVim-based)
+│   ├── flake.nix          # Neovim flake entry point
+│   ├── module.nix         # Main NixVim configuration (options, autocmds, extraPlugins)
+│   ├── plugins.nix        # Plugin configurations
+│   └── keymaps.nix        # Key mappings
 ├── secrets/               # Encrypted secrets (sops-nix)
 │   └── secrets.yaml       # Encrypted API keys
 ├── atuin/                 # Atuin shell history config
@@ -60,7 +60,6 @@ All commands are run via `just` (task runner):
 | `just switch home` | Apply only home-manager configuration |
 | `just switch darwin` | Apply only darwin (system) configuration |
 | `just upgrade` | Update flake inputs and apply changes |
-| `just configure-nvim` | Open nvim with local config for testing |
 
 ### Bootstrap (Fresh Install)
 
@@ -101,11 +100,36 @@ programs.<name> = {
 
 ### Neovim Configuration
 
-- Based on **LazyVim** starter
-- Plugin configs in `nvim/lua/plugins/`
-- Core options in `nvim/lua/config/options.lua`
+- Based on **NixVim** (declarative Neovim configuration via Nix)
+- Self-contained flake in `nvim-flake/` directory
+- Plugin configs in `nvim-flake/plugins.nix`
+- Key mappings in `nvim-flake/keymaps.nix`
+- Core options and autocmds in `nvim-flake/module.nix`
 - Russian keyboard layout support via `langmap`
-- AI integration via **avante.nvim** (OpenRouter provider)
+- AI integration via **opencode.nvim**
+
+#### Adding Neovim Plugins
+
+For plugins with NixVim modules, add to `nvim-flake/plugins.nix`:
+
+```nix
+plugins.<name> = {
+  enable = true;
+  settings = { ... };
+};
+```
+
+For plugins without NixVim modules, use `extraPlugins` in `module.nix`:
+
+```nix
+extraPlugins = [
+  (pkgs.vimUtils.buildVimPlugin {
+    name = "plugin-name";
+    src = inputs.plugins-plugin-name;
+    dependencies = with pkgs.vimPlugins; [ ... ];
+  })
+];
+```
 
 ### Secrets Management
 
@@ -138,7 +162,7 @@ Provides:
 ## Important Notes
 
 1. **Do not edit** `flake.lock` manually — use `nix flake update`
-2. **Neovim config** is symlinked from this repo via home-manager
+2. **Neovim config** is built via NixVim in `nvim-flake/` (not symlinked)
 3. **Starship config** is at `starship.toml` (symlinked to `~/.config/`)
 4. **Catppuccin Mocha** is the primary color theme across tools
 5. **Touch ID for sudo** is enabled via PAM configuration
@@ -147,13 +171,12 @@ Provides:
 
 - **Homebrew**: Managed via nix-darwin, used for `arc-launcher`
 - **Yandex Arc**: Internal VCS tool (tapped from yandex repo)
-- **OpenRouter**: AI API provider for avante.nvim
 
 ## Testing Changes
 
 1. Make changes to Nix files
 2. Run `just switch` to apply
-3. For nvim changes: restart nvim or run `:Lazy sync`
+3. For nvim changes: restart nvim (configuration is built via Nix)
 4. Check for errors in terminal output
 
 ## Flake Inputs
@@ -164,6 +187,8 @@ Provides:
 | `nix-darwin` | macOS system management |
 | `home-manager` | User environment management |
 | `sops-nix` | Secrets management |
+| `nvim-flake` | Neovim configuration (NixVim-based) |
+| `nixvim` | Declarative Neovim configuration framework |
 | `paneru` | Custom service |
 | `zjstatus` | Zellij status bar |
 | `karabinix` | Karabiner-Elements Nix module |

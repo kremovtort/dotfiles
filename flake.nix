@@ -27,6 +27,7 @@
     nvim-flake = {
       url = "path:./nvim-flake";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixvim.inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -54,6 +55,7 @@
             pkgs.just
             pkgs.lua-language-server
             pkgs.nixd
+            pkgs.nixfmt
             pkgs.statix
             pkgs.shellcheck
             pkgs.stylua
@@ -66,7 +68,7 @@
             inputs.karabinix.homeManagerModules.karabinix
             inputs.paneru.homeModules.paneru
             inputs.sops-nix.homeManagerModules.sops
-            inputs.nvim-flake.homeManagerModules.default
+            inputs.nvim-flake.homeModules.default
             ./home-manager/home.nix
           ];
           extraSpecialArgs = {

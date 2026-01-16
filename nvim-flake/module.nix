@@ -1,128 +1,221 @@
 { inputs, self, ... }:
 let
-  inherit (inputs.nixCats) utils;
-
-  luaPath = "${self}/nvim";
-
-  # Allows using flake inputs named `plugins-*` as `pkgs.neovimPlugins.<name>`.
-  # We don't rely on this yet, but it keeps the door open for pinning plugins
-  # not present in nixpkgs.
-  dependencyOverlays = [
-    (utils.standardPluginOverlay inputs)
-  ];
-
-  categoryDefinitions = { pkgs, ... }: {
-    # Plugins loaded at startup (pack/*/start)
-    startupPlugins = {
-      core = [
-        # We take lze from flake input `plugins-lze` via standardPluginOverlay.
-        pkgs.neovimPlugins.lze
-      ];
-    };
-
-    # Plugins installed as opt plugins (pack/*/opt). lze will `packadd` them.
-    optionalPlugins = {
-      core = with pkgs.vimPlugins; [
-        catppuccin-nvim
-      ];
-
-      ui = with pkgs.vimPlugins; [
-        nvim-scrollbar
-        edgy-nvim
-        snacks-nvim
-        lualine-nvim
-        mini-icons
-        which-key-nvim
-        blink-cmp
-        blink-compat
-        friendly-snippets
-        noice-nvim
-        nui-nvim
-        nvim-notify
-      ];
-
-      editing = with pkgs.vimPlugins; [
-        leap-nvim
-        flit-nvim
-        mini-pairs
-        mini-ai
-        mini-surround
-        ts-comments-nvim
-        grug-far-nvim
-        vim-repeat
-      ];
-
-      vcs = with pkgs.vimPlugins; [
-        hunk-nvim
-      ];
-
-      haskell = with pkgs.vimPlugins; [
-        haskell-tools-nvim
-      ];
-
-      ai = [
-        # Comes from flake input `plugins-opencode-nvim` via standardPluginOverlay.
-        pkgs.neovimPlugins.opencode-nvim
-        pkgs.vimPlugins.plenary-nvim
-        pkgs.vimPlugins.render-markdown-nvim
-        # render-markdown.nvim deps (see upstream README)
-        pkgs.vimPlugins.nvim-treesitter
-        pkgs.vimPlugins.mini-nvim
-      ];
-    };
-
-    # Extra binaries and runtime deps available inside Neovim (added to PATH).
-    lspsAndRuntimeDeps = {
-      core = with pkgs; [
-        ripgrep
-        fd
-        tree-sitter
-      ];
-
-      lsp = with pkgs; [
-        lua-language-server
-        nixd
-        bash-language-server
-      ];
-    };
-  };
-
-  packageDefinitions = {
-    nvim = { ... }: {
-      settings = {
-        wrapRc = true;
-        configDirName = "nvim";
-        aliases = [ "vi" "vim" ];
-      };
-
-      categories = {
-        core = true;
-        ui = true;
-        editing = true;
-        vcs = true;
-        haskell = true;
-        ai = true;
-        lsp = true;
-      };
-    };
-  };
-
-  nixCatsHomeModule = utils.mkHomeModules {
-    defaultPackageName = "nvim";
-    moduleNamespace = [ "programs" "nvim" ];
-    inherit luaPath dependencyOverlays categoryDefinitions packageDefinitions;
-    nixpkgs = inputs.nixpkgs;
+  # Build opencode-nvim plugin from flake input
+  mkOpencodePlugin = pkgs: pkgs.vimUtils.buildVimPlugin {
+    name = "opencode-nvim";
+    src = inputs.plugins-opencode-nvim;
+    dependencies = with pkgs.vimPlugins; [
+      plenary-nvim
+      nui-nvim
+    ];
   };
 in
-{ config, ... }:
+{ config, pkgs, ... }:
 {
   imports = [
-    nixCatsHomeModule
+    inputs.nixvim.homeModules.nixvim
+    ./plugins.nix
+    ./keymaps.nix
   ];
 
-  programs.nvim.enable = true;
+  programs.nixvim = {
+    enable = true;
+    defaultEditor = true;
+    viAlias = true;
+    vimAlias = true;
 
-  home.file.".config/nvim/".source =
-    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/nvim-flake/nvim";
+    # =========================================================================
+    # Global variables
+    # =========================================================================
+    globals = {
+      mapleader = " ";
+      maplocalleader = "\\";
+    };
+
+    # =========================================================================
+    # Options (converted from lua/config/options.lua)
+    # =========================================================================
+    opts = {
+      autowrite = true;
+      clipboard = {
+        __raw = ''vim.env.SSH_CONNECTION and "" or "unnamedplus"'';
+      };
+      completeopt = "menu,menuone,noselect";
+      conceallevel = 2;
+      confirm = true;
+      cursorline = true;
+      expandtab = true;
+      fillchars = {
+        foldopen = "";
+        foldclose = "";
+        fold = " ";
+        foldsep = " ";
+        diff = "╱";
+        eob = " ";
+      };
+      foldlevel = 99;
+      foldmethod = "indent";
+      formatoptions = "jcroqlnt";
+      grepformat = "%f:%l:%c:%m";
+      grepprg = "rg --vimgrep";
+      ignorecase = true;
+      inccommand = "nosplit";
+      jumpoptions = "view";
+      laststatus = 3;
+      linebreak = true;
+      list = true;
+      mouse = "a";
+      number = true;
+      pumblend = 10;
+      pumheight = 10;
+      relativenumber = true;
+      ruler = false;
+      scrolloff = 4;
+      sessionoptions = [ "buffers" "curdir" "tabpages" "winsize" "help" "globals" "skiprtp" "folds" ];
+      shiftround = true;
+      shiftwidth = 2;
+      showmode = false;
+      sidescrolloff = 8;
+      signcolumn = "yes";
+      smartcase = true;
+      smartindent = true;
+      smoothscroll = true;
+      spelllang = [ "en" ];
+      spell = false;
+      splitbelow = true;
+      splitkeep = "screen";
+      splitright = true;
+      tabstop = 2;
+      termguicolors = true;
+      timeoutlen = 300;
+      undofile = true;
+      undolevels = 10000;
+      updatetime = 200;
+      virtualedit = "block";
+      wildmode = "longest:full,full";
+      winminwidth = 5;
+      wrap = false;
+      breakindent = true;
+      breakindentopt = "shift:4";
+    };
+
+    # =========================================================================
+    # Colorscheme
+    # =========================================================================
+    colorschemes.catppuccin = {
+      enable = true;
+      settings = {
+        flavour = "mocha";
+        color_overrides = {
+          mocha = {
+            base = "#1c1c1c";
+            mantle = "#161616";
+            crust = "#101010";
+            surface0 = "#2c2c2c";
+            surface1 = "#3c3c3c";
+            surface2 = "#4c4c4c";
+            overlay0 = "#606060";
+            overlay1 = "#757575";
+            overlay2 = "#8a8a8a";
+          };
+        };
+      };
+    };
+
+    # =========================================================================
+    # Autocommands
+    # =========================================================================
+    autoGroups.kremovtort_autocmds.clear = true;
+
+    autoCmd = [
+      {
+        event = "TextYankPost";
+        group = "kremovtort_autocmds";
+        callback.__raw = ''
+          function()
+            vim.highlight.on_yank({ timeout = 200 })
+          end
+        '';
+      }
+      {
+        event = "VimResized";
+        group = "kremovtort_autocmds";
+        callback.__raw = ''
+          function()
+            vim.cmd("tabdo wincmd =")
+          end
+        '';
+      }
+    ];
+
+    # =========================================================================
+    # LSP servers
+    # =========================================================================
+    lsp.servers = {
+      lua_ls = {
+        enable = true;
+        config = {
+          Lua = {
+            telemetry.enabled = false;
+            diagnostics.globals = [ "vim" ];
+          };
+        };
+      };
+      nixd.enable = true;
+      bashls.enable = true;
+    };
+
+    # =========================================================================
+    # Extra plugins (not in NixVim modules)
+    # =========================================================================
+    extraPlugins = [
+      (mkOpencodePlugin pkgs)
+    ];
+
+    # =========================================================================
+    # Runtime dependencies
+    # =========================================================================
+    extraPackages = with pkgs; [
+      ripgrep
+      fd
+      tree-sitter
+    ];
+
+    # =========================================================================
+    # Extra Lua configuration
+    # =========================================================================
+    extraConfigLuaPre = ''
+      -- Russian keyboard layout support (langmap)
+      local function escape(str)
+        local escape_chars = [[;,."|\]]
+        return vim.fn.escape(str, escape_chars)
+      end
+
+      local en = [[`qwertyuiop[]asdfghjkl;'zxcvbnm]]
+      local ru = [[ёйцукенгшщзхъфывапролджэячсмить]]
+      local en_shift = [[~QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>]]
+      local ru_shift = [[ËЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ]]
+
+      vim.opt.langmap = vim.fn.join({
+        escape(ru_shift) .. ";" .. escape(en_shift),
+        escape(ru) .. ";" .. escape(en),
+      }, ",")
+
+      -- shortmess append
+      vim.opt.shortmess:append({ W = true, I = true, c = true, C = true })
+    '';
+
+    extraConfigLua = ''
+      -- =====================================================================
+      -- Extra Lua configuration
+      -- =====================================================================
+
+      -- opencode.nvim
+      require("opencode").setup({})
+
+      -- mini.icons mock for nvim-web-devicons
+      require("mini.icons").mock_nvim_web_devicons()
+
+    '';
+  };
 }
-

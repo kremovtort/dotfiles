@@ -38,6 +38,7 @@ in {
     pkgs.nvimpager
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nixd
+    pkgs.nixfmt
     pkgs.nodejs
     pkgs.ripgrep
     pkgs.shellcheck

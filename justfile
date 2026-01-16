@@ -33,9 +33,6 @@ upgrade:
   brew update
   brew upgrade
 
-configure-nvim:
-  XDG_CONFIG_HOME=$(realpath "$(dirname "$0")") nvim
-
 setup-shell:
   #!/usr/bin/env sh
   if [ ! -d "/etc/nixos" ] && [ "$(uname)" != "Darwin" ]; then
