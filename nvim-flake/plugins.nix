@@ -391,20 +391,20 @@
                 return vim.bo[buf].buftype == "help"
               end,
             },
-            { title = "Spectre", ft = "spectre_panel", size = { height = 0.4 } },
             { title = "Neotest Output", ft = "neotest-output-panel", size = { height = 15 } },
           }
         '';
         left.__raw = ''
           {
-            { title = "Neotest Summary", ft = "neotest-summary" },
+            { title = "Explorer", ft = "neo-tree" },
+            { title = "Test Summary", ft = "neotest-summary" },
           }
         '';
         right.__raw = ''
           {
             { title = "Grug Far", ft = "grug-far", size = { width = 0.4 } },
             { title = "Opencode", ft = "opencode_output", size = { width = 0.4 } },
-            { title = "Opencode", ft = "opencode", size = { width = 0.4 } },
+            { title = "Opencode", ft = "opencode", size = { width = 0.4, height = 6 } },
           }
         '';
         keys.__raw = ''
@@ -460,11 +460,32 @@
       };
     };
 
+    # Toggleterm
+    toggleterm = {
+      enable = true;
+      settings = {
+        direction = "horizontal";
+        size = 15;
+        open_mapping = null; # We'll use custom keymaps
+      };
+    };
+
     scrollbar = {
       enable = true;
     };
     repeat.enable = true;
     friendly-snippets.enable = true;
     blink-compat.enable = true;
+
+    auto-session = {
+      enable = true;
+      settings = {
+        auto_restore = false;
+        auto_save = true;
+        suppressed_dirs = [ "~/" "~/Projects" "~/Downloads" "/" ];
+        args_allow_single_directory = true;
+        args_allow_files_auto_save = false;
+      };
+    };
   };
 }

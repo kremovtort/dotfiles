@@ -240,6 +240,14 @@
       options.desc = "Toggle Bottom Panel";
     }
 
+    # Toggleterm (Ctrl+/)
+    {
+      mode = [ "n" "t" ];
+      key = "<C-/>";
+      action = "<cmd>ToggleTerm direction=horizontal<cr>";
+      options.desc = "Toggle terminal";
+    }
+
     # Escape and clear search highlight
     {
       mode = [
