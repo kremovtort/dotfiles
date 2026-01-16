@@ -54,6 +54,7 @@ in {
       exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
     '')
     inputs.openspec-flake.packages.${system}.default
+    inputs.nvim-flake.packages.${system}.nvim4vscode
   ] ++ darwinPkgs;
 
   home.file = {
@@ -125,6 +126,14 @@ in {
       font-family = "JetBrainsMono Nerd Font Mono";
       font-size = 12;
       macos-titlebar-style = "tabs";
+      macos-option-as-alt = true;
+      # Pass Cmd+[, Cmd+], Cmd+' to Neovim as <D-...> via CSI u protocol
+      # Format: ESC [ keycode ; modifiers+1 u (Super=8, so 8+1=9)
+      keybind = [
+        "super+left_bracket=text:\\x1b[91;9u"   # Cmd+[ -> <D-[>
+        "super+right_bracket=text:\\x1b[93;9u"  # Cmd+] -> <D-]>
+        "super+apostrophe=text:\\x1b[39;9u"     # Cmd+' -> <D-'>
+      ];
     };
   };
 

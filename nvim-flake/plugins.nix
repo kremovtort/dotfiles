@@ -207,7 +207,9 @@
     };
 
     # notify
-    notify.enable = true;
+    notify = {
+      enable = true;
+    };
 
     # Mini plugins
     mini = {
@@ -334,7 +336,7 @@
           '';
         };
         scope.enabled = true;
-        scroll.enabled = true;
+        scroll.enabled = false;
         statuscolumn.enabled = false;
         words.enabled = true;
         terminal.win.keys = { };
@@ -361,6 +363,7 @@
     # edgy
     edgy = {
       enable = true;
+      autoLoad = true;
       settings = {
         animate.enabled = false;
         bottom.__raw = ''
@@ -447,9 +450,19 @@
 
     neo-tree = {
       enable = true;
+      settings = {
+        window = {
+          mappings = {
+            h = "close_node";
+            l = "open";
+          };
+        };
+      };
     };
 
-    scrollbar.enable = true;
+    scrollbar = {
+      enable = true;
+    };
     repeat.enable = true;
     friendly-snippets.enable = true;
     blink-compat.enable = true;
