@@ -74,17 +74,85 @@
   # =========================================================================
   keymaps = [
     # Leap motions
-    { mode = [ "n" "x" "o" ]; key = "s"; action = "<Plug>(leap-forward)"; options.desc = "Leap forward"; }
-    { mode = [ "n" "x" "o" ]; key = "S"; action = "<Plug>(leap-backward)"; options.desc = "Leap backward"; }
+    {
+      mode = [
+        "n"
+        "x"
+        "o"
+      ];
+      key = "s";
+      action = "<Plug>(leap-forward)";
+      options.desc = "Leap forward";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+        "o"
+      ];
+      key = "S";
+      action = "<Plug>(leap-backward)";
+      options.desc = "Leap backward";
+    }
     # Russian layout
-    { mode = [ "n" "x" "o" ]; key = "ы"; action = "<Plug>(leap-forward)"; options.desc = "Leap forward"; }
-    { mode = [ "n" "x" "o" ]; key = "Ы"; action = "<Plug>(leap-backward)"; options.desc = "Leap backward"; }
+    {
+      mode = [
+        "n"
+        "x"
+        "o"
+      ];
+      key = "ы";
+      action = "<Plug>(leap-forward)";
+      options.desc = "Leap forward";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+        "o"
+      ];
+      key = "Ы";
+      action = "<Plug>(leap-backward)";
+      options.desc = "Leap backward";
+    }
 
-    # Window navigation (Ctrl+hjkl)
-    { mode = "n"; key = "<C-h>"; action = "<C-w>h"; options.desc = "Go to left window"; }
-    { mode = "n"; key = "<C-j>"; action = "<C-w>j"; options.desc = "Go to lower window"; }
-    { mode = "n"; key = "<C-k>"; action = "<C-w>k"; options.desc = "Go to upper window"; }
-    { mode = "n"; key = "<C-l>"; action = "<C-w>l"; options.desc = "Go to right window"; }
+    # Window navigation (Ctrl+hjkl) - VSCode commands
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<C-h>";
+      action = "<Cmd>call VSCodeNotify('workbench.action.navigateLeft')<CR>";
+      options.desc = "Navigate left";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<C-j>";
+      action = "<Cmd>call VSCodeNotify('workbench.action.navigateDown')<CR>";
+      options.desc = "Navigate down";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<C-k>";
+      action = "<Cmd>call VSCodeNotify('workbench.action.navigateUp')<CR>";
+      options.desc = "Navigate up";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<C-l>";
+      action = "<Cmd>call VSCodeNotify('workbench.action.navigateRight')<CR>";
+      options.desc = "Navigate right";
+    }
 
     # VSCode folding
     {
