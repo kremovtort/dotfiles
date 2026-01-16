@@ -1,8 +1,8 @@
-{ inputs, flake-self, ... }:
+{ inputs, self, ... }:
 let
   inherit (inputs.nixCats) utils;
 
-  luaPath = "${flake-self}/nvim";
+  luaPath = "${self}/nvim";
 
   # Allows using flake inputs named `plugins-*` as `pkgs.neovimPlugins.<name>`.
   # We don't rely on this yet, but it keeps the door open for pinning plugins
@@ -114,9 +114,15 @@ let
     nixpkgs = inputs.nixpkgs;
   };
 in
+{ config, ... }:
 {
   imports = [
     nixCatsHomeModule
   ];
+
+  programs.nvim.enable = true;
+
+  home.file.".config/nvim/".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/nvim-flake/nvim";
 }
 

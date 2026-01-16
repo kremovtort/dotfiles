@@ -23,16 +23,10 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixCats = {
-      url = "github:BirdeeHub/nixCats-nvim";
-    };
-    plugins-opencode-nvim = {
-      url = "github:sudo-tee/opencode.nvim";
-      flake = false;
-    };
-    plugins-lze = {
-      url = "github:BirdeeHub/lze";
-      flake = false;
+
+    nvim-flake = {
+      url = "path:./nvim-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -72,6 +66,7 @@
             inputs.karabinix.homeManagerModules.karabinix
             inputs.paneru.homeModules.paneru
             inputs.sops-nix.homeManagerModules.sops
+            inputs.nvim-flake.homeManagerModules.default
             ./home-manager/home.nix
           ];
           extraSpecialArgs = {
