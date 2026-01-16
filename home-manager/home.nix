@@ -1,4 +1,12 @@
-{ pkgs, lib, system, flake-self, inputs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  system,
+  flake-self,
+  inputs,
+  ...
+}:
 let
   isDarwin = system == "aarch64-darwin";
   userName = "Alexander Makarov";
@@ -7,7 +15,8 @@ let
     pkgs.monitorcontrol
     pkgs.swiftdefaultapps
   ];
-in {
+in
+{
   imports = [
     ./karabiner.nix
     ./opencode.nix
@@ -15,9 +24,7 @@ in {
   ];
 
   home.username = "kremovtort";
-  home.homeDirectory = if isDarwin
-    then "/Users/kremovtort"
-    else "/home/kremovtort";
+  home.homeDirectory = if isDarwin then "/Users/kremovtort" else "/home/kremovtort";
   nixpkgs.config.allowUnfree = true;
 
   programs.home-manager.enable = true;
@@ -35,7 +42,6 @@ in {
     pkgs.kind
     pkgs.kubectl
     pkgs.kubernetes-helm
-    pkgs.nvimpager
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nixd
     pkgs.nixfmt
@@ -53,33 +59,39 @@ in {
     (pkgs.writeShellScriptBin "lla-for-fzf" ''
       exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
     '')
-    inputs.openspec-flake.packages.${system}.default
+    (pkgs.writeShellScriptBin "page" ''
+      nvim +Man! "$@"
+    '')
     inputs.nvim-flake.packages.${system}.nvim4vscode
-  ] ++ darwinPkgs;
+  ]
+  ++ darwinPkgs;
 
   home.file = {
     ".clickhouse-client".source = "${flake-self}/clickhouse-client";
     ".config/starship.toml".source = "${flake-self}/starship.toml";
-    ".config/ghostty/themes/catppuccin-espresso".source = "${flake-self}/catppuccin/ghostty-theme-catppuccin-espresso";
-    ".config/opencode/themes/catppuccin-espresso.json".source = "${flake-self}/catppuccin/opencode-theme-catppuccin-espresso.json";
+    ".config/ghostty/themes/catppuccin-espresso".source =
+      "${flake-self}/catppuccin/ghostty-theme-catppuccin-espresso";
+    ".config/opencode/themes/catppuccin-espresso.json".source =
+      "${flake-self}/catppuccin/opencode-theme-catppuccin-espresso.json";
   };
 
   home.shell.enableZshIntegration = true;
   home.sessionPath = [
     "/opt/homebrew/bin"
-    "\${HOME}/arcadia"
+    "${config.home.homeDirectory}/arcadia"
     "/codenv/arcadia"
-    "\${HOME}/.local/bin"
-    "\${HOME}/.rd/bin"
+    "${config.home.homeDirectory}/.local/bin"
+    "${config.home.homeDirectory}/.rd/bin"
+    "${config.home.homeDirectory}/.npm-globals/bin"
   ];
   home.sessionVariables.EDITOR = "nvim";
-  home.sessionVariables.ARC = "\${HOME}/arcadia";
-  home.sessionVariables.ARCADIA = "\${HOME}/arcadia";
+  home.sessionVariables.ARC = "${config.home.homeDirectory}/arcadia";
+  home.sessionVariables.ARCADIA = "${config.home.homeDirectory}/arcadia";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
   home.sessionVariables.DO_NOT_TRACK = "1";
   home.sessionVariables.LC_ALL = "en_US.UTF-8";
-  home.sessionVariables.PAGER = "nvimpager";
-  home.sessionVariables.MANPAGER = "nvimpager";
+  home.sessionVariables.PAGER = "page";
+  home.sessionVariables.MANPAGER = "page";
 
   programs.atuin = {
     enable = true;
@@ -89,11 +101,35 @@ in {
       invert = true;
     };
   };
-  
+
   programs.delta = {
     enable = true;
     enableGitIntegration = true;
-    enableJujutsuIntegration = true;
+    # Catppuccin Espresso palette (from `catppuccin/ghostty-theme-catppuccin-espresso`)
+    options = {
+      dark = true;
+      navigate = true;
+
+      # UI accents
+      file-style = "bold #89b4fa";
+      file-decoration-style = "none";
+      # Ensure hunk headers show the starting line numbers (the @@ -a,b +c,d @@ part).
+      hunk-header-style = "line-number syntax";
+      hunk-header-file-style = "bold #89b4fa";
+      hunk-header-line-number-style = "bold #bac2de";
+      hunk-header-decoration-style = "#2c2c2c box";
+
+      # Diff colors
+      minus-style = "syntax #2a1f22";
+      minus-emph-style = "syntax #3a232a";
+      plus-style = "syntax #1f2a22";
+      plus-emph-style = "syntax #25352a";
+      zero-style = "syntax #1c1c1c";
+      whitespace-error-style = "#f38ba8 reverse";
+
+      # Syntax highlighting theme (provided by `bat --list-themes`)
+      syntax-theme = "Catppuccin Mocha";
+    };
   };
 
   programs.direnv = {
@@ -130,9 +166,9 @@ in {
       # Pass Cmd+[, Cmd+], Cmd+' to Neovim as <D-...> via CSI u protocol
       # Format: ESC [ keycode ; modifiers+1 u (Super=8, so 8+1=9)
       keybind = [
-        "super+left_bracket=text:\\x1b[91;9u"   # Cmd+[ -> <D-[>
-        "super+right_bracket=text:\\x1b[93;9u"  # Cmd+] -> <D-]>
-        "super+apostrophe=text:\\x1b[39;9u"     # Cmd+' -> <D-'>
+        "super+left_bracket=text:\\x1b[91;9u" # Cmd+[ -> <D-[>
+        "super+right_bracket=text:\\x1b[93;9u" # Cmd+] -> <D-]>
+        "super+apostrophe=text:\\x1b[39;9u" # Cmd+' -> <D-'>
       ];
     };
   };
@@ -142,15 +178,25 @@ in {
     settings.user.name = userName;
     settings.user.email = userEmail;
   };
-  
+
   programs.jjui.enable = true;
-  
+
   programs.jujutsu = {
     enable = true;
     settings.user.name = userName;
     settings.user.email = userEmail;
     settings.revsets.log = "present(@) | ancestors(@, 16) | ancestors(@.., 16)";
-    settings.ui.diff-editor = ["nvim" "-c" "DiffEditor $left $right $output"];
+    settings.ui.diff-formatter = [
+      "delta"
+      "--paging=never"
+      "$left"
+      "$right"
+    ];
+    settings.ui.diff-editor = [
+      "nvim"
+      "-c"
+      "DiffEditor $left $right $output"
+    ];
   };
 
   programs.less.enable = true;
@@ -176,7 +222,7 @@ in {
   };
 
   programs.zsh = import ./zsh.nix { inherit pkgs lib; };
-  
+
   programs.wezterm = {
     enable = true;
     enableZshIntegration = true;
@@ -185,5 +231,5 @@ in {
 
   programs.zellij = import ./zellij.nix { inherit pkgs; };
 
-  services.paneru = lib.mkIf isDarwin (import ./paneru.nix {});
+  services.paneru = lib.mkIf isDarwin (import ./paneru.nix { });
 }

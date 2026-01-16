@@ -18,7 +18,6 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
-    openspec-flake.url = "github:kremovtort/openspec-flake";
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
