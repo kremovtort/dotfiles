@@ -52,7 +52,7 @@
     "flake-parts_2": {
       "inputs": {
         "nixpkgs-lib": [
-          "nvim-flake",
+          "nvim",
           "nixvim",
           "nixpkgs"
         ]
@@ -291,7 +291,7 @@
         "type": "github"
       }
     },
-    "nvim-flake": {
+    "nvim": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
@@ -308,6 +308,26 @@
         "type": "path"
       },
       "parent": []
+    },
+    "openspec": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1768597211,
+        "narHash": "sha256-6TVJWdQV1rVAjgBdUQ7fbqtDivJuZlXat/nxHm7xq/s=",
+        "owner": "Fission-AI",
+        "repo": "OpenSpec",
+        "rev": "ed4d96520809b3c1bdcbb2d44be89d68eb78c8c8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Fission-AI",
+        "repo": "OpenSpec",
+        "type": "github"
+      }
     },
     "paneru": {
       "inputs": {
@@ -372,7 +392,8 @@
         "karabinix": "karabinix",
         "nix-darwin": "nix-darwin",
         "nixpkgs": "nixpkgs_3",
-        "nvim-flake": "nvim-flake",
+        "nvim": "nvim",
+        "openspec": "openspec",
         "paneru": "paneru",
         "sops-nix": "sops-nix",
         "zjstatus": "zjstatus"
