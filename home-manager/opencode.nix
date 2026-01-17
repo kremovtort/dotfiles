@@ -1,4 +1,5 @@
-{ config, ... }: {
+{ config, ... }:
+{
   programs.opencode = {
     enable = true;
     settings = {
@@ -12,30 +13,56 @@
             "-y"
             "@upstash/context7-mcp"
             "--api-key"
-            "{env:CONTEXT7_API_KEY}"
+            "{file:${config.sops.secrets.context7-api-key.path}}"
+          ];
+        };
+        read-website-fast = {
+          type = "local";
+          enabled = true;
+          command = [
+            "npx"
+            "-y"
+            "@just-every/mcp-read-website-fast"
           ];
         };
       };
       agent = {
         plan = {
           mode = "primary";
-          model = "openrouter/anthropic/claude-opus-4.5";
-          thinking = {
-            type = "enabled";
-            budgetTokens = 16000;
-          };
+          model = "openai/gpt-5.2";
         };
         build = {
           mode = "primary";
-          model = "openrouter/openai/gpt-5.2";
-          reasoningEffort = "high";
+          model = "openai/gpt-5.2";
+        };
+        general = {
+          mode = "subagent";
+          model = "openai/gpt-5.1-codex-mini";
+        };
+        explore = {
+          mode = "subagent";
+          model = "openai/gpt-5.1-codex-mini";
+        };
+      };
+      plugin = [
+        "opencode-pty"
+        "@mohak34/opencode-notifier@latest"
+        "opencode-websearch-cited@1.2.0"
+      ];
+      provider = {
+        openai = {
+          models = {
+            "gpt-5.1-codex-mini".options = {
+              reasoningEffort = "high";
+            };
+          };
+        };
+        openrouter = {
+          options = {
+            websearch_cited.model = "x-ai/grok-4.1-fast";
+          };
         };
       };
     };
   };
-
-  home.sessionVariablesExtra = ''
-    export OPENROUTER_API_KEY="$(cat ${config.sops.secrets.openrouter-api-key.path} 2>/dev/null || true)"
-    export CONTEXT7_API_KEY="$(cat ${config.sops.secrets.context7-api-key.path} 2>/dev/null || true)"
-  '';
 }

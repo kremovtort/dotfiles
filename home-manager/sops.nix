@@ -1,18 +1,29 @@
-{ pkgs, flake-self, config, ... }:
+{ inputs, pkgs, flake-self, config, ... }:
 {
+  imports = [ inputs.sops-nix.homeManagerModules.sops ];
+
   home.packages = [
     pkgs.age
     pkgs.sops
     pkgs.ssh-to-age
   ];
 
+  launchd.agents.sops-nix = pkgs.lib.mkIf pkgs.stdenv.isDarwin {
+    enable = true;
+    config = {
+      EnvironmentVariables = {
+        PATH = pkgs.lib.mkForce "/usr/bin:/bin:/usr/sbin:/sbin";
+      };
+    };
+  };
+
   sops = {
     defaultSopsFile = "${flake-self}/secrets/secrets.yaml";
     
-    # Use SSH key as age key source
     age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
     
     secrets.openrouter-api-key = {};
     secrets.context7-api-key = {};
+    secrets.tavily-api-key = {};
   };
 }
