@@ -1,4 +1,4 @@
-{ inputs, self, ... }:
+{ inputs, ... }:
 let
   # Build opencode-nvim plugin from flake input
   mkOpencodePlugin = pkgs: pkgs.vimUtils.buildVimPlugin {
@@ -10,7 +10,7 @@ let
     ];
   };
 in
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 {
   imports = [
     inputs.nixvim.homeModules.nixvim
@@ -36,6 +36,7 @@ in
     # Options (converted from lua/config/options.lua)
     # =========================================================================
     opts = {
+      autoread = true;
       autowrite = true;
       clipboard = {
         __raw = ''vim.env.SSH_CONNECTION and "" or "unnamedplus"'';
@@ -201,18 +202,21 @@ in
     # =========================================================================
     # LSP servers
     # =========================================================================
-    lsp.servers = {
-      lua_ls = {
-        enable = true;
-        config = {
-          Lua = {
-            telemetry.enabled = false;
-            diagnostics.globals = [ "vim" ];
+    plugins.lsp = {
+      enable = true;
+      servers = {
+        lua_ls = {
+          enable = true;
+          config = {
+            Lua = {
+              telemetry.enabled = false;
+              diagnostics.globals = [ "vim" ];
+            };
           };
         };
+        nixd.enable = true;
+        bashls.enable = true;
       };
-      nixd.enable = true;
-      bashls.enable = true;
     };
 
     # =========================================================================
@@ -256,16 +260,13 @@ in
     '';
 
     extraConfigLua = ''
-      -- =====================================================================
-      -- Extra Lua configuration
-      -- =====================================================================
-
       -- opencode.nvim
-      require("opencode").setup({})
+      require("opencode").setup({
+        keymap_prefix = '<leader>a'
+      })
 
       -- mini.icons mock for nvim-web-devicons
       require("mini.icons").mock_nvim_web_devicons()
-
     '';
   };
 }

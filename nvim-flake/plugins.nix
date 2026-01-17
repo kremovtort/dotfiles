@@ -9,7 +9,12 @@
           theme = "auto";
           globalstatus = true;
           disabled_filetypes = {
-            statusline = [ "dashboard" "alpha" "ministarter" "snacks_dashboard" ];
+            statusline = [
+              "dashboard"
+              "alpha"
+              "ministarter"
+              "snacks_dashboard"
+            ];
           };
         };
         sections = {
@@ -38,7 +43,10 @@
               __unkeyed-1 = "filetype";
               icon_only = true;
               separator = "";
-              padding = { left = 1; right = 0; };
+              padding = {
+                left = 1;
+                right = 0;
+              };
             }
             {
               __unkeyed-1.__raw = ''
@@ -52,9 +60,16 @@
                   else
                     rel = vim.fn.fnamemodify(name, ":~")
                   end
-                  rel = vim.fn.pathshorten(rel)
-                  if vim.bo.modified then rel = rel .. " [+]" end
-                  return rel
+
+                  local suffix = vim.bo.modified and " [+]" or ""
+                  local columns = vim.o.columns or vim.fn.winwidth(0)
+                  local max_len = math.max(20, columns - 80)
+
+                  if vim.fn.strdisplaywidth(rel .. suffix) > max_len then
+                    rel = vim.fn.pathshorten(rel)
+                  end
+
+                  return rel .. suffix
                 end
               '';
             }
@@ -82,8 +97,21 @@
             }
           ];
           lualine_y = [
-            { __unkeyed-1 = "progress"; separator = " "; padding = { left = 1; right = 0; }; }
-            { __unkeyed-1 = "location"; padding = { left = 0; right = 1; }; }
+            {
+              __unkeyed-1 = "progress";
+              separator = " ";
+              padding = {
+                left = 1;
+                right = 0;
+              };
+            }
+            {
+              __unkeyed-1 = "location";
+              padding = {
+                left = 0;
+                right = 1;
+              };
+            }
           ];
           lualine_z = [
             {
@@ -95,7 +123,11 @@
             }
           ];
         };
-        extensions = [ "neo-tree" "lazy" "fzf" ];
+        extensions = [
+          "neo-tree"
+          "lazy"
+          "fzf"
+        ];
       };
     };
 
@@ -126,7 +158,12 @@
           };
         };
         sources = {
-          default = [ "lsp" "path" "snippets" "buffer" ];
+          default = [
+            "lsp"
+            "path"
+            "snippets"
+            "buffer"
+          ];
         };
         cmdline = {
           enabled = true;
@@ -154,24 +191,94 @@
       settings = {
         preset = "helix";
         spec = [
-          { __unkeyed-1 = "<leader><tab>"; group = "tabs"; }
-          { __unkeyed-1 = "<leader>c"; group = "code"; }
-          { __unkeyed-1 = "<leader>d"; group = "debug"; }
-          { __unkeyed-1 = "<leader>dp"; group = "profiler"; }
-          { __unkeyed-1 = "<leader>f"; group = "file/find"; }
-          { __unkeyed-1 = "<leader>g"; group = "git"; }
-          { __unkeyed-1 = "<leader>gh"; group = "hunks"; }
-          { __unkeyed-1 = "<leader>q"; group = "quit/session"; }
-          { __unkeyed-1 = "<leader>s"; group = "search"; }
-          { __unkeyed-1 = "<leader>sn"; group = "noice"; }
-          { __unkeyed-1 = "<leader>u"; group = "ui"; }
-          { __unkeyed-1 = "<leader>x"; group = "diagnostics/quickfix"; }
-          { __unkeyed-1 = "["; group = "prev"; }
-          { __unkeyed-1 = "]"; group = "next"; }
-          { __unkeyed-1 = "g"; group = "goto"; }
-          { __unkeyed-1 = "gz"; group = "surround"; }
-          { __unkeyed-1 = "z"; group = "fold"; }
-          { __unkeyed-1 = "gx"; desc = "Open with system app"; }
+          {
+            __unkeyed-1 = "<leader><tab>";
+            group = "tabs";
+          }
+          {
+            __unkeyed-1 = "<leader>a";
+            group = "agent";
+          }
+          {
+            __unkeyed-1 = "<leader>aP";
+            group = "permissions";
+          }
+          {
+            __unkeyed-1 = "<leader>ar";
+            group = "revert";
+          }
+          {
+            __unkeyed-1 = "<leader>b";
+            group = "buffers";
+          }
+          {
+            __unkeyed-1 = "<leader>c";
+            group = "code";
+          }
+          {
+            __unkeyed-1 = "<leader>d";
+            group = "debug";
+          }
+          {
+            __unkeyed-1 = "<leader>dp";
+            group = "profiler";
+          }
+          {
+            __unkeyed-1 = "<leader>f";
+            group = "file/find";
+          }
+          {
+            __unkeyed-1 = "<leader>g";
+            group = "git";
+          }
+          {
+            __unkeyed-1 = "<leader>gh";
+            group = "hunks";
+          }
+          {
+            __unkeyed-1 = "<leader>q";
+            group = "quit/session";
+          }
+          {
+            __unkeyed-1 = "<leader>s";
+            group = "search";
+          }
+          {
+            __unkeyed-1 = "<leader>sn";
+            group = "noice";
+          }
+          {
+            __unkeyed-1 = "<leader>u";
+            group = "ui";
+          }
+          {
+            __unkeyed-1 = "<leader>x";
+            group = "diagnostics/quickfix";
+          }
+          {
+            __unkeyed-1 = "[";
+            group = "prev";
+          }
+          {
+            __unkeyed-1 = "]";
+            group = "next";
+          }
+          {
+            __unkeyed-1 = "g";
+            group = "goto";
+          }
+          {
+            __unkeyed-1 = "gz";
+            group = "surround";
+          }
+          {
+            __unkeyed-1 = "z";
+            group = "fold";
+          }
+          {
+            __unkeyed-1 = "gx";
+            desc = "Open with system app";
+          }
         ];
       };
     };
@@ -212,34 +319,57 @@
     };
 
     # Mini plugins
-    mini = {
+    mini-icons = {
       enable = true;
-      modules = {
-        icons = {
-          file = {
-            ".keep" = { glyph = "󰊢"; hl = "MiniIconsGrey"; };
-            "devcontainer.json" = { glyph = ""; hl = "MiniIconsAzure"; };
+      settings = {
+        file = {
+          ".keep" = {
+            glyph = "󰊢";
+            hl = "MiniIconsGrey";
           };
-          filetype = {
-            dotenv = { glyph = ""; hl = "MiniIconsYellow"; };
+          "devcontainer.json" = {
+            glyph = "";
+            hl = "MiniIconsAzure";
           };
         };
-        pairs = {
-          modes = { insert = true; command = true; terminal = false; };
-        };
-        ai = {
-          n_lines = 500;
-        };
-        surround = {
-          mappings = {
-            add = "gza";
-            delete = "gzd";
-            find = "gzf";
-            find_left = "gzF";
-            highlight = "gzh";
-            replace = "gzr";
-            update_n_lines = "gzn";
+        filetype = {
+          dotenv = {
+            glyph = "";
+            hl = "MiniIconsYellow";
           };
+        };
+      };
+    };
+
+    mini-pairs = {
+      enable = true;
+      settings = {
+        modes = {
+          insert = true;
+          command = true;
+          terminal = false;
+        };
+      };
+    };
+
+    mini-ai = {
+      enable = true;
+      settings = {
+        n_lines = 500;
+      };
+    };
+
+    mini-surround = {
+      enable = true;
+      settings = {
+        mappings = {
+          add = "gza";
+          delete = "gzd";
+          find = "gzf";
+          find_left = "gzF";
+          highlight = "gzh";
+          replace = "gzr";
+          update_n_lines = "gzn";
         };
       };
     };
@@ -264,8 +394,14 @@
             focus_tree = [ "<leader>e" ];
           };
           tree = {
-            expand_node = [ "l" "<Right>" ];
-            collapse_node = [ "h" "<Left>" ];
+            expand_node = [
+              "l"
+              "<Right>"
+            ];
+            collapse_node = [
+              "h"
+              "<Left>"
+            ];
             open_file = [ "<Cr>" ];
             toggle_file = [ "a" ];
           };
@@ -279,7 +415,10 @@
           };
         };
         ui = {
-          tree = { mode = "nested"; width = 35; };
+          tree = {
+            mode = "nested";
+            width = 35;
+          };
           layout = "vertical";
         };
         icons = {
@@ -321,7 +460,10 @@
           win.input.keys = {
             "<a-c>" = {
               __unkeyed-1 = "toggle_cwd";
-              mode = [ "n" "i" ];
+              mode = [
+                "n"
+                "i"
+              ];
             };
           };
           actions.toggle_cwd.__raw = ''
@@ -348,7 +490,10 @@
       enable = true;
       settings = {
         anti_conceal.enabled = false;
-        file_types = [ "markdown" "opencode_output" ];
+        file_types = [
+          "markdown"
+          "opencode_output"
+        ];
       };
     };
 
@@ -359,6 +504,8 @@
         hls.settings.haskell.plugin.importLens.globalOn = false;
       };
     };
+
+    haskell-scope-highlighting.enable = false;
 
     # edgy
     edgy = {
@@ -371,6 +518,7 @@
             {
               ft = "toggleterm",
               size = { height = 0.4 },
+              wo = { winhighlight = "Normal:Normal,NormalNC:Normal", winblend = 0 },
               filter = function(_, win)
                 return vim.api.nvim_win_get_config(win).relative == ""
               end,
@@ -403,8 +551,24 @@
         right.__raw = ''
           {
             { title = "Grug Far", ft = "grug-far", size = { width = 0.4 } },
-            { title = "Opencode", ft = "opencode_output", size = { width = 0.4 } },
-            { title = "Opencode", ft = "opencode", size = { width = 0.4, height = 6 } },
+            { 
+              title = "Opencode",
+              ft = "opencode_output",
+              size = { width = 0.4 },
+              wo = {
+                winhighlight = "Normal:Normal,NormalNC:Normal",
+                winblend = 0
+              }
+            },
+            { 
+              title = "Opencode",
+              ft = "opencode",
+              size = { width = 0.4, height = 8 },
+              wo = {
+                winhighlight = "Normal:Normal,NormalNC:Normal",
+                winblend = 0
+              }
+            },
           }
         '';
         keys.__raw = ''
@@ -451,6 +615,7 @@
     neo-tree = {
       enable = true;
       settings = {
+        filesystem.follow_current_file.enabled = true;
         window = {
           mappings = {
             h = "close_node";
@@ -467,11 +632,24 @@
         direction = "horizontal";
         size = 15;
         open_mapping = null; # We'll use custom keymaps
+        shade_terminals = false;
+        highlights = {
+          Normal = {
+            link = "Normal";
+          };
+          NormalFloat = {
+            link = "NormalFloat";
+          };
+          FloatBorder = {
+            link = "FloatBorder";
+          };
+        };
       };
     };
 
-    scrollbar = {
+    scrollview = {
       enable = true;
+      autoLoad = true;
     };
     repeat.enable = true;
     friendly-snippets.enable = true;
@@ -482,10 +660,20 @@
       settings = {
         auto_restore = false;
         auto_save = true;
-        suppressed_dirs = [ "~/" "~/Projects" "~/Downloads" "/" ];
+        suppressed_dirs = [
+          "~/"
+          "~/Projects"
+          "~/Downloads"
+          "/"
+        ];
         args_allow_single_directory = true;
         args_allow_files_auto_save = false;
       };
+    };
+
+    yanky = {
+      enable = true;
+      autoLoad = true;
     };
   };
 }

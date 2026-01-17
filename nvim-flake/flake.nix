@@ -22,7 +22,6 @@
       forAllSystems = nixpkgs.lib.genAttrs systems;
     in
     {
-      # Home-Manager module that builds wrapped Neovim via NixVim.
       homeModules.default = import ./module.nix { inherit inputs self; };
 
       # Standalone packages

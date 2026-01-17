@@ -348,57 +348,6 @@
     }
 
     # LSP / diagnostics
-    {
-      mode = [
-        "n"
-        "x"
-      ];
-      key = "<leader>cf";
-      action.__raw = "function() vim.lsp.buf.format({ async = true }) end";
-      options.desc = "Format";
-    }
-    {
-      mode = "n";
-      key = "<leader>cd";
-      action.__raw = "function() vim.diagnostic.open_float(nil, { scope = 'line' }) end";
-      options.desc = "Line Diagnostics";
-    }
-    {
-      mode = "n";
-      key = "]d";
-      action.__raw = "function() vim.diagnostic.goto_next() end";
-      options.desc = "Next Diagnostic";
-    }
-    {
-      mode = "n";
-      key = "[d";
-      action.__raw = "function() vim.diagnostic.goto_prev() end";
-      options.desc = "Prev Diagnostic";
-    }
-    {
-      mode = "n";
-      key = "]e";
-      action.__raw = "function() vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR }) end";
-      options.desc = "Next Error";
-    }
-    {
-      mode = "n";
-      key = "[e";
-      action.__raw = "function() vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR }) end";
-      options.desc = "Prev Error";
-    }
-    {
-      mode = "n";
-      key = "]w";
-      action.__raw = "function() vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.WARN }) end";
-      options.desc = "Next Warning";
-    }
-    {
-      mode = "n";
-      key = "[w";
-      action.__raw = "function() vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.WARN }) end";
-      options.desc = "Prev Warning";
-    }
 
     # Toggles
     {
@@ -1076,14 +1025,6 @@
       options.desc = "Colorschemes";
     }
 
-    # opencode.nvim keymap
-    {
-      mode = "n";
-      key = "<leader>oo";
-      action = "<cmd>Opencode<cr>";
-      options.desc = "Open opencode.nvim";
-    }
-
     # Comment helpers (gco / gcO)
     {
       mode = "n";
@@ -1158,6 +1099,366 @@
         end
       '';
       options.desc = "Quickfix List";
+    }
+  ];
+
+  # LSP-only keymaps (applied on LSP attach).
+  # See: https://nix-community.github.io/nixvim/lsp/keymaps/index.html
+  programs.nixvim.lsp.keymaps = [
+    {
+      mode = "n";
+      key = "<leader>cl";
+      action = "<cmd>LspInfo<cr>";
+      options.desc = "Lsp Info";
+    }
+    {
+      mode = "n";
+      key = "gd";
+      lspBufAction = "definition";
+      options.desc = "Goto Definition";
+    }
+    {
+      mode = "n";
+      key = "gr";
+      lspBufAction = "references";
+      options.desc = "References";
+    }
+    {
+      mode = "n";
+      key = "gI";
+      lspBufAction = "implementation";
+      options.desc = "Goto Implementation";
+    }
+    {
+      mode = "n";
+      key = "gy";
+      lspBufAction = "type_definition";
+      options.desc = "Goto Type Definition";
+    }
+    {
+      mode = "n";
+      key = "gD";
+      lspBufAction = "declaration";
+      options.desc = "Goto Declaration";
+    }
+    {
+      mode = "n";
+      key = "K";
+      lspBufAction = "hover";
+      options.desc = "Hover";
+    }
+    {
+      mode = "n";
+      key = "gK";
+      lspBufAction = "signature_help";
+      options.desc = "Signature Help";
+    }
+    {
+      mode = "i";
+      key = "<C-k>";
+      lspBufAction = "signature_help";
+      options.desc = "Signature Help";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<leader>ca";
+      lspBufAction = "code_action";
+      options.desc = "Code Action";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<leader>cc";
+      action.__raw = ''
+        function()
+          local ok = pcall(function() vim.lsp.codelens.run() end)
+          if not ok then
+            vim.notify("Codelens not supported in this Neovim/LSP setup", vim.log.levels.WARN)
+          end
+        end
+      '';
+      options.desc = "Run Codelens";
+    }
+    {
+      mode = "n";
+      key = "<leader>cC";
+      action.__raw = ''
+        function()
+          local ok = pcall(function() vim.lsp.codelens.refresh() end)
+          if not ok then
+            vim.notify("Codelens not supported in this Neovim/LSP setup", vim.log.levels.WARN)
+          end
+        end
+      '';
+      options.desc = "Refresh & Display Codelens";
+    }
+    {
+      mode = "n";
+      key = "<leader>cR";
+      action.__raw = ''
+        function()
+          local bufnr = 0
+          local old = vim.api.nvim_buf_get_name(bufnr)
+          if not old or old == "" then
+            vim.notify("No file name for current buffer", vim.log.levels.WARN)
+            return
+          end
+
+          vim.ui.input({ prompt = "Rename file to: ", default = old }, function(new)
+            if not new or new == "" or new == old then return end
+
+            local dir = vim.fn.fnamemodify(new, ":h")
+            if dir and dir ~= "" and dir ~= "." then
+              pcall(vim.fn.mkdir, dir, "p")
+            end
+
+            local oldUri = vim.uri_from_fname(old)
+            local newUri = vim.uri_from_fname(new)
+            local params = { files = { { oldUri = oldUri, newUri = newUri } } }
+
+            -- Best-effort: ask LSP for workspace edits before renaming.
+            local pending_edits = {}
+            for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+              if client.supports_method and client:supports_method("workspace/willRenameFiles") then
+                local res = client.request_sync("workspace/willRenameFiles", params, 1000, bufnr)
+                if res and res.result and res.result.workspaceEdit then
+                  table.insert(pending_edits, { client = client, edit = res.result.workspaceEdit })
+                end
+              end
+            end
+
+            local rc = vim.fn.rename(old, new)
+            if rc ~= 0 then
+              vim.notify("Rename failed (vim.fn.rename exit code: " .. tostring(rc) .. ")", vim.log.levels.ERROR)
+              return
+            end
+
+            -- Update current buffer to point at the new path.
+            vim.api.nvim_buf_set_name(bufnr, new)
+            vim.cmd("silent! edit!")
+
+            -- Apply workspace edits (if any).
+            for _, item in ipairs(pending_edits) do
+              pcall(vim.lsp.util.apply_workspace_edit, item.edit, item.client.offset_encoding)
+            end
+
+            -- Notify LSP after rename (if supported).
+            for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+              if client.supports_method and client:supports_method("workspace/didRenameFiles") then
+                client.notify("workspace/didRenameFiles", params)
+              end
+            end
+          end)
+        end
+      '';
+      options.desc = "Rename File";
+    }
+    {
+      mode = "n";
+      key = "<leader>cr";
+      lspBufAction = "rename";
+      options.desc = "Rename";
+    }
+    {
+      mode = "n";
+      key = "<leader>cA";
+      action.__raw = ''
+        function()
+          vim.lsp.buf.code_action({
+            context = { only = { "source" } },
+            apply = true,
+          })
+        end
+      '';
+      options.desc = "Source Action";
+    }
+    {
+      mode = "n";
+      key = "]]";
+      action.__raw = ''
+        function()
+          local ok, illuminate = pcall(require, "illuminate")
+          if ok and illuminate and illuminate.goto_next_reference then
+            illuminate.goto_next_reference(false)
+            return
+          end
+
+          local word = vim.fn.expand("<cword>")
+          if not word or word == "" then return end
+          local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
+          vim.fn.search(pat, "W")
+        end
+      '';
+      options.desc = "Next Reference";
+    }
+    {
+      mode = "n";
+      key = "[[";
+      action.__raw = ''
+        function()
+          local ok, illuminate = pcall(require, "illuminate")
+          if ok and illuminate and illuminate.goto_prev_reference then
+            illuminate.goto_prev_reference(false)
+            return
+          end
+
+          local word = vim.fn.expand("<cword>")
+          if not word or word == "" then return end
+          local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
+          vim.fn.search(pat, "bW")
+        end
+      '';
+      options.desc = "Prev Reference";
+    }
+    {
+      mode = "n";
+      key = "<A-n>";
+      action.__raw = ''
+        function()
+          local ok, illuminate = pcall(require, "illuminate")
+          if ok and illuminate and illuminate.goto_next_reference then
+            illuminate.goto_next_reference(false)
+            return
+          end
+
+          local word = vim.fn.expand("<cword>")
+          if not word or word == "" then return end
+          local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
+          vim.fn.search(pat, "W")
+        end
+      '';
+      options.desc = "Next Reference";
+    }
+    {
+      mode = "n";
+      key = "<A-p>";
+      action.__raw = ''
+        function()
+          local ok, illuminate = pcall(require, "illuminate")
+          if ok and illuminate and illuminate.goto_prev_reference then
+            illuminate.goto_prev_reference(false)
+            return
+          end
+
+          local word = vim.fn.expand("<cword>")
+          if not word or word == "" then return end
+          local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
+          vim.fn.search(pat, "bW")
+        end
+      '';
+      options.desc = "Prev Reference";
+    }
+    {
+      mode = "n";
+      key = "<leader>ss";
+      action.__raw = ''
+        function()
+          local ok, snacks = pcall(require, "snacks")
+          if ok and snacks and snacks.picker and snacks.picker.lsp_symbols then
+            snacks.picker.lsp_symbols()
+            return
+          end
+          vim.lsp.buf.document_symbol()
+        end
+      '';
+      options.desc = "LSP Symbols";
+    }
+    {
+      mode = "n";
+      key = "<leader>sS";
+      action.__raw = ''
+        function()
+          local ok, snacks = pcall(require, "snacks")
+          if ok and snacks and snacks.picker and snacks.picker.lsp_workspace_symbols then
+            snacks.picker.lsp_workspace_symbols()
+            return
+          end
+          vim.lsp.buf.workspace_symbol()
+        end
+      '';
+      options.desc = "LSP Workspace Symbols";
+    }
+    {
+      mode = "n";
+      key = "gai";
+      action.__raw = ''
+        function()
+          local ok = pcall(function() vim.lsp.buf.incoming_calls() end)
+          if not ok then
+            vim.notify("Incoming calls not supported in this Neovim/LSP setup", vim.log.levels.WARN)
+          end
+        end
+      '';
+      options.desc = "Calls Incoming";
+    }
+    {
+      mode = "n";
+      key = "gao";
+      action.__raw = ''
+        function()
+          local ok = pcall(function() vim.lsp.buf.outgoing_calls() end)
+          if not ok then
+            vim.notify("Outgoing calls not supported in this Neovim/LSP setup", vim.log.levels.WARN)
+          end
+        end
+      '';
+      options.desc = "Calls Outgoing";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<leader>cf";
+      lspBufAction = "format";
+      options.desc = "Format";
+    }
+    {
+      mode = "n";
+      key = "<leader>cd";
+      action.__raw = "function() vim.diagnostic.open_float(nil, { scope = 'line' }) end";
+      options.desc = "Line Diagnostics";
+    }
+    {
+      mode = "n";
+      key = "]d";
+      action.__raw = "function() vim.diagnostic.goto_next() end";
+      options.desc = "Next Diagnostic";
+    }
+    {
+      mode = "n";
+      key = "[d";
+      action.__raw = "function() vim.diagnostic.goto_prev() end";
+      options.desc = "Prev Diagnostic";
+    }
+    {
+      mode = "n";
+      key = "]e";
+      action.__raw = "function() vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR }) end";
+      options.desc = "Next Error";
+    }
+    {
+      mode = "n";
+      key = "[e";
+      action.__raw = "function() vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR }) end";
+      options.desc = "Prev Error";
+    }
+    {
+      mode = "n";
+      key = "]w";
+      action.__raw = "function() vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.WARN }) end";
+      options.desc = "Next Warning";
+    }
+    {
+      mode = "n";
+      key = "[w";
+      action.__raw = "function() vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.WARN }) end";
+      options.desc = "Prev Warning";
     }
   ];
 }
