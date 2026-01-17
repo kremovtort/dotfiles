@@ -21,6 +21,9 @@ in
     ./karabiner.nix
     ./opencode.nix
     ./sops.nix
+    ./tmux.nix
+    ./zellij.nix
+    ./zsh.nix
   ];
 
   home.username = "kremovtort";
@@ -46,6 +49,8 @@ in
     pkgs.nixd
     pkgs.nixfmt
     pkgs.nodejs
+    pkgs.nvim4vscode
+    pkgs.openspec
     pkgs.ripgrep
     pkgs.shellcheck
     pkgs.tokei
@@ -62,7 +67,6 @@ in
     (pkgs.writeShellScriptBin "page" ''
       nvim +Man! "$@"
     '')
-    inputs.nvim-flake.packages.${system}.nvim4vscode
   ]
   ++ darwinPkgs;
 
@@ -84,7 +88,6 @@ in
     "${config.home.homeDirectory}/.rd/bin"
     "${config.home.homeDirectory}/.npm-globals/bin"
   ];
-  home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.ARC = "${config.home.homeDirectory}/arcadia";
   home.sessionVariables.ARCADIA = "${config.home.homeDirectory}/arcadia";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
@@ -214,22 +217,14 @@ in
 
   programs.tealdeer.enable = true;
 
-  programs.tmux = import ./tmux.nix { inherit pkgs; };
-
   programs.zoxide = {
     enable = true;
     enableZshIntegration = true;
   };
-
-  programs.zsh = import ./zsh.nix { inherit pkgs lib; };
 
   programs.wezterm = {
     enable = true;
     enableZshIntegration = true;
     extraConfig = builtins.readFile ../wezterm.lua;
   };
-
-  programs.zellij = import ./zellij.nix { inherit pkgs; };
-
-  services.paneru = lib.mkIf isDarwin (import ./paneru.nix { });
 }
