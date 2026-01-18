@@ -1,5 +1,37 @@
 {
   "nodes": {
+    "anthropicSkills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766254184,
+        "narHash": "sha256-pllFZoWRdtLliz/5pLWks0V9nKFMzeWoRcmFgu2UWi8=",
+        "owner": "anthropics",
+        "repo": "skills",
+        "rev": "69c0b1a0674149f27b61b2635f935524b6add202",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anthropics",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
+    "astGrepClaudeSkill": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1763947069,
+        "narHash": "sha256-LCI06qz9skVqSsXc88djK6YixABB+GnvoZcSce1m5Aw=",
+        "owner": "ast-grep",
+        "repo": "claude-skill",
+        "rev": "d46b7d0cd238000e35bfcd57aa95edb3ed6a573c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ast-grep",
+        "repo": "claude-skill",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
         "lastModified": 1765739568,
@@ -167,6 +199,27 @@
         "type": "github"
       }
     },
+    "home-manager_2": {
+      "inputs": {
+        "nixpkgs": [
+          "skills",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1766387499,
+        "narHash": "sha256-AjK3/UKDzeXFeYNLVBaJ3+HLE9he1g5UrlNd4/BM3eA=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "527ad07e6625302b648ed3b28c34b62a79bd103e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
     "karabinix": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -272,6 +325,22 @@
       }
     },
     "nixpkgs_4": {
+      "locked": {
+        "lastModified": 1766309749,
+        "narHash": "sha256-3xY8CZ4rSnQ0NqGhMKAy5vgC+2IVK0NoVEzDoOh4DA4=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "a6531044f6d0bef691ea18d4d4ce44d0daa6e816",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_5": {
       "locked": {
         "lastModified": 1765934234,
         "narHash": "sha256-pJjWUzNnjbIAMIc5gRFUuKCDQ9S1cuh3b2hKgA7Mc4A=",
@@ -427,6 +496,8 @@
     },
     "root": {
       "inputs": {
+        "anthropicSkills": "anthropicSkills",
+        "astGrepClaudeSkill": "astGrepClaudeSkill",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "karabinix": "karabinix",
@@ -436,6 +507,7 @@
         "openspec": "openspec",
         "paneru": "paneru",
         "repomapper": "repomapper",
+        "skills": "skills",
         "sops-nix": "sops-nix",
         "zjstatus": "zjstatus"
       }
@@ -458,6 +530,25 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "skills": {
+      "inputs": {
+        "home-manager": "home-manager_2",
+        "nixpkgs": "nixpkgs_4"
+      },
+      "locked": {
+        "lastModified": 1768742840,
+        "narHash": "sha256-gruSSLj99aht8U9vWr98lVSvuuTvgGXjdm99PxCcFag=",
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
+        "rev": "c1d4e5538c4426a05e40f6222caeeca14e3f6180",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Kyure-A",
+        "repo": "agent-skills-nix",
         "type": "github"
       }
     },
@@ -545,7 +636,7 @@
       "inputs": {
         "crane": "crane",
         "flake-utils": "flake-utils_3",
-        "nixpkgs": "nixpkgs_4",
+        "nixpkgs": "nixpkgs_5",
         "rust-overlay": "rust-overlay"
       },
       "locked": {

@@ -1,8 +1,43 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 {
   home.packages = [
     pkgs.repomapper
   ];
+
+  programs.agent-skills = {
+    enable = true;
+
+    # Install selected skills where OpenCode discovers them.
+    targets = {
+      opencode = {
+        dest = "\${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills";
+        structure = "symlink-tree";
+      };
+    };
+
+    sources = {
+      anthropic = {
+        path = inputs.anthropicSkills;
+        subdir = "skills";
+      };
+
+      ast-grep = {
+        path = inputs.astGrepClaudeSkill;
+        # Repo structure: ast-grep/skills/<skill>/SKILL.md
+        subdir = "ast-grep/skills";
+      };
+    };
+
+    skills.enable = [
+      "skill-creator"
+      "ast-grep"
+    ];
+  };
 
   programs.opencode = {
     enable = true;

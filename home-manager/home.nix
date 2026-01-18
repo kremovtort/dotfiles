@@ -18,6 +18,7 @@ let
 in
 {
   imports = [
+    inputs.skills.homeManagerModules.default
     ./karabiner.nix
     ./opencode.nix
     ./sops.nix
@@ -34,6 +35,7 @@ in
   home.stateVersion = "24.11";
 
   home.packages = [
+    pkgs.ast-grep
     pkgs.bat
     pkgs.bash-language-server
     pkgs.bottom

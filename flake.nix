@@ -6,6 +6,17 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
+    skills.url = "github:Kyure-A/agent-skills-nix";
+
+    anthropicSkills = {
+      url = "github:anthropics/skills";
+      flake = false;
+    };
+
+    astGrepClaudeSkill = {
+      url = "github:ast-grep/claude-skill";
+      flake = false;
+    };
 
     nix-darwin = {
       url = "github:LnL7/nix-darwin/master";
