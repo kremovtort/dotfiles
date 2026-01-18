@@ -359,6 +359,11 @@
       };
     };
 
+    mini-diff = {
+      enable = true;
+      autoLoad = true;
+    };
+
     mini-surround = {
       enable = true;
       settings = {
