@@ -230,21 +230,11 @@ in
       };
     };
 
-    # =========================================================================
-    # Extra plugins (not in NixVim modules)
-    # =========================================================================
-    extraPlugins = [
-      (mkOpencodePlugin pkgs)
-    ];
-
-    # =========================================================================
-    # Runtime dependencies
-    # =========================================================================
-    extraPackages = with pkgs; [
-      ripgrep
-      fd
-      tree-sitter
-    ];
+    dependencies = {
+      fd.enable = true;
+      ripgrep.enable = true;
+      tree-sitter.enable = true;
+    };
 
     # =========================================================================
     # Extra Lua configuration
@@ -268,13 +258,6 @@ in
 
       -- shortmess append
       vim.opt.shortmess:append({ W = true, I = true, c = true, C = true })
-    '';
-
-    extraConfigLua = ''
-      -- opencode.nvim
-      require("opencode").setup({
-        keymap_prefix = '<leader>a'
-      })
     '';
   };
 }

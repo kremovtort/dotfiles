@@ -242,7 +242,10 @@
 
     # Toggleterm (Ctrl+/)
     {
-      mode = [ "n" "t" ];
+      mode = [
+        "n"
+        "t"
+      ];
       key = "<C-/>";
       action = "<cmd>ToggleTerm direction=horizontal<cr>";
       options.desc = "Toggle terminal";
@@ -1100,6 +1103,47 @@
       '';
       options.desc = "Quickfix List";
     }
+
+    # Opencode
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<leader>aa";
+      action.__raw = ''function() require("opencode").ask("@this: ", { submit = true }) end'';
+      options.desc = "Ask opencode…";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<leader>ax";
+      action.__raw = ''function() require("opencode").select() end'';
+      options.desc = "Execute opencode action…";
+    }
+    {
+      mode = [
+        "n"
+        "x"
+      ];
+      key = "<leader>a.";
+      action.__raw = ''function() require("opencode").toggle() end'';
+      options.desc = "Toggle opencode…";
+    }
+    {
+      mode = "n";
+      key = "<S-C-u>";
+      action.__raw = ''function() require("opencode").command("session.half.page.up") end'';
+      options.desc = "Scroll opencode up";
+    }
+    {
+      mode = "n";
+      key = "<S-C-d>";
+      action.__raw = ''function() require("opencode").command("session.half.page.down") end'';
+      options.desc = "Scroll opencode down";
+    }
   ];
 
   # LSP-only keymaps (applied on LSP attach).
@@ -1287,7 +1331,6 @@
             illuminate.goto_next_reference(false)
             return
           end
-
           local word = vim.fn.expand("<cword>")
           if not word or word == "" then return end
           local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
@@ -1306,7 +1349,6 @@
             illuminate.goto_prev_reference(false)
             return
           end
-
           local word = vim.fn.expand("<cword>")
           if not word or word == "" then return end
           local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
@@ -1325,7 +1367,6 @@
             illuminate.goto_next_reference(false)
             return
           end
-
           local word = vim.fn.expand("<cword>")
           if not word or word == "" then return end
           local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
@@ -1344,7 +1385,6 @@
             illuminate.goto_prev_reference(false)
             return
           end
-
           local word = vim.fn.expand("<cword>")
           if not word or word == "" then return end
           local pat = "\\V\\<" .. vim.fn.escape(word, "\\") .. "\\>"
