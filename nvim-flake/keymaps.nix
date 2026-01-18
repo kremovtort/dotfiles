@@ -471,7 +471,7 @@
     }
     {
       mode = "t";
-      key = "<C-x>";
+      key = "<C-\\>";
       action = "<C-\\><C-n>";
     }
 
@@ -1131,6 +1131,22 @@
       key = "<leader>a.";
       action.__raw = ''function() require("opencode").toggle() end'';
       options.desc = "Toggle opencode…";
+    }
+    {
+      mode = [
+        "n"
+        "v"
+        "x"
+      ];
+      key = "go";
+      action.__raw = ''function() return require("opencode").operator("@this ") end'';
+      options.desc = "Add range to opencode";
+    }
+    {
+      mode = "n";
+      key = "goo";
+      action.__raw = ''function() return require("opencode").operator("@this ") .. "_" end'';
+      options.desc = "Add line to opencode";
     }
     {
       mode = "n";

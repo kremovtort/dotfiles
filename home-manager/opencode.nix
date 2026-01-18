@@ -1,7 +1,12 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 {
+  home.packages = [
+    pkgs.repomapper
+  ];
+
   programs.opencode = {
     enable = true;
+
     settings = {
       theme = "catppuccin-espresso";
       mcp = {
@@ -62,6 +67,9 @@
             websearch_cited.model = "x-ai/grok-4.1-fast";
           };
         };
+      };
+      lsp = {
+        haskell.disabled = true;
       };
     };
   };

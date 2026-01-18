@@ -2,7 +2,7 @@
   description = "My macos system Nix flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:kremovtort/nixpkgs/update-opencode";
     flake-parts.url = "github:hercules-ci/flake-parts";
     zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
@@ -14,6 +14,11 @@
 
     home-manager = {
       url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    repomapper = {
+      url = "github:kremovtort/RepoMapper/haskell-support";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -63,6 +68,7 @@
                 zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
                 openspec = inputs.openspec.packages.${prev.stdenv.hostPlatform.system}.default;
                 nvim4vscode = inputs.nvim.packages.${prev.stdenv.hostPlatform.system}.nvim4vscode;
+                repomapper = inputs.repomapper.packages.${prev.stdenv.hostPlatform.system}.default;
               })
             ];
             config = { };
