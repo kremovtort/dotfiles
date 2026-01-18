@@ -141,6 +141,15 @@
     };
 
     # Completion
+    supermaven = {
+      enable = true;
+      autoLoad = true;
+      settings = {
+        disable_inline_completion = true;
+        disable_keymaps = true;
+      };
+    };
+
     blink-cmp = {
       enable = true;
       settings = {
@@ -160,10 +169,18 @@
         sources = {
           default = [
             "lsp"
+            "supermaven"
             "path"
             "snippets"
             "buffer"
           ];
+          providers = {
+            supermaven = {
+              name = "supermaven";
+              module = "blink.compat.source";
+              score_offset = 100;
+            };
+          };
         };
         cmdline = {
           enabled = true;
@@ -321,6 +338,7 @@
     # Mini plugins
     mini-icons = {
       enable = true;
+      autoLoad = true;
       mockDevicons = true;
       settings = {
         file = {
@@ -344,6 +362,7 @@
 
     mini-pairs = {
       enable = true;
+      autoLoad = true;
       settings = {
         modes = {
           insert = true;
@@ -355,6 +374,7 @@
 
     mini-ai = {
       enable = true;
+      autoLoad = true;
       settings = {
         n_lines = 500;
       };
@@ -367,6 +387,7 @@
 
     mini-surround = {
       enable = true;
+      autoLoad = true;
       settings = {
         mappings = {
           add = "gza";

@@ -1,14 +1,16 @@
 { inputs, ... }:
 let
   # Build opencode-nvim plugin from flake input
-  mkOpencodePlugin = pkgs: pkgs.vimUtils.buildVimPlugin {
-    name = "opencode-nvim";
-    src = inputs.plugins-opencode-nvim;
-    dependencies = with pkgs.vimPlugins; [
-      plenary-nvim
-      nui-nvim
-    ];
-  };
+  mkOpencodePlugin =
+    pkgs:
+    pkgs.vimUtils.buildVimPlugin {
+      name = "opencode-nvim";
+      src = inputs.plugins-opencode-nvim;
+      dependencies = with pkgs.vimPlugins; [
+        plenary-nvim
+        nui-nvim
+      ];
+    };
 in
 { pkgs, ... }:
 {
@@ -65,7 +67,16 @@ in
       relativenumber = true;
       ruler = false;
       scrolloff = 4;
-      sessionoptions = [ "buffers" "curdir" "tabpages" "winsize" "help" "globals" "skiprtp" "folds" ];
+      sessionoptions = [
+        "buffers"
+        "curdir"
+        "tabpages"
+        "winsize"
+        "help"
+        "globals"
+        "skiprtp"
+        "folds"
+      ];
       shiftround = true;
       shiftwidth = 2;
       showmode = false;
