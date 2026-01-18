@@ -264,9 +264,6 @@ in
       require("opencode").setup({
         keymap_prefix = '<leader>a'
       })
-
-      -- mini.icons mock for nvim-web-devicons
-      require("mini.icons").mock_nvim_web_devicons()
     '';
   };
 }

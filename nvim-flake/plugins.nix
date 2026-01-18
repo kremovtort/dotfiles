@@ -321,6 +321,7 @@
     # Mini plugins
     mini-icons = {
       enable = true;
+      mockDevicons = true;
       settings = {
         file = {
           ".keep" = {
