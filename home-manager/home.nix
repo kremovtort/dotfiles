@@ -44,9 +44,13 @@ in
 
   home.packages = [
     pkgs.ast-grep
+    (pkgs.writeShellScriptBin "sg" ''
+      ast-grep $@
+    '')
     pkgs.bat
     pkgs.bash-language-server
     pkgs.bottom
+    pkgs.bun
     pkgs.devcontainer
     pkgs.docker
     pkgs.fd
@@ -75,7 +79,7 @@ in
       exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
     '')
     (pkgs.writeShellScriptBin "page" ''
-      nvim +Man! "$@"
+      nvim +Man! $@
     '')
   ]
   ++ darwinPkgs;
@@ -97,6 +101,7 @@ in
     "${config.home.homeDirectory}/.local/bin"
     "${config.home.homeDirectory}/.rd/bin"
     "${config.home.homeDirectory}/.npm-globals/bin"
+    "${config.home.homeDirectory}/.bun/bin"
   ];
   home.sessionVariables.ARC = "${config.home.homeDirectory}/arcadia";
   home.sessionVariables.ARCADIA = "${config.home.homeDirectory}/arcadia";

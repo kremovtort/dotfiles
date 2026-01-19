@@ -11,8 +11,10 @@ let
         nui-nvim
       ];
     };
+  icons = import ./icons.nix;
+  lib = inputs.nixvim.lib;
 in
-{ pkgs, ... }:
+{ ... }:
 {
   imports = [
     inputs.nixvim.homeModules.nixvim
@@ -33,6 +35,8 @@ in
     globals = {
       mapleader = " ";
       maplocalleader = "\\";
+
+      icons.__raw = lib.nixvim.lua.toLuaObject icons;
     };
 
     # =========================================================================
@@ -112,6 +116,13 @@ in
       enable = true;
       settings = {
         flavour = "mocha";
+        integrations = {
+          blink_cmp = {
+            enable = true;
+          };
+          neotree = true;
+          leap = true;
+        };
         color_overrides = {
           mocha = {
             base = "#1c1c1c";

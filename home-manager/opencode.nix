@@ -83,6 +83,7 @@
         "opencode-pty"
         "@mohak34/opencode-notifier@latest"
         "opencode-websearch-cited@1.2.0"
+        "cc-safety-net"
       ];
       provider = {
         openai = {

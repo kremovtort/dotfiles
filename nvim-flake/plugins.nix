@@ -1,6 +1,8 @@
 # NixVim plugins configuration
 { pkgs, ... }:
-{
+let
+  icons = import ./icons.nix;
+in {
   programs.nixvim = {
     extraPlugins = [
       pkgs.vimPlugins.nvim-scrollbar
@@ -43,10 +45,10 @@
               {
                 __unkeyed-1 = "diagnostics";
                 symbols = {
-                  error = " ";
-                  warn = " ";
-                  info = " ";
-                  hint = " ";
+                  error = icons.diagnostics.Error;
+                  warn = icons.diagnostics.Warn;
+                  info = icons.diagnostics.Info;
+                  hint = icons.diagnostics.Hint;
                 };
               }
               {
@@ -88,9 +90,9 @@
               {
                 __unkeyed-1 = "diff";
                 symbols = {
-                  added = " ";
-                  modified = " ";
-                  removed = " ";
+                  added = icons.git.added;
+                  modified = icons.git.modified;
+                  removed = icons.git.removed;
                 };
                 source.__raw = ''
                   function()
@@ -127,7 +129,7 @@
               {
                 __unkeyed-1.__raw = ''
                   function()
-                    return " " .. os.date("%R")
+                    return " " .. os.date("%R")
                   end
                 '';
               }
@@ -349,7 +351,6 @@
       mini-icons = {
         enable = true;
         autoLoad = true;
-        mockDevicons = true;
         settings = {
           file = {
             ".keep" = {
@@ -357,13 +358,13 @@
               hl = "MiniIconsGrey";
             };
             "devcontainer.json" = {
-              glyph = "";
+              glyph = "";
               hl = "MiniIconsAzure";
             };
           };
           filetype = {
             dotenv = {
-              glyph = "";
+              glyph = "";
               hl = "MiniIconsYellow";
             };
           };
@@ -410,6 +411,8 @@
           };
         };
       };
+
+      web-devicons.enable = true;
 
       # Leap
       leap.enable = true;
@@ -546,7 +549,7 @@
 
       # edgy
       edgy = {
-        enable = true;
+        enable = false;
         autoLoad = true;
         settings = {
           animate.enabled = false;
@@ -659,6 +662,20 @@
               l = "open";
             };
           };
+          default_component_configs = {
+            indent = {
+              with_expanders = true;
+              expander_collapsed = "";
+              expander_expanded = "";
+              expander_highlight = "NeoTreeExpander";
+            };
+          };
+          git_status = {
+            symbols = {
+              unstaged = "󰄱";
+              staged = "󰱒";
+            };
+          };
         };
       };
 
@@ -666,8 +683,7 @@
       toggleterm = {
         enable = true;
         settings = {
-          direction = "horizontal";
-          size = 15;
+          direction = "float";
           open_mapping = null; # We'll use custom keymaps
           shade_terminals = false;
           highlights = {
