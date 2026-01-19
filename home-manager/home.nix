@@ -5,6 +5,7 @@
   system,
   flake-self,
   inputs,
+  isLima,
   ...
 }:
 let
@@ -12,6 +13,7 @@ let
   userName = "Alexander Makarov";
   userEmail = "i@kremovtort.ru";
   darwinPkgs = map (lib.mkIf isDarwin) [
+    pkgs.lima
     pkgs.monitorcontrol
     pkgs.swiftdefaultapps
   ];
@@ -28,7 +30,13 @@ in
   ];
 
   home.username = "kremovtort";
-  home.homeDirectory = if isDarwin then "/Users/kremovtort" else "/home/kremovtort";
+  home.homeDirectory =
+    if isDarwin then
+      "/Users/kremovtort"
+    else if isLima then
+      "/home/kremovtort.linux"
+    else
+      "/home/kremovtort";
   nixpkgs.config.allowUnfree = true;
 
   programs.home-manager.enable = true;

@@ -139,24 +139,6 @@
         "type": "github"
       }
     },
-    "flake-utils_3": {
-      "inputs": {
-        "systems": "systems_4"
-      },
-      "locked": {
-        "lastModified": 1731533236,
-        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "type": "github"
-      }
-    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
@@ -310,16 +292,16 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1768759515,
-        "narHash": "sha256-QQP9mwEepqYGaDxNsNFT9I6fK3/5uQIaj2ri0SsHl2M=",
-        "owner": "kremovtort",
+        "lastModified": 1768783163,
+        "narHash": "sha256-tLj4KcRDLakrlpvboTJDKsrp6z2XLwyQ4Zmo+w8KsY4=",
+        "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2602a4a361491632f4b14578eb1acb0b9662f028",
+        "rev": "bde09022887110deb780067364a0818e89258968",
         "type": "github"
       },
       "original": {
-        "owner": "kremovtort",
-        "ref": "update-opencode",
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -472,28 +454,6 @@
         "type": "github"
       }
     },
-    "repomapper": {
-      "inputs": {
-        "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1768772252,
-        "narHash": "sha256-B8I1mA4dSyt9edQiYQjJ2O11atB4zkwocU5mIxkviS4=",
-        "owner": "kremovtort",
-        "repo": "RepoMapper",
-        "rev": "922234191580ce1d6ff05a63210f3e81d2c7e538",
-        "type": "github"
-      },
-      "original": {
-        "owner": "kremovtort",
-        "ref": "haskell-support",
-        "repo": "RepoMapper",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "anthropicSkills": "anthropicSkills",
@@ -506,7 +466,6 @@
         "nvim": "nvim",
         "openspec": "openspec",
         "paneru": "paneru",
-        "repomapper": "repomapper",
         "skills": "skills",
         "sops-nix": "sops-nix",
         "zjstatus": "zjstatus"
@@ -617,25 +576,10 @@
         "type": "github"
       }
     },
-    "systems_4": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
     "zjstatus": {
       "inputs": {
         "crane": "crane",
-        "flake-utils": "flake-utils_3",
+        "flake-utils": "flake-utils_2",
         "nixpkgs": "nixpkgs_5",
         "rust-overlay": "rust-overlay"
       },

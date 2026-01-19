@@ -5,14 +5,9 @@
   ...
 }:
 {
-  home.packages = [
-    pkgs.repomapper
-  ];
-
   programs.agent-skills = {
     enable = true;
 
-    # Install selected skills where OpenCode discovers them.
     targets = {
       opencode = {
         dest = "\${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills";

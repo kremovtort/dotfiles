@@ -2,7 +2,7 @@
   description = "My macos system Nix flake";
 
   inputs = {
-    nixpkgs.url = "github:kremovtort/nixpkgs/update-opencode";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
@@ -25,11 +25,6 @@
 
     home-manager = {
       url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    repomapper = {
-      url = "github:kremovtort/RepoMapper/haskell-support";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -110,6 +105,20 @@
             extraSpecialArgs = {
               inherit system inputs;
               flake-self = self;
+              isLima = false;
+            };
+          };
+
+          legacyPackages.homeConfigurations."kremovtort@lima-default" = inputs.home-manager.lib.homeManagerConfiguration {
+            inherit pkgs;
+            modules = [
+              inputs.nvim.homeModules.default
+              ./home-manager/home.nix
+            ];
+            extraSpecialArgs = {
+              inherit system inputs;
+              flake-self = self;
+              isLima = true;
             };
           };
 
