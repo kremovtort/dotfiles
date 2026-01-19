@@ -2,36 +2,15 @@
   config,
   pkgs,
   inputs,
+  flake-self,
   ...
 }:
 {
-  programs.agent-skills = {
-    enable = true;
-
-    targets = {
-      opencode = {
-        dest = "\${XDG_CONFIG_HOME:-$HOME/.config}/opencode/skills";
-        structure = "symlink-tree";
-      };
-    };
-
-    sources = {
-      anthropic = {
-        path = inputs.anthropicSkills;
-        subdir = "skills";
-      };
-
-      ast-grep = {
-        path = inputs.astGrepClaudeSkill;
-        # Repo structure: ast-grep/skills/<skill>/SKILL.md
-        subdir = "ast-grep/skills";
-      };
-    };
-
-    skills.enable = [
-      "skill-creator"
-      "ast-grep"
-    ];
+  home.file = {
+    ".config/opencode/commands".source = "${flake-self}/opencode/commands/";
+    ".config/opencode/skills/vsc-detect".source = "${flake-self}/opencode/skills/vsc-detect/";
+    ".config/opencode/skills/ast-grep".source = "${inputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
+    ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
   };
 
   programs.opencode = {
