@@ -21,6 +21,7 @@ in
   imports = [
     inputs.nixvim.homeModules.nixvim
     ./plugins.nix
+    ./plugins/lualine.nix
     ./keymaps.nix
     ./autoCmd.nix
   ];
