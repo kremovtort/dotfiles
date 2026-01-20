@@ -37,7 +37,7 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 │   ├── tmux.nix           # Tmux configuration
 │   ├── zellij.nix         # Zellij terminal multiplexer
 │   └── zsh.nix            # Zsh shell configuration
-├── nvim-flake/            # Neovim configuration (NixVim-based)
+├── nvim/            # Neovim configuration (NixVim-based)
 │   ├── flake.nix          # Neovim flake entry point
 │   ├── module.nix         # Main NixVim configuration (options, autocmds, extraPlugins)
 │   ├── plugins.nix        # Plugin configurations
@@ -101,16 +101,16 @@ programs.<name> = {
 ### Neovim Configuration
 
 - Based on **NixVim** (declarative Neovim configuration via Nix)
-- Self-contained flake in `nvim-flake/` directory
-- Plugin configs in `nvim-flake/plugins.nix`
-- Key mappings in `nvim-flake/keymaps.nix`
-- Core options and autocmds in `nvim-flake/module.nix`
+- Self-contained flake in `nvim/` directory
+- Plugin configs in `nvim/plugins.nix`
+- Key mappings in `nvim/keymaps.nix`
+- Core options and autocmds in `nvim/module.nix`
 - Russian keyboard layout support via `langmap`
 - AI integration via **opencode.nvim**
 
 #### Adding Neovim Plugins
 
-For plugins with NixVim modules, add to `nvim-flake/plugins.nix`:
+For plugins with NixVim modules, add to `nvim/plugins.nix`:
 
 ```nix
 plugins.<name> = {
@@ -162,7 +162,7 @@ Provides:
 ## Important Notes
 
 1. **Do not edit** `flake.lock` manually — use `nix flake update`
-2. **Neovim config** is built via NixVim in `nvim-flake/` (not symlinked)
+2. **Neovim config** is built via NixVim in `nvim/` (not symlinked)
 3. **Starship config** is at `starship.toml` (symlinked to `~/.config/`)
 4. **Catppuccin Mocha** is the primary color theme across tools
 5. **Touch ID for sudo** is enabled via PAM configuration

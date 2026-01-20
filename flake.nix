@@ -39,7 +39,7 @@
     };
 
     nvim = {
-      url = "path:./nvim-flake";
+      url = "path:./nvim";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixvim.inputs.nixpkgs.follows = "nixpkgs";
     };
