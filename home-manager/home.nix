@@ -123,6 +123,7 @@ in
   programs.delta = {
     enable = true;
     enableGitIntegration = true;
+    enableJujutsuIntegration = true;
     # Catppuccin Espresso palette (from `catppuccin/ghostty-theme-catppuccin-espresso`)
     options = {
       dark = true;
@@ -132,10 +133,10 @@ in
       file-style = "bold #89b4fa";
       file-decoration-style = "none";
       # Ensure hunk headers show the starting line numbers (the @@ -a,b +c,d @@ part).
-      hunk-header-style = "line-number syntax";
-      hunk-header-file-style = "bold #89b4fa";
-      hunk-header-line-number-style = "bold #bac2de";
-      hunk-header-decoration-style = "#2c2c2c box";
+      # hunk-header-style = "line-number syntax";
+      # hunk-header-file-style = "bold #89b4fa";
+      # hunk-header-line-number-style = "bold #bac2de";
+      # hunk-header-decoration-style = "#2c2c2c box";
 
       # Diff colors
       minus-style = "syntax #2a1f22";
@@ -144,9 +145,6 @@ in
       plus-emph-style = "syntax #25352a";
       zero-style = "syntax #1c1c1c";
       whitespace-error-style = "#f38ba8 reverse";
-
-      # Syntax highlighting theme (provided by `bat --list-themes`)
-      syntax-theme = "Catppuccin Mocha";
     };
   };
 
@@ -197,19 +195,35 @@ in
     settings.user.email = userEmail;
   };
 
-  programs.jjui.enable = true;
+  programs.jjui = {
+    enable = true;
+    settings = {
+      preview = {
+        revision_command = [
+          "util"
+          "exec"
+          "--"
+          "bash"
+          "-c"
+          "jj show --git -r $change_id | delta --paging never"
+        ];
+        file_command = [
+          "util"
+          "exec"
+          "--"
+          "bash"
+          "-c"
+          "jj diff --git -r $change_id $file | delta --paging never"
+        ];
+      };
+    };
+  };
 
   programs.jujutsu = {
     enable = true;
     settings.user.name = userName;
     settings.user.email = userEmail;
     settings.revsets.log = "present(@) | ancestors(@, 16) | ancestors(@.., 16)";
-    settings.ui.diff-formatter = [
-      "delta"
-      "--paging=never"
-      "$left"
-      "$right"
-    ];
     settings.ui.diff-editor = [
       "nvim"
       "-c"
