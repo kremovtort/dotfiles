@@ -32,7 +32,6 @@
             vim.opt_local.number = false
             vim.opt_local.relativenumber = false
             vim.opt_local.signcolumn = "no"
-            vim.cmd("startinsert")
           end
         '';
       }
@@ -56,7 +55,7 @@
         pattern = "opencode_terminal";
         callback.__raw = ''
           function(ev)
-            local opts = { buffer = ev.buf, silent = true, nowait = true }
+            local modes = { "n", "i", "v", "t" }
             for _, key in ipairs({
               "<ScrollWheelUp>",
               "<ScrollWheelDown>",
@@ -67,7 +66,7 @@
               "<ScrollWheelLeft>",
               "<ScrollWheelRight>",
             }) do
-              vim.keymap.set({ "n", "i", "v", "t" }, key, "<Nop>", opts)
+              pcall(vim.keymap.del, modes, key, { buffer = ev.buf })
             end
           end
         '';
