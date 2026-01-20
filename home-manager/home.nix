@@ -27,6 +27,7 @@ in
     ./tmux.nix
     ./zellij.nix
     ./zsh.nix
+    ./starship.nix
   ];
 
   home.username = "kremovtort";
@@ -80,7 +81,6 @@ in
 
   home.file = {
     ".clickhouse-client".source = "${flake-self}/clickhouse-client";
-    ".config/starship.toml".source = "${flake-self}/starship.toml";
     ".config/ghostty/themes/catppuccin-espresso".source =
       "${flake-self}/catppuccin/ghostty-theme-catppuccin-espresso";
     ".config/opencode/themes/catppuccin-espresso.json".source =
@@ -229,11 +229,6 @@ in
   programs.man.enable = true;
 
   programs.nix-your-shell = {
-    enable = true;
-    enableZshIntegration = true;
-  };
-
-  programs.starship = {
     enable = true;
     enableZshIntegration = true;
   };
