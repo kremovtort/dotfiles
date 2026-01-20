@@ -227,6 +227,7 @@ in {
             {
               __unkeyed-1 = "<leader>a";
               group = "agent";
+              icon = "";
             }
             {
               __unkeyed-1 = "<leader>aP";
@@ -698,11 +699,6 @@ in {
             };
           };
         };
-      };
-
-      scrollview = {
-        enable = true;
-        autoLoad = true;
       };
 
       repeat.enable = true;

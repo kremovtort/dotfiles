@@ -49,21 +49,6 @@
         '';
       }
 
-      # Cursor-agent buffer settings
-      {
-        event = "BufEnter";
-        group = "kremovtort_autocmds";
-        pattern = "term://*";
-        callback.__raw = ''
-          function()
-            if vim.b.cursor_agent then
-              vim.opt_local.scrolloff = 0
-              vim.cmd("startinsert")
-            end
-          end
-        '';
-      }
-
       # Disable mouse/trackpad scrolling in opencode terminal window
       {
         event = "FileType";

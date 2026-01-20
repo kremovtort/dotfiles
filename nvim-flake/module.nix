@@ -1,7 +1,7 @@
 { inputs, ... }:
 let
   # Build opencode-nvim plugin from flake input
-  mkOpencodePlugin =
+  _mkOpencodePlugin =
     pkgs:
     pkgs.vimUtils.buildVimPlugin {
       name = "opencode-nvim";
@@ -34,8 +34,7 @@ in
     # =========================================================================
     globals = {
       mapleader = " ";
-      maplocalleader = "\\";
-
+      maplocalleader = ",";
       icons.__raw = lib.nixvim.lua.toLuaObject icons;
     };
 
@@ -45,9 +44,7 @@ in
     opts = {
       autoread = true;
       autowrite = true;
-      clipboard = {
-        __raw = ''vim.env.SSH_CONNECTION and "" or "unnamedplus"'';
-      };
+      clipboard.__raw = ''vim.env.SSH_CONNECTION and "" or "unnamedplus"'';
       completeopt = "menu,menuone,noselect";
       conceallevel = 2;
       confirm = true;
@@ -147,16 +144,120 @@ in
       servers = {
         lua_ls = {
           enable = true;
-          config = {
+          settings = {
             Lua = {
               telemetry.enabled = false;
               diagnostics.globals = [ "vim" ];
+
+              # LazyVim-like defaults
+              workspace.checkThirdParty = false;
+              codeLens.enable = true;
+              completion.callSnippet = "Replace";
+              doc.privateName = [ "^_" ];
+              hint = {
+                enable = true;
+                setType = false;
+                paramType = true;
+                paramName = "Disable";
+                semicolon = "Disable";
+                arrayIndex = "Disable";
+              };
             };
           };
         };
         nixd.enable = true;
         bashls.enable = true;
       };
+      # Adds to the generated `capabilities` table (for all servers)
+      capabilities = ''
+        capabilities.workspace = capabilities.workspace or {}
+        capabilities.workspace.fileOperations = capabilities.workspace.fileOperations or {}
+        capabilities.workspace.fileOperations.didRename = true
+        capabilities.workspace.fileOperations.willRename = true
+      '';
+
+      # Runs for every buffer when a client attaches.
+      # Args provided by nixvim: (client, bufnr)
+      onAttach = ''
+        -- LazyVim-like on_attach behavior
+        if vim.bo[bufnr].buftype ~= "" then return end
+
+        local inlay_hints_enabled = true
+        local inlay_hints_exclude = { vue = true, haskell = true }
+        local folds_enabled = true
+        local codelens_enabled = false
+
+        -- Inlay hints
+        if inlay_hints_enabled
+          and vim.lsp.inlay_hint
+          and client.supports_method
+          and client:supports_method("textDocument/inlayHint")
+          and not inlay_hints_exclude[vim.bo[bufnr].filetype]
+        then
+          pcall(vim.lsp.inlay_hint.enable, true, { bufnr = bufnr })
+        end
+
+        -- Folds via LSP (foldmethod/foldexpr are window-local)
+        if folds_enabled
+          and client.supports_method
+          and client:supports_method("textDocument/foldingRange")
+        then
+          local function apply_folds_to_windows()
+            for _, win in ipairs(vim.fn.win_findbuf(bufnr)) do
+              pcall(vim.api.nvim_set_option_value, "foldmethod", "expr", { win = win })
+              pcall(vim.api.nvim_set_option_value, "foldexpr", "v:lua.vim.lsp.foldexpr()", { win = win })
+            end
+          end
+
+          apply_folds_to_windows()
+
+          vim.api.nvim_create_autocmd("BufWinEnter", {
+            buffer = bufnr,
+            callback = apply_folds_to_windows,
+          })
+        end
+
+        -- Code lens
+        if codelens_enabled
+          and vim.lsp.codelens
+          and client.supports_method
+          and client:supports_method("textDocument/codeLens")
+        then
+          pcall(vim.lsp.codelens.refresh)
+          vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "InsertLeave" }, {
+            buffer = bufnr,
+            callback = function()
+              pcall(vim.lsp.codelens.refresh)
+            end,
+          })
+        end
+      '';
+
+      luaConfig.post = ''
+        -- Diagnostics (vim.diagnostic.config)
+        do
+          local diag = vim.g.icons.diagnostics
+
+          vim.diagnostic.config({
+            underline = true,
+            update_in_insert = false,
+            severity_sort = true,
+            virtual_text = {
+              spacing = 4,
+              source = "if_many",
+              prefix = "●",
+            },
+            signs = {
+              text = {
+                [vim.diagnostic.severity.ERROR] = diag.Error or "E",
+                [vim.diagnostic.severity.WARN] = diag.Warn or "W",
+                [vim.diagnostic.severity.HINT] = diag.Hint or "H",
+                [vim.diagnostic.severity.INFO] = diag.Info or "I",
+              },
+            },
+          })
+        end
+      '';
     };
 
     dependencies = {
