@@ -17,6 +17,29 @@ in
           link("LualineTermNumber", "Number")
           link("LualineTermCommand", "String")
           link("LualineTermCwd", "Directory")
+
+          -- Make lualine_c separator slightly darker than normal text.
+          -- Derive from existing lualine theme groups so it follows colorscheme.
+          local ok, hls = pcall(vim.api.nvim_get_hl, 0, { name = "lualine_c_normal" })
+          if ok and hls and hls.fg and hls.bg then
+            local fg = hls.fg
+            local bg = hls.bg
+            local function mix(a, b, t)
+              return math.floor(a + (b - a) * t + 0.5)
+            end
+            local function blend(c1, c2, t)
+              return {
+                r = mix(bit.rshift(c1, 16) % 256, bit.rshift(c2, 16) % 256, t),
+                g = mix(bit.rshift(c1, 8) % 256, bit.rshift(c2, 8) % 256, t),
+                b = mix(c1 % 256, c2 % 256, t),
+              }
+            end
+            local blended = blend(fg, bg, 0.55)
+            local hex = string.format("#%02x%02x%02x", blended.r, blended.g, blended.b)
+            pcall(vim.api.nvim_set_hl, 0, "LualineCSeparator", { fg = hex, bg = hls.bg, default = true })
+          else
+            pcall(vim.api.nvim_set_hl, 0, "LualineCSeparator", { link = "Comment", default = true })
+          end
         end
 
         local function trim(s)
@@ -110,7 +133,11 @@ in
           {
             __unkeyed-1.__raw = ''
               function()
-                return " " .. vim.g.__lualine_jj_branch or (vim.b.gitsigns_head or "")
+                local branch = vim.g.__lualine_jj_branch or (vim.b.gitsigns_head or "")
+                if branch == "" then
+                  return ""
+                end
+                return " " .. branch
               end
             '';
           }
@@ -124,6 +151,7 @@ in
                 return vim.fn.fnamemodify(root, ":t")
               end
             '';
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "diagnostics";
@@ -133,6 +161,7 @@ in
               info = icons.diagnostics.Info;
               hint = icons.diagnostics.Hint;
             };
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "filetype";
@@ -220,19 +249,28 @@ in
                 return rel .. suffix
               end
             '';
+            padding = {
+              left = -1;
+              right = 1;
+            };
+            separator = "%#LualineCSeparator#%*";
           }
-        ];
-
-        lualine_x = [
           {
             __unkeyed-1 = "diff";
             symbols = {
-              added = icons.git.added;
-              modified = icons.git.modified;
-              removed = icons.git.removed;
+              added = "+";
+              modified = "~";
+              removed = "-";
             };
             source.__raw = ''
               function()
+                -- Prefer vcsigns stats (works for jj/git/hg). It stores a lualine-compatible table in b:vcsigns_stats.
+                local stats = vim.b.vcsigns_stats
+                if stats then
+                  return stats
+                end
+
+                -- Fallback to gitsigns if present.
                 local gitsigns = vim.b.gitsigns_status_dict
                 if gitsigns then
                   return {
@@ -243,6 +281,31 @@ in
                 end
               end
             '';
+          }
+        ];
+
+        lualine_x = [
+          {
+            __unkeyed-1 = "lsp_status";
+            icon = ""; # f013
+            symbols = {
+              spinner = [
+                "⠋"
+                "⠙"
+                "⠹"
+                "⠸"
+                "⠼"
+                "⠴"
+                "⠦"
+                "⠧"
+                "⠇"
+                "⠏"
+              ];
+              done = "✓";
+              separator = " ";
+            };
+            ignore_lsp = { };
+            show_name = true;
           }
         ];
 
@@ -277,7 +340,6 @@ in
 
       extensions = [
         "neo-tree"
-        "toggleterm"
         "trouble"
       ];
     };
