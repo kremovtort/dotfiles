@@ -1,15 +1,33 @@
 # NixVim plugins configuration
-{ pkgs, ... }:
+{ pkgs, nvimInputs, ... }:
 let
   icons = import ./icons.nix;
-in {
+
+  vcsignsVclib = pkgs.vimUtils.buildVimPlugin {
+    name = "vcsigns-vclib-nvim";
+    src = nvimInputs.plugins-vclib-nvim;
+  };
+
+  vcsigns = pkgs.vimUtils.buildVimPlugin {
+    name = "vcsigns-nvim";
+    src = nvimInputs.plugins-vcsigns-nvim;
+    dependencies = [ vcsignsVclib ];
+  };
+in
+{
   programs.nixvim = {
     extraPlugins = [
       pkgs.vimPlugins.nvim-scrollbar
+      vcsignsVclib
+      vcsigns
     ];
 
     extraConfigLua = ''
       require("scrollbar").setup()
+
+      require("vcsigns").setup({
+        target_commit = 1,
+      })
     '';
 
     plugins = {
@@ -398,7 +416,7 @@ in {
       };
 
       mini-diff = {
-        enable = true;
+        enable = false;
         autoLoad = true;
       };
 

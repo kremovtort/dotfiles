@@ -14,18 +14,40 @@
       url = "github:sudo-tee/opencode.nvim";
       flake = false;
     };
+
+    plugins-vcsigns-nvim = {
+      url = "github:algmyr/vcsigns.nvim";
+      flake = false;
+    };
+
+    plugins-vclib-nvim = {
+      url = "github:algmyr/vclib.nvim";
+      flake = false;
+    };
   };
 
-  outputs = inputs @ { self, nixpkgs, nixvim, ... }:
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      nixvim,
+      ...
+    }:
     let
-      systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
     in
     {
       homeModules.default = import ./module.nix { inherit inputs self; };
 
       # Standalone packages
-      packages = forAllSystems (system:
+      packages = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           nixvim' = nixvim.legacyPackages.${system};

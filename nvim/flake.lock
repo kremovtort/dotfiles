@@ -75,11 +75,45 @@
         "type": "github"
       }
     },
+    "plugins-vclib-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767664666,
+        "narHash": "sha256-jxYxwmG6485bMNhmiJwuI0u6sthGoLoUzn9ijgiHLHI=",
+        "owner": "algmyr",
+        "repo": "vclib.nvim",
+        "rev": "971ba737352cf37a1d057a2b49d483b59d3993e3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "algmyr",
+        "repo": "vclib.nvim",
+        "type": "github"
+      }
+    },
+    "plugins-vcsigns-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767375444,
+        "narHash": "sha256-AA4Q//FFgCN0+SAbYS78bKfOO1+LvGyxOiiLkydVgdE=",
+        "owner": "algmyr",
+        "repo": "vcsigns.nvim",
+        "rev": "ee9e1f144b73bc7ce1d50412075b827c31121f18",
+        "type": "github"
+      },
+      "original": {
+        "owner": "algmyr",
+        "repo": "vcsigns.nvim",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
         "nixvim": "nixvim",
-        "plugins-opencode-nvim": "plugins-opencode-nvim"
+        "plugins-opencode-nvim": "plugins-opencode-nvim",
+        "plugins-vclib-nvim": "plugins-vclib-nvim",
+        "plugins-vcsigns-nvim": "plugins-vcsigns-nvim"
       }
     },
     "systems": {

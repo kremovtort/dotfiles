@@ -16,6 +16,8 @@ let
 in
 { ... }:
 {
+  _module.args.nvimInputs = inputs;
+
   imports = [
     inputs.nixvim.homeModules.nixvim
     ./plugins.nix
