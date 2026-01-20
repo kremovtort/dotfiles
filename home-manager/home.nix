@@ -65,6 +65,7 @@ in
     pkgs.nodejs
     pkgs.nvim4vscode
     pkgs.openspec
+    pkgs.ov
     pkgs.ripgrep
     pkgs.shellcheck
     pkgs.tokei
@@ -74,13 +75,6 @@ in
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
-    # for zoxide fzf preview
-    (pkgs.writeShellScriptBin "lla-for-fzf" ''
-      exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
-    '')
-    (pkgs.writeShellScriptBin "page" ''
-      nvim +Man! $@
-    '')
   ]
   ++ darwinPkgs;
 
@@ -108,8 +102,8 @@ in
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
   home.sessionVariables.DO_NOT_TRACK = "1";
   home.sessionVariables.LC_ALL = "en_US.UTF-8";
-  home.sessionVariables.PAGER = "page";
-  home.sessionVariables.MANPAGER = "page";
+  home.sessionVariables.PAGER = "ov";
+  home.sessionVariables.MANPAGER = "ov";
 
   programs.atuin = {
     enable = true;

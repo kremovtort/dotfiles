@@ -1,5 +1,11 @@
 { pkgs, lib, ... }:
 {
+  home.packages = [
+    (pkgs.writeShellScriptBin "lla-for-fzf" ''
+      exa --color=always -la $(echo $1 | sed 's|^[^/]*/|/|')
+    '')
+  ];
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;

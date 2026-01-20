@@ -13,6 +13,11 @@ in {
     '';
 
     plugins = {
+      auto-save = {
+        enable = true;
+        autoLoad = true;
+      };
+
       # UI
       lualine = {
         enable = true;
