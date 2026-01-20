@@ -468,23 +468,22 @@
       options.desc = "Toggle Inlay Hints";
     }
 
-    # Terminal window navigation (disabled in floating windows)
+    # Terminal window navigation (pass through in floating windows)
     {
       mode = "t";
       key = "<C-h>";
       action.__raw = ''
         function()
           local cfg = vim.api.nvim_win_get_config(0)
-          if cfg.relative ~= "" then return end
-          vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>h", true, false, true),
-            "n",
-            false
-          )
+          if cfg.relative ~= "" then
+            return vim.api.nvim_replace_termcodes("<C-h>", true, false, true)
+          end
+          return vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>h", true, false, true)
         end
       '';
       options = {
         silent = true;
+        expr = true;
         desc = "Go to Left Window";
       };
     }
@@ -494,16 +493,15 @@
       action.__raw = ''
         function()
           local cfg = vim.api.nvim_win_get_config(0)
-          if cfg.relative ~= "" then return end
-          vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>j", true, false, true),
-            "n",
-            false
-          )
+          if cfg.relative ~= "" then
+            return vim.api.nvim_replace_termcodes("<C-j>", true, false, true)
+          end
+          return vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>j", true, false, true)
         end
       '';
       options = {
         silent = true;
+        expr = true;
         desc = "Go to Lower Window";
       };
     }
@@ -513,16 +511,15 @@
       action.__raw = ''
         function()
           local cfg = vim.api.nvim_win_get_config(0)
-          if cfg.relative ~= "" then return end
-          vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>k", true, false, true),
-            "n",
-            false
-          )
+          if cfg.relative ~= "" then
+            return vim.api.nvim_replace_termcodes("<C-k>", true, false, true)
+          end
+          return vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>k", true, false, true)
         end
       '';
       options = {
         silent = true;
+        expr = true;
         desc = "Go to Upper Window";
       };
     }
@@ -532,16 +529,15 @@
       action.__raw = ''
         function()
           local cfg = vim.api.nvim_win_get_config(0)
-          if cfg.relative ~= "" then return end
-          vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>l", true, false, true),
-            "n",
-            false
-          )
+          if cfg.relative ~= "" then
+            return vim.api.nvim_replace_termcodes("<C-l>", true, false, true)
+          end
+          return vim.api.nvim_replace_termcodes("<C-\\><C-n><C-w>l", true, false, true)
         end
       '';
       options = {
         silent = true;
+        expr = true;
         desc = "Go to Right Window";
       };
     }
