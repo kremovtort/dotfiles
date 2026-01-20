@@ -155,6 +155,11 @@ in
               group = "git";
             }
             {
+              __unkeyed-1 = "<leader>j";
+              group = "vcs";
+              icon = "";
+            }
+            {
               __unkeyed-1 = "<leader>gh";
               group = "hunks";
             }

@@ -879,51 +879,27 @@
     # Git keymaps
     {
       mode = "n";
-      key = "<leader>gd";
+      key = "<leader>jd";
       action.__raw = "function() require('snacks').picker.git_diff() end";
       options.desc = "Git Diff (hunks)";
     }
     {
       mode = "n";
-      key = "<leader>gD";
+      key = "<leader>jD";
       action.__raw = "function() require('snacks').picker.git_diff({ base = 'origin', group = true }) end";
       options.desc = "Git Diff (origin)";
     }
     {
       mode = "n";
-      key = "<leader>gs";
+      key = "<leader>js";
       action.__raw = "function() require('snacks').picker.git_status() end";
       options.desc = "Git Status";
     }
     {
       mode = "n";
-      key = "<leader>gS";
+      key = "<leader>jS";
       action.__raw = "function() require('snacks').picker.git_stash() end";
       options.desc = "Git Stash";
-    }
-    {
-      mode = "n";
-      key = "<leader>gi";
-      action.__raw = "function() require('snacks').picker.gh_issue() end";
-      options.desc = "GitHub Issues (open)";
-    }
-    {
-      mode = "n";
-      key = "<leader>gI";
-      action.__raw = "function() require('snacks').picker.gh_issue({ state = 'all' }) end";
-      options.desc = "GitHub Issues (all)";
-    }
-    {
-      mode = "n";
-      key = "<leader>gp";
-      action.__raw = "function() require('snacks').picker.gh_pr() end";
-      options.desc = "GitHub Pull Requests (open)";
-    }
-    {
-      mode = "n";
-      key = "<leader>gP";
-      action.__raw = "function() require('snacks').picker.gh_pr({ state = 'all' }) end";
-      options.desc = "GitHub Pull Requests (all)";
     }
 
     # Search keymaps
@@ -1227,7 +1203,7 @@
     }
     {
       mode = "n";
-      key = "<leader>jd";
+      key = "<leader>uj";
       action.__raw = ''function() require("vcsigns.actions").toggle_hunk_diff(0) end'';
       options.desc = "Toggle inline hunk diff";
     }
