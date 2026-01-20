@@ -30,15 +30,6 @@
             "{file:${config.sops.secrets.context7-api-key.path}}"
           ];
         };
-        read-website-fast = {
-          type = "local";
-          enabled = true;
-          command = [
-            "npx"
-            "-y"
-            "@just-every/mcp-read-website-fast"
-          ];
-        };
       };
       agent = {
         plan = {
