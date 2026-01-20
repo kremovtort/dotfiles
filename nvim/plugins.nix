@@ -28,6 +28,22 @@ in
       require("vcsigns").setup({
         target_commit = 1,
       })
+
+      -- Lualine: nicer terminal buffer names + highlighting
+      local function set_lualine_term_hl()
+        local function link(from, to)
+          pcall(vim.api.nvim_set_hl, 0, from, { link = to, default = true })
+        end
+
+        link("LualineTermNumber", "Number")
+        link("LualineTermCommand", "String")
+        link("LualineTermCwd", "Directory")
+      end
+
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        callback = set_lualine_term_hl,
+      })
+      set_lualine_term_hl()
     '';
 
     plugins = {
@@ -86,6 +102,66 @@ in
               {
                 __unkeyed-1.__raw = ''
                   function()
+                    if vim.bo.buftype == "terminal" then
+                      local function stl_escape(text)
+                        text = tostring(text or "")
+                        -- Escape % so terminal titles can't break statusline
+                        text = text:gsub("%%", "%%%%")
+                        -- Strip control chars/newlines
+                        text = text:gsub("[\r\n]", " ")
+                        text = text:gsub("[%z\1-\31]", "")
+                        return text
+                      end
+
+                      local function hl(group, text)
+                        return ("%#" .. group .. "#" .. stl_escape(text) .. "%*")
+                      end
+
+                      local function tail(path)
+                        if not path or path == "" then return "" end
+                        return vim.fn.fnamemodify(path, ":t")
+                      end
+
+                      local bufname = vim.api.nvim_buf_get_name(0)
+
+                      -- Extract cwd and cmd from `term://{cwd}//{pid}:{cmd}`
+                      local cwd = bufname:match("^term://(.-)//%d+:")
+                      local cmd = bufname:match("^term://.-//%d+:(.*)$")
+
+                      local cwd_tail = tail(cwd)
+
+                      -- Prefer term_title, but avoid cwd-in-cwd
+                      local title = vim.b.term_title
+                      if title == nil or title == "" then
+                        title = cmd or ""
+                      end
+
+                      -- If title looks like a path or duplicates cwd, show shell name
+                      if cwd_tail ~= "" and (title == cwd_tail or title:find(cwd_tail, 1, true)) then
+                        local shell = vim.env.SHELL or ""
+                        title = tail(shell)
+                      end
+
+                      -- If title is a nix store path, trim to last segment
+                      if title:sub(1, 5) == "/nix/" then
+                        title = tail(title)
+                      end
+
+                      if title == "" then
+                        title = "term"
+                      end
+
+                      local title_hl = hl("LualineTermCommand", title)
+                      local cwd_hl = cwd_tail ~= "" and hl("LualineTermCwd", cwd_tail) or hl("LualineTermCwd", tail(vim.fn.getcwd()))
+
+                      if vim.bo.filetype == "toggleterm" and vim.b.toggle_number then
+                        local num_hl = hl("LualineTermNumber", tostring(vim.b.toggle_number))
+                        return "term " .. num_hl .. " runs " .. title_hl .. " in " .. cwd_hl
+                      end
+
+                      return title_hl .. " in " .. cwd_hl
+                    end
+
                     local name = vim.api.nvim_buf_get_name(0)
                     if name == "" then return "[No Name]" end
                     local root = vim.fs.root(0, { ".git" }) or vim.uv.cwd() or ""
@@ -531,7 +607,7 @@ in
                 desc = "Projects";
                 action = ":lua Snacks.picker.projects()";
               }
-              { 
+              {
                 icon = " ";
                 key = "r";
                 desc = "Recent Files";
