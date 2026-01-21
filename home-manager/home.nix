@@ -54,6 +54,9 @@ in
     pkgs.fd
     pkgs.gnumake
     pkgs.htop
+    pkgs.jiq
+    pkgs.jless
+    pkgs.jq
     pkgs.kind
     pkgs.kubectl
     pkgs.kubernetes-helm
