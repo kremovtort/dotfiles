@@ -1,0 +1,32 @@
+{
+  "agents": {
+    "orchestrator": {
+      "model": "openai/gpt-5.2",
+      "skills": [
+        "*"
+      ]
+    },
+    "oracle": {
+      "model": "openai/gpt-5.2",
+      "skills": []
+    },
+    "librarian": {
+      "model": "openai/gpt-5.1-codex-mini",
+      "skills": []
+    },
+    "explorer": {
+      "model": "openai/gpt-5.1-codex-mini",
+      "skills": []
+    },
+    "designer": {
+      "model": "openai/gpt-5.1-codex-mini",
+      "skills": [
+        "playwright"
+      ]
+    },
+    "fixer": {
+      "model": "openai/gpt-5.1-codex-mini",
+      "skills": []
+    }
+  }
+}

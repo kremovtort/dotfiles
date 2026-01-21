@@ -25,5 +25,6 @@
     secrets.openrouter-api-key = {};
     secrets.context7-api-key = {};
     secrets.tavily-api-key = {};
+    secrets.zai-api-key = {};
   };
 }

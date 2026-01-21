@@ -7,7 +7,9 @@
 }:
 {
   home.file = {
-    ".config/opencode/commands".source = "${flake-self}/opencode/commands/";
+    ".config/opencode/oh-my-opencode-slim.json".source = "${flake-self}/opencode/oh-my-opencode-slim.json";
+    ".config/opencode/commands/rmslop.md".source = "${flake-self}/opencode/commands/rmslop.md";
+    ".config/opencode/commands/spellcheck.md".source = "${flake-self}/opencode/commands/spellcheck.md";
     ".config/opencode/skills/vsc-detect".source = "${flake-self}/opencode/skills/vsc-detect/";
     ".config/opencode/skills/ast-grep".source = "${inputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
@@ -44,16 +46,13 @@
           mode = "subagent";
           model = "openai/gpt-5.1-codex-mini";
         };
-        explore = {
-          mode = "subagent";
-          model = "openai/gpt-5.1-codex-mini";
-        };
       };
       plugin = [
         "opencode-pty"
         "@mohak34/opencode-notifier@latest"
         "opencode-websearch-cited@1.2.0"
         "cc-safety-net"
+        "oh-my-opencode-slim"
       ];
       provider = {
         openai = {
