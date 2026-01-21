@@ -1,6 +1,10 @@
 { inputs, self }:
 { config, ... }:
 {
+  home.activation.copyOpencodeTools = ''
+    cp -rf ${self}/tools ${config.home.homeDirectory}/.config/opencode
+  '';
+
   home.file = {
     ".config/opencode/commands/rmslop.md".source = "${self}/commands/rmslop.md";
     ".config/opencode/commands/spellcheck.md".source = "${self}/commands/spellcheck.md";
@@ -9,8 +13,6 @@
     ".config/opencode/skills/jujutsu".source = "${self}/skills/jujutsu";
     ".config/opencode/skills/ast-grep".source = "${inputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
-
-    ".config/opencode/tools/ast-grep.ts".source = "${self}/tools/ast-grep.ts";
 
     ".config/opencode/AGENTS.md".source = "${self}/_AGENTS.md";
   };
