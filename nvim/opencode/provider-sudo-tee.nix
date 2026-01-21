@@ -1,6 +1,6 @@
 # OpenCode integration via sudo-tee/opencode.nvim (Neovim UI frontend).
 # This is built from the flake input `plugins-opencode-nvim`.
-{ pkgs, nvimInputs, ... }:
+{ config, pkgs, nvimInputs, ... }:
 let
   opencodeNvim = pkgs.vimUtils.buildVimPlugin {
     name = "opencode-nvim";
@@ -23,7 +23,7 @@ in
         preferred_picker = "snacks",
         preferred_completion = "blink",
 
-        default_global_keymaps = false,
+        default_global_keymaps = true,
         keymap_prefix = "<leader>a",
       })
     '';

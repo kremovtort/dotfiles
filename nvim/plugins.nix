@@ -123,6 +123,11 @@ in
               icon = "";
             }
             {
+              __unkeyed-1 = "<leader>at";
+              group = "toggle";
+              icon = "";
+            }
+            {
               __unkeyed-1 = "<leader>aP";
               group = "permissions";
             }
@@ -688,13 +693,9 @@ in
         autoLoad = true;
       };
 
-      opencode = {
-        enable = true;
-        autoLoad = true;
-        settings = {
-          provider.enabled = "snacks";
-        };
-      };
+      # OpenCode plugin selection lives in `nvim/opencode/*` provider modules.
+      # UI helpers for OpenCode remain configured above (edgy panes, render-markdown filetypes).
+
     };
   };
 }

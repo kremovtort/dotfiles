@@ -1,16 +1,5 @@
 { inputs, ... }:
 let
-  # Build opencode-nvim plugin from flake input
-  _mkOpencodePlugin =
-    pkgs:
-    pkgs.vimUtils.buildVimPlugin {
-      name = "opencode-nvim";
-      src = inputs.plugins-opencode-nvim;
-      dependencies = with pkgs.vimPlugins; [
-        plenary-nvim
-        nui-nvim
-      ];
-    };
   icons = import ./icons.nix;
   lib = inputs.nixvim.lib;
 in
@@ -20,6 +9,12 @@ in
 
   imports = [
     inputs.nixvim.homeModules.nixvim
+
+    # OpenCode integration is split into provider modules.
+    # Switch by swapping one import below.
+    # ./opencode/provider-nickvandyke.nix
+    ./opencode/provider-sudo-tee.nix
+
     ./plugins.nix
     ./plugins/lualine.nix
     ./keymaps.nix
