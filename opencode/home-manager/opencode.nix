@@ -58,6 +58,17 @@
           model = "openai/gpt-5.2";
         };
 
+        ask = {
+          mode = "primary";
+          model = "openai/gpt-5.2";
+          reasoningEffort = "low";
+          description = "Answer questions and analyze without editing code";
+          permission = {
+            edit = "deny";
+            bash = "allow";
+          };
+        };
+
         general = {
           mode = "subagent";
           model = "openai/gpt-5.1-codex-mini";
