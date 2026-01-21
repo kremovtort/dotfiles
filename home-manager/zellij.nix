@@ -1,6 +1,10 @@
 { pkgs, ... }:
 
 {
+  home.packages = [
+    pkgs.zjstatus
+  ];
+
   programs.zellij = {
     enable = true;
     settings = {

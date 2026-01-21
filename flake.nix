@@ -4,9 +4,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    zjstatus.url = "github:dj95/zjstatus";
+    # zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
-    skills.url = "github:Kyure-A/agent-skills-nix";
     jj-starship.url = "github:dmmulroy/jj-starship";
 
     anthropicSkills = {

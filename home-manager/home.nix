@@ -4,7 +4,6 @@
   lib,
   system,
   flake-self,
-  inputs,
   isLima,
   ...
 }:
@@ -20,12 +19,11 @@ let
 in
 {
   imports = [
-    inputs.skills.homeManagerModules.default
     ./karabiner.nix
     ./opencode.nix
     ./sops.nix
     ./tmux.nix
-    ./zellij.nix
+    # ./zellij.nix
     ./zsh.nix
     ./starship.nix
   ];
@@ -72,7 +70,6 @@ in
     pkgs.tokei
     pkgs.tree-sitter
     pkgs.uv
-    pkgs.zjstatus
     pkgs.zsh-completions
     pkgs.zsh-fast-syntax-highlighting
     pkgs.zsh-fzf-tab
