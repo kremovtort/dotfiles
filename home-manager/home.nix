@@ -137,7 +137,10 @@ in
       minus-emph-style = "syntax #3a232a";
       plus-style = "syntax #1f2a22";
       plus-emph-style = "syntax #25352a";
-      zero-style = "syntax #1c1c1c";
+      # NOTE: delta 0.18.2 on nixpkgs currently panics when `zero-style`
+      # is given a background color ("capacity overflow"), which breaks jjui
+      # and any git/jj pager output. Keep it background-free.
+      zero-style = "syntax";
       whitespace-error-style = "#f38ba8 reverse";
     };
   };
