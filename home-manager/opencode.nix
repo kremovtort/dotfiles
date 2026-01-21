@@ -7,7 +7,6 @@
 }:
 {
   home.file = {
-    ".config/opencode/oh-my-opencode-slim.json".source = "${flake-self}/opencode/oh-my-opencode-slim.json";
     ".config/opencode/commands/rmslop.md".source = "${flake-self}/opencode/commands/rmslop.md";
     ".config/opencode/commands/spellcheck.md".source = "${flake-self}/opencode/commands/spellcheck.md";
     ".config/opencode/skills/vcs-detect".source = "${flake-self}/opencode/skills/vcs-detect";
@@ -52,7 +51,6 @@
         "@mohak34/opencode-notifier@latest"
         "opencode-websearch-cited@1.2.0"
         "cc-safety-net"
-        "oh-my-opencode-slim"
       ];
       provider = {
         openai = {
