@@ -20,7 +20,7 @@
     settings = {
       theme = "catppuccin-espresso";
       mcp = {
-        context7 = {
+        docs_search = {
           type = "local";
           enabled = true;
           command = [
@@ -30,6 +30,17 @@
             "--api-key"
             "{file:${config.sops.secrets.context7-api-key.path}}"
           ];
+        };
+        web_search = {
+          type = "remote";
+          enabled = false;
+          url = "https://api.z.ai/api/mcp/web_search_prime/mcp";
+          headers.Authorization = "Bearer {file:${config.sops.secrets.zai-api-key.path}}";
+        };
+        grep_app = {
+          type = "remote";
+          enabled = true;
+          url = "https://mcp.grep.app";
         };
       };
       agent = {
@@ -49,7 +60,7 @@
       plugin = [
         "opencode-pty"
         "@mohak34/opencode-notifier@latest"
-        "opencode-websearch-cited@1.2.0"
+        "opencode-websearch-cited@latest"
         "cc-safety-net"
       ];
       provider = {
