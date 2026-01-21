@@ -10,7 +10,7 @@
     ".config/opencode/oh-my-opencode-slim.json".source = "${flake-self}/opencode/oh-my-opencode-slim.json";
     ".config/opencode/commands/rmslop.md".source = "${flake-self}/opencode/commands/rmslop.md";
     ".config/opencode/commands/spellcheck.md".source = "${flake-self}/opencode/commands/spellcheck.md";
-    ".config/opencode/skills/vsc-detect".source = "${flake-self}/opencode/skills/vsc-detect/";
+    ".config/opencode/skills/vcs-detect".source = "${flake-self}/opencode/skills/vcs-detect";
     ".config/opencode/skills/ast-grep".source = "${inputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
   };
