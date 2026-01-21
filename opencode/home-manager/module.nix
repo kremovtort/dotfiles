@@ -23,6 +23,8 @@
     settings = {
       theme = "catppuccin-espresso";
 
+      compaction.prune = false;
+
       mcp = {
         docs_search = {
           type = "local";
@@ -83,6 +85,7 @@
         "@mohak34/opencode-notifier@latest"
         "opencode-websearch-cited@latest"
         "cc-safety-net"
+        "@tarquinen/opencode-dcp@latest"
       ];
 
       provider = {
