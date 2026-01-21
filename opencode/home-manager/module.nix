@@ -11,6 +11,8 @@
     ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
 
     ".config/opencode/tools/ast-grep.ts".source = "${self}/tools/ast-grep.ts";
+
+    ".config/opencode/AGENTS.md".source = "${self}/_AGENTS.md";
   };
 
   programs.opencode = {
