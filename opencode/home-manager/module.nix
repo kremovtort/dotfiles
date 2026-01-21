@@ -1,20 +1,15 @@
-{
-  config,
-  inputs,
-  flake-self,
-  ...
-}:
+{ inputs, self }:
+{ config, ... }:
 {
   home.file = {
-    ".config/opencode/commands/rmslop.md".source = "${flake-self}/opencode/commands/rmslop.md";
-    ".config/opencode/commands/spellcheck.md".source = "${flake-self}/opencode/commands/spellcheck.md";
+    ".config/opencode/commands/rmslop.md".source = "${self}/commands/rmslop.md";
+    ".config/opencode/commands/spellcheck.md".source = "${self}/commands/spellcheck.md";
 
-    ".config/opencode/skills/vcs-detect".source = "${flake-self}/opencode/skills/vcs-detect";
+    ".config/opencode/skills/vcs-detect".source = "${self}/skills/vcs-detect";
     ".config/opencode/skills/ast-grep".source = "${inputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
 
-    # Custom tools (repo-local) exposed as global tools.
-    ".config/opencode/tools/ast-grep.ts".source = "${flake-self}/opencode/tools/ast-grep.ts";
+    ".config/opencode/tools/ast-grep.ts".source = "${self}/tools/ast-grep.ts";
   };
 
   programs.opencode = {

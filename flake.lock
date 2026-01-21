@@ -16,7 +16,39 @@
         "type": "github"
       }
     },
+    "anthropicSkills_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766254184,
+        "narHash": "sha256-pllFZoWRdtLliz/5pLWks0V9nKFMzeWoRcmFgu2UWi8=",
+        "owner": "anthropics",
+        "repo": "skills",
+        "rev": "69c0b1a0674149f27b61b2635f935524b6add202",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anthropics",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "astGrepClaudeSkill": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1763947069,
+        "narHash": "sha256-LCI06qz9skVqSsXc88djK6YixABB+GnvoZcSce1m5Aw=",
+        "owner": "ast-grep",
+        "repo": "claude-skill",
+        "rev": "d46b7d0cd238000e35bfcd57aa95edb3ed6a573c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ast-grep",
+        "repo": "claude-skill",
+        "type": "github"
+      }
+    },
+    "astGrepClaudeSkill_2": {
       "flake": false,
       "locked": {
         "lastModified": 1763947069,
@@ -346,6 +378,24 @@
       },
       "parent": []
     },
+    "opencode": {
+      "inputs": {
+        "anthropicSkills": "anthropicSkills_2",
+        "astGrepClaudeSkill": "astGrepClaudeSkill_2",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "./opencode",
+        "type": "path"
+      },
+      "original": {
+        "path": "./opencode",
+        "type": "path"
+      },
+      "parent": []
+    },
     "openspec": {
       "inputs": {
         "nixpkgs": [
@@ -465,6 +515,7 @@
         "nix-darwin": "nix-darwin",
         "nixpkgs": "nixpkgs_4",
         "nvim": "nvim",
+        "opencode": "opencode",
         "openspec": "openspec",
         "paneru": "paneru",
         "sops-nix": "sops-nix"

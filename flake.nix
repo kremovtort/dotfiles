@@ -8,16 +8,6 @@
     karabinix.url = "github:pepegar/karabinix";
     jj-starship.url = "github:dmmulroy/jj-starship";
 
-    anthropicSkills = {
-      url = "github:anthropics/skills";
-      flake = false;
-    };
-
-    astGrepClaudeSkill = {
-      url = "github:ast-grep/claude-skill";
-      flake = false;
-    };
-
     nix-darwin = {
       url = "github:LnL7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -42,6 +32,11 @@
       url = "path:./nvim";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixvim.inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    opencode = {
+      url = "path:./opencode";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     openspec = {
@@ -100,6 +95,7 @@
             inherit pkgs;
             modules = [
               inputs.nvim.homeModules.default
+              inputs.opencode.homeModules.default
               ./home-manager/home.nix
             ];
             extraSpecialArgs = {
@@ -109,18 +105,21 @@
             };
           };
 
-          legacyPackages.homeConfigurations."kremovtort@lima-default" = inputs.home-manager.lib.homeManagerConfiguration {
-            inherit pkgs;
-            modules = [
-              inputs.nvim.homeModules.default
-              ./home-manager/home.nix
-            ];
-            extraSpecialArgs = {
-              inherit system inputs;
-              flake-self = self;
-              isLima = true;
-            };
-          };
+          legacyPackages.homeConfigurations."kremovtort@lima-default" =
+            inputs.home-manager.lib.homeManagerConfiguration
+              {
+                inherit pkgs;
+                modules = [
+                  inputs.nvim.homeModules.default
+                  inputs.opencode.homeModules.default
+                  ./home-manager/home.nix
+                ];
+                extraSpecialArgs = {
+                  inherit system inputs;
+                  flake-self = self;
+                  isLima = true;
+                };
+              };
 
           legacyPackages.darwinConfigurations."kremovtort-OSX" = inputs.nix-darwin.lib.darwinSystem {
             modules = [ ./darwin/configuration.nix ];
