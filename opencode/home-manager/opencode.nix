@@ -12,6 +12,9 @@
     ".config/opencode/skills/vcs-detect".source = "${flake-self}/opencode/skills/vcs-detect";
     ".config/opencode/skills/ast-grep".source = "${inputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
+
+    # Custom tools (repo-local) exposed as global tools.
+    ".config/opencode/tools/ast-grep.ts".source = "${flake-self}/opencode/tools/ast-grep.ts";
   };
 
   programs.opencode = {
