@@ -20,7 +20,7 @@ in
 {
   imports = [
     ./karabiner.nix
-    ./opencode.nix
+    ../opencode/home-manager/opencode.nix
     ./sops.nix
     ./tmux.nix
     # ./zellij.nix
