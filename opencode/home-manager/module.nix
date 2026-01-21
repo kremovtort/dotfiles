@@ -6,6 +6,7 @@
     ".config/opencode/commands/spellcheck.md".source = "${self}/commands/spellcheck.md";
 
     ".config/opencode/skills/vcs-detect".source = "${self}/skills/vcs-detect";
+    ".config/opencode/skills/jujutsu".source = "${self}/skills/jujutsu";
     ".config/opencode/skills/ast-grep".source = "${inputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source = "${inputs.anthropicSkills}/skills/skill-creator";
 
