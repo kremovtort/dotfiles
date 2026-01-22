@@ -95,7 +95,7 @@
             inherit pkgs;
             modules = [
               inputs.nvim.homeModules.default
-              inputs.opencode.homeModules.default
+              # inputs.opencode.homeModules.default
               ./home-manager/home.nix
             ];
             extraSpecialArgs = {
@@ -111,7 +111,7 @@
                 inherit pkgs;
                 modules = [
                   inputs.nvim.homeModules.default
-                  inputs.opencode.homeModules.default
+                  # inputs.opencode.homeModules.default
                   ./home-manager/home.nix
                 ];
                 extraSpecialArgs = {
