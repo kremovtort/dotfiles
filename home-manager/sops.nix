@@ -1,4 +1,4 @@
-{ inputs, pkgs, flake-self, config, ... }:
+{ inputs, pkgs, self, config, ... }:
 {
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
 
@@ -18,7 +18,7 @@
   };
 
   sops = {
-    defaultSopsFile = "${flake-self}/secrets/secrets.yaml";
+    defaultSopsFile = "${self}/secrets/secrets.yaml";
     
     age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
     

@@ -13,7 +13,7 @@ in
     # OpenCode integration is split into provider modules.
     # Switch by swapping one import below.
     # ./opencode/provider-nickvandyke.nix
-    # ./opencode/provider-sudo-tee.nix
+    ./opencode/provider-sudo-tee.nix
 
     ./plugins.nix
     ./plugins/lualine.nix

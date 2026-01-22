@@ -95,12 +95,11 @@
             inherit pkgs;
             modules = [
               inputs.nvim.homeModules.default
-              # inputs.opencode.homeModules.default
+              inputs.opencode.homeModules.default
               ./home-manager/home.nix
             ];
             extraSpecialArgs = {
-              inherit system inputs;
-              flake-self = self;
+              inherit system inputs self;
               isLima = false;
             };
           };
@@ -110,13 +109,12 @@
               {
                 inherit pkgs;
                 modules = [
-                  inputs.nvim.homeModules.default
-                  # inputs.opencode.homeModules.default
+                  # inputs.nvim.homeModules.default
+                  inputs.opencode.homeModules.default
                   ./home-manager/home.nix
                 ];
                 extraSpecialArgs = {
-                  inherit system inputs;
-                  flake-self = self;
+                  inherit system inputs self;
                   isLima = true;
                 };
               };

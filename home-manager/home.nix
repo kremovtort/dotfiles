@@ -3,7 +3,7 @@
   pkgs,
   lib,
   system,
-  flake-self,
+  self,
   isLima,
   ...
 }:
@@ -79,11 +79,12 @@ in
   ++ darwinPkgs;
 
   home.file = {
-    ".clickhouse-client".source = "${flake-self}/clickhouse-client";
+    ".clickhouse-client".source = "${self}/clickhouse-client";
     ".config/ghostty/themes/catppuccin-espresso".source =
-      "${flake-self}/catppuccin/ghostty-theme-catppuccin-espresso";
+      "${self}/catppuccin/ghostty-theme-catppuccin-espresso";
     ".config/opencode/themes/catppuccin-espresso.json".source =
-      "${flake-self}/catppuccin/opencode-theme-catppuccin-espresso.json";
+      "${self}/catppuccin/opencode-theme-catppuccin-espresso.json";
+    ".config/ov/config.yaml".source = "${self}/ov.yaml";
   };
 
   home.shell.enableZshIntegration = true;
