@@ -1,5 +1,5 @@
 { inputs, self }:
-{ config, ... }:
+{ config, system, ... }:
 {
   home.activation.copyOpencodeTools = ''
     cp -rf ${self}/tools ${config.home.homeDirectory}/.config/opencode
@@ -20,10 +20,15 @@
   programs.opencode = {
     enable = true;
 
+    package = inputs.opencode.packages.${system}.default;
+
     settings = {
       theme = "catppuccin-espresso";
 
-      compaction.prune = false;
+      compaction = {
+        prune = false;
+        auto = false;
+      };
 
       mcp = {
         docs_search = {
@@ -85,7 +90,6 @@
         "@mohak34/opencode-notifier@latest"
         "opencode-websearch-cited@latest"
         "cc-safety-net"
-        "@tarquinen/opencode-dcp@latest"
       ];
 
       provider = {

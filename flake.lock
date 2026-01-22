@@ -19,11 +19,11 @@
     "astGrepClaudeSkill": {
       "flake": false,
       "locked": {
-        "lastModified": 1763947069,
-        "narHash": "sha256-LCI06qz9skVqSsXc88djK6YixABB+GnvoZcSce1m5Aw=",
+        "lastModified": 1769044697,
+        "narHash": "sha256-LgGFtPieyKtoru22AhHW8hvkJ8kCHO2Cr8rBOWGuxvY=",
         "owner": "ast-grep",
         "repo": "claude-skill",
-        "rev": "d46b7d0cd238000e35bfcd57aa95edb3ed6a573c",
+        "rev": "577f4d4507678f2c8cee150fae25e6ce309f70b1",
         "type": "github"
       },
       "original": {
@@ -352,7 +352,8 @@
         "astGrepClaudeSkill": "astGrepClaudeSkill",
         "nixpkgs": [
           "nixpkgs"
-        ]
+        ],
+        "opencode": "opencode_2"
       },
       "locked": {
         "path": "./opencode",
@@ -363,6 +364,27 @@
         "type": "path"
       },
       "parent": []
+    },
+    "opencode_2": {
+      "inputs": {
+        "nixpkgs": [
+          "opencode",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1769083529,
+        "narHash": "sha256-qZ50Us8xPQxKhCqjIsvEosN5KfrcX/G8DSMERocYGbg=",
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "rev": "4ca088ed121c293819f5da13c0d2ff2a616ad597",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "type": "github"
+      }
     },
     "openspec": {
       "inputs": {
