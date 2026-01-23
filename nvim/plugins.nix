@@ -1,8 +1,6 @@
 # NixVim plugins configuration
 { pkgs, nvimInputs, ... }:
 let
-  icons = import ./icons.nix;
-
   vcsignsVclib = pkgs.vimUtils.buildVimPlugin {
     name = "vcsigns-vclib-nvim";
     src = nvimInputs.plugins-vclib-nvim;
@@ -504,8 +502,13 @@ in
       haskell-tools = {
         enable = true;
         settings = {
-          hls.settings.haskell.plugin.importLens.globalOn = false;
+          hls = {
+            default_settings.haskell = {
+              formatting_provider = "fourmolu";
+            };
+          };
         };
+        autoLoad = true;
       };
 
       haskell-scope-highlighting.enable = false;
