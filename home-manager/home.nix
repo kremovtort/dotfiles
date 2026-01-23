@@ -178,6 +178,9 @@ in
       macos-option-as-alt = true;
       # Pass Cmd+[, Cmd+], Cmd+' to Neovim as <D-...> via CSI u protocol
       # Format: ESC [ keycode ; modifiers+1 u (Super=8, so 8+1=9)
+      clipboard-read = "allow";
+      clipboard-write = "allow";
+      clipboard-paste-protection = false;
       keybind = [
         "super+left_bracket=text:\\x1b[91;9u" # Cmd+[ -> <D-[>
         "super+right_bracket=text:\\x1b[93;9u" # Cmd+] -> <D-]>
