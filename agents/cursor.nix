@@ -5,43 +5,63 @@
   lib,
   ...
 }:
-{
-  home.activation.copyCursorAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    cursorAgentsDir="${config.home.homeDirectory}/.cursor/agents"
-    mkdir -p "$cursorAgentsDir"
+let
+  localAgent = name: {
+    inherit name;
+    src = "${agents}/cursor/agents/${name}.md";
+  };
+  cursorAgents = [
+    (localAgent "designer")
+    (localAgent "fixer")
+    (localAgent "librarian")
+    (localAgent "oracle")
+  ];
 
-    # Cursor does not reliably pick up subagents when they are symlinked
-    # from the Nix store (home.file). Install them as regular files.
-    # Replace any existing symlinks with regular files.
-    rm -f \
-      "$cursorAgentsDir/designer.md" \
-      "$cursorAgentsDir/fixer.md" \
-      "$cursorAgentsDir/librarian.md" \
-      "$cursorAgentsDir/oracle.md"
+  localSkill = name: {
+    inherit name;
+    src = "${agents}/skills/${name}";
+  };
+  cursorSkills = [
+    (localSkill "vcs-detect")
+    (localSkill "jujutsu")
+    {
+      name = "ast-grep";
+      src = "${agentsInputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
+    }
+    {
+      name = "skill-creator";
+      src = "${agentsInputs.anthropicSkills}/skills/skill-creator";
+    }
+  ];
 
-    cp -f "${agents}/cursor/agents/designer.md" "$cursorAgentsDir/designer.md"
-    cp -f "${agents}/cursor/agents/fixer.md" "$cursorAgentsDir/fixer.md"
-    cp -f "${agents}/cursor/agents/librarian.md" "$cursorAgentsDir/librarian.md"
-    cp -f "${agents}/cursor/agents/oracle.md" "$cursorAgentsDir/oracle.md"
+  copyCursorAgent = {name, src}: ''
+    cp -f "${src}" "${cursorAgentsDir}/${name}.md"
+    chmod +w "${cursorAgentsDir}/${name}.md"
   '';
 
+  copyCursorSkill = {name, src}: ''
+    cp -R "${src}" "${cursorSkillsDir}"
+    chmod -R +w "${cursorSkillsDir}/${name}"
+  '';
+
+  cursorAgentsDir = "${config.home.homeDirectory}/.cursor/agents";
+  cursorSkillsDir = "${config.home.homeDirectory}/.cursor/skills";
+in
+{
+  # Cursor does not reliably pick up subagents when they are symlinked
+  # from the Nix store (home.file). Install them as regular files.
+  home.activation.copyCursorAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "${cursorAgentsDir}"
+
+    ${lib.concatStringsSep "\n" (map copyCursorAgent cursorAgents)}
+  '';
+
+  # Cursor does not reliably pick up skills when they are symlinked
+  # from the Nix store (home.file). Install them as regular directories.
   home.activation.copyCursorSkills = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    cursorSkillsDir="${config.home.homeDirectory}/.cursor/skills"
-    mkdir -p "$cursorSkillsDir"
+    mkdir -p "${cursorSkillsDir}"
 
-    # Cursor does not reliably pick up skills when they are symlinked
-    # from the Nix store (home.file). Install them as regular directories.
-    # Replace any existing symlinks/directories with regular directories.
-    rm -rf \
-      "$cursorSkillsDir/vcs-detect" \
-      "$cursorSkillsDir/jujutsu" \
-      "$cursorSkillsDir/ast-grep" \
-      "$cursorSkillsDir/skill-creator"
-
-    cp -R "${agents}/skills/vcs-detect" "$cursorSkillsDir/vcs-detect"
-    cp -R "${agents}/skills/jujutsu" "$cursorSkillsDir/jujutsu"
-    cp -R "${agentsInputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep" "$cursorSkillsDir/ast-grep"
-    cp -R "${agentsInputs.anthropicSkills}/skills/skill-creator" "$cursorSkillsDir/skill-creator"
+    ${lib.concatStringsSep "\n" (map copyCursorSkill cursorSkills)}
   '';
 
   home.file = {
