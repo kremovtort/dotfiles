@@ -133,6 +133,15 @@ in
       lsp = {
         haskell.disabled = true;
       };
-    };
+
+      keybinds = {
+        app_exit = "ctrl+d,ctrl+в,<leader>q";
+        session_interrupt = "ctrl+c,ctrl+с";
+        session_child_cycle = "ctrl+],ctrl+ъ";
+        session_child_cycle_reverse = "ctrl+[,ctrl+х";
+        input_delete_word_backward = "ctrl+w,ctrl+ц,ctrl+backspace,alt+backspace";
+        session_parent = "<leader>o";
+      };
+     };
   };
 }
