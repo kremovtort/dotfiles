@@ -2,7 +2,7 @@
   description = "My macos system Nix flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     # zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
@@ -34,7 +34,7 @@
       inputs.nixvim.inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    opencode = {
+    agents = {
       url = "path:./agents";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -95,7 +95,7 @@
             inherit pkgs;
             modules = [
               inputs.nvim.homeModules.default
-              inputs.opencode.homeModules.default
+              inputs.agents.homeModules.default
               ./home-manager/home.nix
             ];
             extraSpecialArgs = {
@@ -109,8 +109,8 @@
               {
                 inherit pkgs;
                 modules = [
-                  # inputs.nvim.homeModules.default
-                  inputs.opencode.homeModules.default
+                  inputs.nvim.homeModules.default
+                  inputs.agents.homeModules.default
                   ./home-manager/home.nix
                 ];
                 extraSpecialArgs = {

@@ -1,4 +1,19 @@
-{ agents, agentsInputs, config, system, ... }:
+{
+  agents,
+  agentsInputs,
+  config,
+  system,
+  pkgs,
+  ...
+}:
+let
+  bun2nix = agentsInputs.bun2nix.packages.${system}.default;
+
+  opencodeCursorAuth = pkgs.callPackage (agents + "/pkgs/opencode-cursor-auth/default.nix") {
+    inherit bun2nix;
+    opencode-cursor-auth-src = agentsInputs."opencode-cursor-auth";
+  };
+in
 {
   home.activation.copyOpencodeTools = ''
     cp -rf ${agents}/tools ${config.home.homeDirectory}/.config/opencode
@@ -10,8 +25,14 @@
 
     ".config/opencode/skills/vcs-detect".source = "${agents}/skills/vcs-detect";
     ".config/opencode/skills/jujutsu".source = "${agents}/skills/jujutsu";
-    ".config/opencode/skills/ast-grep".source = "${agentsInputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
-    ".config/opencode/skills/skill-creator".source = "${agentsInputs.anthropicSkills}/skills/skill-creator";
+    ".config/opencode/skills/ast-grep".source =
+      "${agentsInputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
+    ".config/opencode/skills/skill-creator".source =
+      "${agentsInputs.anthropicSkills}/skills/skill-creator";
+
+    ".config/opencode/plugins/cursor-auth.ts".text = ''
+      export { CursorOAuthPlugin } from "${opencodeCursorAuth}/dist/plugin/index.js";
+    '';
 
     ".config/opencode/AGENTS.md".source = "${agents}/_AGENTS.md";
   };
@@ -105,6 +126,8 @@
             websearch_cited.model = "x-ai/grok-4.1-fast";
           };
         };
+
+        cursor.name = "Cursor";
       };
 
       lsp = {
