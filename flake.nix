@@ -35,7 +35,7 @@
     };
 
     opencode = {
-      url = "path:./opencode";
+      url = "path:./agents";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

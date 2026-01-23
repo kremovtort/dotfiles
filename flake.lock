@@ -356,11 +356,11 @@
         "opencode": "opencode_2"
       },
       "locked": {
-        "path": "./opencode",
+        "path": "./agents",
         "type": "path"
       },
       "original": {
-        "path": "./opencode",
+        "path": "./agents",
         "type": "path"
       },
       "parent": []
@@ -373,11 +373,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1769089416,
-        "narHash": "sha256-OtDsdavmaU6bMpE2B/Y2+o+md+UvhdM0xygqfbMoJ80=",
+        "lastModified": 1769153255,
+        "narHash": "sha256-ardM8zEJWvTvsFMQZWivjGPB2uIqFw6QPAzrRjAHQKY=",
         "owner": "anomalyco",
         "repo": "opencode",
-        "rev": "16a8f5a9c38b73665330a2113d1401d1640355b3",
+        "rev": "c130dd425a32fe1c1cd3747ea6565b0e6bf50100",
         "type": "github"
       },
       "original": {
