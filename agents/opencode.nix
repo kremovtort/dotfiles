@@ -19,6 +19,7 @@ let
 
   opencodeAgents = [
     (localOpencodeAgent "scout")
+    (localOpencodeAgent "docs_digger")
     (localOpencodeAgent "runner")
     (localOpencodeAgent "diff_indexer")
   ];
