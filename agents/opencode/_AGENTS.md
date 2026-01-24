@@ -14,10 +14,6 @@ These rules are injected globally for OpenCode sessions.
   - Use `ast_grep_search` / `ast_grep_replace` for simple mechanical refactors.
   - For tasks like “create a new file as a copy of another file”, “move/rename file”, or “copy file”, prefer shell commands like `cp` and `mv` instead of manual edits.
 
-- Prefer built-in discovery tools:
-  - Use `docs_search` (Context7 MCP) to look up library/framework documentation.
-  - Use `grep_app` MCP to search for real-world code examples on GitHub.
-
 - **Never discard unrelated changes** just because they look “extra”.
   - This includes any destructive commands in any VCS (e.g. `jj restore`, `git reset --hard`, `git checkout --`, force pushes, etc.).
   - If you accidentally mixed multiple concerns in one change, use `jj split` to separate them into multiple commits/changes.
@@ -26,16 +22,61 @@ These rules are injected globally for OpenCode sessions.
 
 ## Subagent usage
 
-- When invoking `@scout`, keep the prompt tiny: 1-2 sentences + 2-5 keywords (symbols, filenames, error string). Do not paste long context.
-- When invoking `@docs_digger`, pass `q=` + optional `focus=` + optional `limit=` + optional `prefer=` + optional `skills=`. Ask for quotes + sources; do not paste long context.
-- When invoking `@diff_indexer`, pass only `scope=` + optional `base/head` + optional `focus=` + `limit_files/limit_hunks`. Do not paste diffs.
-- When invoking `@runner`, pass only the command + `limit=` + optional `focus=`. Do not paste full logs into the parent session.
+- When invoking subagents, send a single **JSON object** (no prose) matching the contract below.
+- Keep subagent prompts tiny; do not paste long context.
+
+### `@scout` input (JSON)
+
+```json
+{
+  "q": "what to find/trace",
+  "mode": "search|trace",
+  "focus": "optional keywords/paths",
+  "from": "(trace only) optional start symbol",
+  "to": "(trace only) optional target symbol"
+}
+```
+
+### `@docs_digger` input (JSON)
+
+```json
+{
+  "q": "the exact question/topic",
+  "focus": "optional keywords/paths",
+  "limit": 8,
+  "prefer": ["man", "context7", "web", "github", "code", "api"],
+  "skills": ["optional-skill-name"]
+}
+```
+
+### `@diff_indexer` input (JSON)
+
+```json
+{
+  "scope": "worktree|staged|unstaged|range",
+  "base": "(scope=range) base rev",
+  "head": "(scope=range) head rev",
+  "focus": "optional keywords/paths",
+  "limit_files": 25,
+  "limit_hunks": 50
+}
+```
+
+### `@runner` input (JSON)
+
+```json
+{
+  "cmd": "the exact command(s) to run (one line, or multiple commands separated by &&)",
+  "limit": 5,
+  "focus": "optional keywords/paths"
+}
+```
 
 ## Context hygiene
 
 - If the task needs codebase discovery ("where is X?", "who calls Y?", "find config for Z?"), delegate it to `@scout` immediately.
 - In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
-- If the task needs external documentation research and you want sources/quotes ("what do the docs say", "find the exact option/spec", "cite docs"), delegate it to `@docs_digger`.
+- If the task needs external documentation research, delegate it to `@docs_digger`.
 - If the task is "what changed" / diff structure / file list / hunk locations, delegate it to `@diff_indexer`.
 - If the task is call-path tracing ("how does X call Y", indirect call chains, wrappers/middleware), delegate it to `@scout` and ask for a chain + `path:line` refs.
 - If the task needs running builds/tests/lints (or interpreting their logs), delegate it to `@runner` immediately.
