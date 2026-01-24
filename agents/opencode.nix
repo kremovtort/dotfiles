@@ -9,14 +9,16 @@
 let
   bun2nix = agentsInputs.bun2nix.packages.${system}.default;
 
-  opencodeCursorAuth = pkgs.callPackage (agents + "/pkgs/opencode-cursor-auth/default.nix") {
+  opencodeAssets = agents + "/opencode";
+
+  opencodeCursorAuth = pkgs.callPackage (opencodeAssets + "/pkgs/opencode-cursor-auth/default.nix") {
     inherit bun2nix;
     opencode-cursor-auth-src = agentsInputs."opencode-cursor-auth";
   };
 in
 {
   home.activation.copyOpencodeTools = ''
-    cp -rf ${agents}/tools ${config.home.homeDirectory}/.config/opencode
+    cp -rf ${opencodeAssets}/tools ${config.home.homeDirectory}/.config/opencode
   '';
 
   home.file = {
@@ -34,7 +36,7 @@ in
       export { CursorOAuthPlugin } from "${opencodeCursorAuth}/dist/plugin/index.js";
     '';
 
-    ".config/opencode/AGENTS.md".source = "${agents}/_AGENTS.md";
+    ".config/opencode/AGENTS.md".source = "${opencodeAssets}/_AGENTS.md";
   };
 
   programs.opencode = {
@@ -142,6 +144,6 @@ in
         input_delete_word_backward = "ctrl+w,ctrl+ц,ctrl+backspace,alt+backspace";
         session_parent = "<leader>o";
       };
-     };
+    };
   };
 }
