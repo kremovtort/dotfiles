@@ -2,6 +2,7 @@
   agents,
   agentsInputs,
   config,
+  lib,
   system,
   pkgs,
   ...
@@ -17,8 +18,16 @@ let
   };
 in
 {
-  home.activation.copyOpencodeTools = ''
-    cp -rf ${opencodeAssets}/tools ${config.home.homeDirectory}/.config/opencode
+  home.activation.copyOpencodeTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "${config.home.homeDirectory}/.config/opencode"
+    cp -rf "${opencodeAssets}/tools" "${config.home.homeDirectory}/.config/opencode"
+  '';
+
+  # Avoid symlink discovery edge-cases: install agents as real files.
+  home.activation.copyOpencodeAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "${config.home.homeDirectory}/.config/opencode/agents"
+    cp -f "${opencodeAssets}/agents/scout.md" "${config.home.homeDirectory}/.config/opencode/agents/scout.md"
+    chmod +w "${config.home.homeDirectory}/.config/opencode/agents/scout.md"
   '';
 
   home.file = {

@@ -23,3 +23,15 @@ These rules are injected globally for OpenCode sessions.
   - If you accidentally mixed multiple concerns in one change, use `jj split` to separate them into multiple commits/changes.
   - If build/generated output (e.g. `flake.lock`) changes unexpectedly, keep it as a separate commit/change. The user decides whether to discard it and will do so themselves.
   - Only discard changes when the user explicitly asked you to do it.
+
+## Subagent usage
+
+- When invoking `@scout`, keep the prompt tiny: 1-2 sentences + 2-5 keywords (symbols, filenames, error string). Do not paste long context.
+
+## Context hygiene
+
+- If the task needs codebase discovery ("where is X?", "who calls Y?", "find config for Z?"), delegate it to `@scout` immediately.
+- In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
+- If the task is call-path tracing ("how does X call Y", indirect call chains, wrappers/middleware), delegate it to `@scout` and ask for a chain + `path:line` refs.
+- If the task needs running builds/tests/lints (or interpreting their logs), delegate it to `@runner` immediately.
+- In the parent agent, do not run long test/build commands or paste their logs; ask `@runner` for PASS/FAIL + raw errors with `path:line` refs.
