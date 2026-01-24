@@ -20,6 +20,7 @@ let
   opencodeAgents = [
     (localOpencodeAgent "scout")
     (localOpencodeAgent "runner")
+    (localOpencodeAgent "diff_indexer")
   ];
 
   copyOpencodeAgent =

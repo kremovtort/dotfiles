@@ -27,12 +27,14 @@ These rules are injected globally for OpenCode sessions.
 ## Subagent usage
 
 - When invoking `@scout`, keep the prompt tiny: 1-2 sentences + 2-5 keywords (symbols, filenames, error string). Do not paste long context.
+- When invoking `@diff_indexer`, pass only `scope=` + optional `base/head` + optional `focus=` + `limit_files/limit_hunks`. Do not paste diffs.
 - When invoking `@runner`, pass only the command + `limit=` + optional `focus=`. Do not paste full logs into the parent session.
 
 ## Context hygiene
 
 - If the task needs codebase discovery ("where is X?", "who calls Y?", "find config for Z?"), delegate it to `@scout` immediately.
 - In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
+- If the task is "what changed" / diff structure / file list / hunk locations, delegate it to `@diff_indexer`.
 - If the task is call-path tracing ("how does X call Y", indirect call chains, wrappers/middleware), delegate it to `@scout` and ask for a chain + `path:line` refs.
 - If the task needs running builds/tests/lints (or interpreting their logs), delegate it to `@runner` immediately.
 - In the parent agent, do not run long test/build commands or paste their logs; ask `@runner` for PASS/FAIL + raw errors with `path:line` refs.
