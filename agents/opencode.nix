@@ -12,6 +12,25 @@ let
 
   opencodeAssets = agents + "/opencode";
 
+  localOpencodeAgent = name: {
+    inherit name;
+    src = "${opencodeAssets}/agents/${name}.md";
+  };
+
+  opencodeAgents = [
+    (localOpencodeAgent "scout")
+    (localOpencodeAgent "runner")
+  ];
+
+  copyOpencodeAgent =
+    { name, src }:
+    ''
+      cp -f "${src}" "${opencodeAgentsDir}/${name}.md"
+      chmod +w "${opencodeAgentsDir}/${name}.md"
+    '';
+
+  opencodeAgentsDir = "${config.home.homeDirectory}/.config/opencode/agents";
+
   opencodeCursorAuth = pkgs.callPackage (opencodeAssets + "/pkgs/opencode-cursor-auth/default.nix") {
     inherit bun2nix;
     opencode-cursor-auth-src = agentsInputs."opencode-cursor-auth";
@@ -25,9 +44,9 @@ in
 
   # Avoid symlink discovery edge-cases: install agents as real files.
   home.activation.copyOpencodeAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    mkdir -p "${config.home.homeDirectory}/.config/opencode/agents"
-    cp -f "${opencodeAssets}/agents/scout.md" "${config.home.homeDirectory}/.config/opencode/agents/scout.md"
-    chmod +w "${config.home.homeDirectory}/.config/opencode/agents/scout.md"
+    mkdir -p "${opencodeAgentsDir}"
+
+    ${lib.concatStringsSep "\n" (map copyOpencodeAgent opencodeAgents)}
   '';
 
   home.file = {
