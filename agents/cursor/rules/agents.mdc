@@ -1,0 +1,89 @@
+---
+description: Global Cursor workflow rules (VCS safety + delegation to helper agents).
+alwaysApply: true
+---
+
+These rules are applied globally for Cursor Agent sessions.
+
+## VCS detection
+
+- Before running any VCS command, determine the VCS in use.
+- If unclear, load and follow the `vcs-detect` skill.
+- Use the detected VCS (`jj` vs `git`) consistently for the rest of the task.
+
+## Safety and change hygiene
+
+- **Never discard unrelated changes** just because they look “extra”.
+  - Avoid destructive commands (e.g. `jj restore`, `git reset --hard`, `git checkout --`, force pushes).
+  - Only discard changes when the user explicitly asks for it.
+
+## Tooling preferences (Cursor)
+
+- Prefer precise local discovery:
+  - Use **Grep/Glob** for exact searches and file location.
+  - Use **SemanticSearch** when you need meaning-based discovery.
+  - Use **Read** to open the minimal code slices needed.
+- For edits:
+  - Read before editing; patch minimally.
+  - After edits, check **ReadLints** on edited files when available.
+- For verification:
+  - Use **Shell** for builds/tests when relevant; keep commands non-destructive.
+
+## Helper agents (delegation)
+
+Keep delegation prompts tiny; reference paths instead of pasting files.
+
+- Use `@scout` for codebase discovery:
+  - “where is X?”, “who calls Y?”, “find config for Z?”, indirect call chains.
+  - Ask for a short chain + `path:line` refs.
+- Use `@docs-digger` for external documentation research:
+  - Ask for verbatim quotes + sources, not a long explanation.
+- Use `@diff-indexer` for “what changed?”:
+  - Ask for file list + hunk anchors, strict JSON.
+- Use `@runner` for builds/tests/lints and log triage:
+  - Ask for PASS/FAIL + raw errors with `path:line` when possible.
+  - Don’t paste huge logs back into the parent context; return only the relevant errors.
+
+### Subagent input contracts (recommended)
+
+#### `@scout` input (JSON)
+```json
+{
+  "q": "what to find/trace",
+  "mode": "search|trace",
+  "focus": "optional keywords/paths",
+  "from": "(trace only) optional start symbol",
+  "to": "(trace only) optional target symbol"
+}
+```
+
+#### `@docs-digger` input (JSON)
+```json
+{
+  "q": "the exact question/topic",
+  "focus": "optional keywords/paths",
+  "limit": 8,
+  "prefer": ["man", "context7", "web", "github", "code", "api"]
+}
+```
+
+#### `@diff-indexer` input (JSON)
+```json
+{
+  "scope": "worktree|staged|unstaged|range",
+  "base": "(scope=range) base rev",
+  "head": "(scope=range) head rev",
+  "focus": "optional keywords/paths",
+  "limit_files": 25,
+  "limit_hunks": 50
+}
+```
+
+#### `@runner` input (JSON)
+```json
+{
+  "cmd": "the exact command(s) to run (one line, or multiple commands separated by &&)",
+  "limit": 5,
+  "focus": "optional keywords/paths"
+}
+```

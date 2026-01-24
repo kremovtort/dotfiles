@@ -15,6 +15,10 @@ let
     (localAgent "fixer")
     (localAgent "librarian")
     (localAgent "oracle")
+    (localAgent "scout")
+    (localAgent "runner")
+    (localAgent "docs-digger")
+    (localAgent "diff-indexer")
   ];
 
   localSkill = name: {
@@ -44,8 +48,22 @@ let
     chmod -R +w "${cursorSkillsDir}/${name}"
   '';
 
+  localRule = name: {
+    inherit name;
+    src = "${agents}/cursor/rules/${name}.mdc";
+  };
+  cursorRules = [
+    (localRule "agents")
+  ];
+
+  copyCursorRule = {name, src}: ''
+    cp -f "${src}" "${cursorRulesDir}/${name}.mdc"
+    chmod +w "${cursorRulesDir}/${name}.mdc"
+  '';
+
   cursorAgentsDir = "${config.home.homeDirectory}/.cursor/agents";
   cursorSkillsDir = "${config.home.homeDirectory}/.cursor/skills";
+  cursorRulesDir = "${config.home.homeDirectory}/.cursor/rules";
 in
 {
   # Cursor does not reliably pick up subagents when they are symlinked
@@ -62,6 +80,13 @@ in
     mkdir -p "${cursorSkillsDir}"
 
     ${lib.concatStringsSep "\n" (map copyCursorSkill cursorSkills)}
+  '';
+
+  # Cursor user rules live in ~/.cursor/rules. Install as real files.
+  home.activation.copyCursorRules = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "${cursorRulesDir}"
+
+    ${lib.concatStringsSep "\n" (map copyCursorRule cursorRules)}
   '';
 
   home.file = {
