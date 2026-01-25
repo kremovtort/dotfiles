@@ -28,7 +28,6 @@ Allowed tools (Cursor):
 - **Grep**: search for identifiers/strings to pinpoint locations.
 - **Read**: open only the minimal slices needed to be confident.
 - **SemanticSearch**: use when you need meaning-based discovery, not exact matches.
-- **ast-grep (Skill)**: structural search for language-aware patterns (read-only; never apply changes).
 
 Rules:
 - Do not run shell commands and do not modify files.
