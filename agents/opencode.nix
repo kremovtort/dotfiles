@@ -131,10 +131,8 @@ in
           };
         };
 
-        general = {
-          mode = "subagent";
-          model = "openai/gpt-5.1-codex-mini";
-        };
+        general.disable = true;
+        explore.disable = true;
       };
 
       plugin = [
