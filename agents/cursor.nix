@@ -11,10 +11,6 @@ let
     src = "${agents}/cursor/agents/${name}.md";
   };
   cursorAgents = [
-    (localAgent "designer")
-    (localAgent "fixer")
-    (localAgent "librarian")
-    (localAgent "oracle")
     (localAgent "scout")
     (localAgent "runner")
     (localAgent "docs-digger")
