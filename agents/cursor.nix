@@ -14,7 +14,6 @@ let
     (localAgent "scout")
     (localAgent "runner")
     (localAgent "docs-digger")
-    (localAgent "diff-indexer")
   ];
 
   localSkill = name: {
@@ -34,15 +33,19 @@ let
     }
   ];
 
-  copyCursorAgent = {name, src}: ''
-    cp -f "${src}" "${cursorAgentsDir}/${name}.md"
-    chmod +w "${cursorAgentsDir}/${name}.md"
-  '';
+  copyCursorAgent =
+    { name, src }:
+    ''
+      cp -f "${src}" "${cursorAgentsDir}/${name}.md"
+      chmod +w "${cursorAgentsDir}/${name}.md"
+    '';
 
-  copyCursorSkill = {name, src}: ''
-    cp -R "${src}" "${cursorSkillsDir}"
-    chmod -R +w "${cursorSkillsDir}/${name}"
-  '';
+  copyCursorSkill =
+    { name, src }:
+    ''
+      cp -R "${src}" "${cursorSkillsDir}"
+      chmod -R +w "${cursorSkillsDir}/${name}"
+    '';
 
   localRule = name: {
     inherit name;
@@ -52,10 +55,12 @@ let
     (localRule "agents")
   ];
 
-  copyCursorRule = {name, src}: ''
-    cp -f "${src}" "${cursorRulesDir}/${name}.mdc"
-    chmod +w "${cursorRulesDir}/${name}.mdc"
-  '';
+  copyCursorRule =
+    { name, src }:
+    ''
+      cp -f "${src}" "${cursorRulesDir}/${name}.mdc"
+      chmod +w "${cursorRulesDir}/${name}.mdc"
+    '';
 
   cursorAgentsDir = "${config.home.homeDirectory}/.cursor/agents";
   cursorSkillsDir = "${config.home.homeDirectory}/.cursor/skills";
