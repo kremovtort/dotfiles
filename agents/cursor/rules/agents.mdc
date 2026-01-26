@@ -170,7 +170,7 @@ Situation: you need "what changed?" without pasting full diffs (before commit/PR
 - Use `@docs-digger` for external documentation research:
   - Ask for verbatim quotes + sources, not a long explanation.
 - Use `@diff-indexer` for “what changed?”:
-  - Ask for file list + hunk anchors, strict JSON.
+  - Ask for file list + hunk anchors, strict TOML.
 - Use `@runner` for builds/tests/lints and log triage:
   - Ask for PASS/FAIL + raw errors with `path:line` when possible.
   - Don’t paste huge logs back into the parent context; return only the relevant errors.
