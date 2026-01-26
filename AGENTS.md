@@ -21,33 +21,44 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 
 ```
 .
-├── flake.nix              # Main flake entry point
-├── flake.lock             # Locked dependencies
-├── init.sh                # Bootstrap script (installs Nix, runs switch)
-├── justfile               # Task runner commands
-├── darwin/                # macOS system configuration (nix-darwin)
-│   ├── configuration.nix  # System settings, keyboard, PAM/TouchID
-│   └── homebrew.nix       # Homebrew packages (arc-launcher)
-├── home-manager/          # User environment configuration
-│   ├── home.nix           # Main home-manager config
-│   ├── karabiner.nix      # Keyboard remapping
-│   ├── opencode.nix       # OpenCode AI tool config
-│   ├── paneru.nix         # Paneru service
-│   ├── sops.nix           # Secrets (age/sops)
-│   ├── tmux.nix           # Tmux configuration
-│   ├── zellij.nix         # Zellij terminal multiplexer
-│   └── zsh.nix            # Zsh shell configuration
-├── nvim/            # Neovim configuration (NixVim-based)
-│   ├── flake.nix          # Neovim flake entry point
-│   ├── module.nix         # Main NixVim configuration (options, autocmds, extraPlugins)
-│   ├── plugins.nix        # Plugin configurations
-│   └── keymaps.nix        # Key mappings
-├── secrets/               # Encrypted secrets (sops-nix)
-│   └── secrets.yaml       # Encrypted API keys
-├── atuin/                 # Atuin shell history config
-├── clickhouse-client/     # ClickHouse client config
-├── starship.toml          # Starship prompt config
-└── wezterm.lua            # WezTerm terminal config
+├── flake.nix                 # Main flake entry point
+├── flake.lock                # Locked dependencies
+├── init.sh                   # Bootstrap script (installs Nix, runs switch)
+├── justfile                  # Task runner commands
+├── darwin/                   # macOS system configuration (nix-darwin)
+│   ├── configuration.nix     # System settings, keyboard, PAM/TouchID
+│   └── homebrew.nix          # Homebrew packages
+├── home-manager/             # User environment configuration
+│   ├── home.nix              # Main home-manager config
+│   ├── karabiner.nix         # Keyboard remapping
+│   ├── paneru.nix            # Paneru service
+│   ├── sops.nix              # Secrets (age/sops)
+│   ├── starship.nix          # Starship prompt config
+│   ├── tmux.nix              # Tmux configuration
+│   ├── zellij.nix            # Zellij terminal multiplexer
+│   └── zsh.nix               # Zsh shell configuration
+├── nvim/                     # Neovim configuration (NixVim-based, separate flake)
+│   ├── flake.nix             # Neovim flake entry point
+│   ├── module.nix            # Main NixVim configuration
+│   ├── plugins.nix           # Plugin configurations (plus `nvim/plugins/`)
+│   ├── keymaps.nix           # Key mappings
+│   ├── autoCmd.nix           # Autocommands
+│   ├── icons.nix             # Icons and UI helpers
+│   ├── vscode.nix            # VSCode-focused nvim build
+│   └── opencode/             # opencode.nvim providers and shared config
+├── agents/                   # AI agent configs (OpenCode/Cursor, skills, tools)
+│   ├── flake.nix             # Agents flake entry point
+│   ├── opencode.nix          # OpenCode home-manager module (installs rules/agents)
+│   └── cursor.nix            # Cursor module/rules
+├── secrets/                  # Encrypted secrets (sops-nix)
+│   └── secrets.yaml          # Encrypted API keys
+├── catppuccin/               # Theme assets (Ghostty/OpenCode)
+├── atuin/                    # Atuin shell history config
+├── clickhouse-client/        # ClickHouse client config
+├── ov.yaml                   # OpenCode configuration
+├── uv-tools.sh               # uv helpers
+├── starship.toml             # Starship prompt config (legacy / direct)
+└── wezterm.lua               # WezTerm terminal config
 ```
 
 ## Key Commands
@@ -56,10 +67,13 @@ All commands are run via `just` (task runner):
 
 | Command | Description |
 |---------|-------------|
-| `just switch` | Apply all configurations (darwin + home-manager) |
+| `just switch` | Apply all configurations (darwin + home-manager on macOS; home-manager on Linux) |
 | `just switch home` | Apply only home-manager configuration |
 | `just switch darwin` | Apply only darwin (system) configuration |
-| `just upgrade` | Update flake inputs and apply changes |
+| `just upgrade` | Update flake inputs and apply changes (plus `brew update/upgrade` on macOS) |
+| `just darwin-rebuild-switch` | Low-level: `nix run .#darwin-rebuild -- switch --flake .` |
+| `just home-manager-switch` | Low-level: `nix run .#home-manager -- switch --flake .` |
+| `just setup-shell` | Ensure nix profile `zsh` is a valid login shell |
 
 ### Bootstrap (Fresh Install)
 
@@ -104,7 +118,9 @@ programs.<name> = {
 - Self-contained flake in `nvim/` directory
 - Plugin configs in `nvim/plugins.nix`
 - Key mappings in `nvim/keymaps.nix`
-- Core options and autocmds in `nvim/module.nix`
+- Core options in `nvim/module.nix`
+- Autocmds in `nvim/autoCmd.nix`
+- Extra per-plugin configs in `nvim/plugins/`
 - Russian keyboard layout support via `langmap`
 - AI integration via **opencode.nvim**
 
@@ -155,6 +171,7 @@ Provides:
 - `nixd` (Nix LSP)
 - `lua-language-server`
 - `bash-language-server`
+- `nixfmt`
 - `statix` (Nix linter)
 - `shellcheck`
 - `stylua`
@@ -164,8 +181,9 @@ Provides:
 1. **Do not edit** `flake.lock` manually — use `nix flake update`
 2. **Neovim config** is built via NixVim in `nvim/` (not symlinked)
 3. **Starship config** is at `starship.toml` (symlinked to `~/.config/`)
-4. **Catppuccin Mocha** is the primary color theme across tools
-5. **Touch ID for sudo** is enabled via PAM configuration
+4. **Catppuccin** is the primary theme family (Mocha in most tools; Espresso is used in some terminal/OpenCode assets)
+5. This repo is typically used with **Jujutsu (`jj`) on top of Git**; detect VCS before running VCS commands
+6. **Touch ID for sudo** is enabled via PAM configuration
 
 ## External Dependencies
 
@@ -184,13 +202,13 @@ Provides:
 | Input | Purpose |
 |-------|---------|
 | `nixpkgs` | Package repository (unstable) |
+| `flake-parts` | Flake structure helper |
 | `nix-darwin` | macOS system management |
 | `home-manager` | User environment management |
 | `sops-nix` | Secrets management |
-| `nvim-flake` | Neovim configuration (NixVim-based) |
-| `nixvim` | Declarative Neovim configuration framework |
-| `paneru` | Custom service |
-| `zjstatus` | Zellij status bar |
 | `karabinix` | Karabiner-Elements Nix module |
-| `openspec-flake` | Custom OpenSpec tool |
-| `flake-parts` | Flake structure helper |
+| `jj-starship` | Starship integration for Jujutsu |
+| `paneru` | Custom service |
+| `nvim` | Neovim configuration (separate local flake) |
+| `agents` | AI agent tooling (local flake) |
+| `openspec` | OpenSpec tool |
