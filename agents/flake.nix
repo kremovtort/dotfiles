@@ -4,6 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
+    openspec = {
+      url = "github:Fission-AI/OpenSpec";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     bun2nix = {
       url = "git+https://github.com/nix-community/bun2nix?ref=refs/tags/2.0.6";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,14 +41,18 @@
       ...
     }:
     {
-      homeModules.default = {
-        _module.args.agentsInputs = inputs;
-        _module.args.agents = self;
+      homeModules.default =
+        { system, ... }:
+        {
+          _module.args.agentsInputs = inputs;
+          _module.args.agents = self;
 
-        imports = [
-          ./cursor.nix
-          ./opencode.nix
-        ];
-      };
+          imports = [
+            ./cursor.nix
+            ./opencode.nix
+          ];
+
+          home.packages = [ inputs.openspec.packages.${system}.default ];
+        };
     };
 }

@@ -65,7 +65,6 @@ in
     pkgs.nixfmt
     pkgs.nodejs
     pkgs.nvim4vscode
-    pkgs.openspec
     pkgs.ov
     pkgs.ripgrep
     pkgs.shellcheck

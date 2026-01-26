@@ -38,11 +38,6 @@
       url = "path:./agents";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    openspec = {
-      url = "github:Fission-AI/OpenSpec";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -67,7 +62,6 @@
             overlays = [
               (final: prev: {
                 zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
-                openspec = inputs.openspec.packages.${prev.stdenv.hostPlatform.system}.default;
                 nvim4vscode = inputs.nvim.packages.${prev.stdenv.hostPlatform.system}.nvim4vscode;
                 jj-starship = inputs.jj-starship.packages.${prev.stdenv.hostPlatform.system}.default;
               })

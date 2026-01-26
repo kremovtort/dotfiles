@@ -92,11 +92,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1768875095,
-        "narHash": "sha256-dYP3DjiL7oIiiq3H65tGIXXIT1Waiadmv93JS0sS+8A=",
+        "lastModified": 1769330179,
+        "narHash": "sha256-yxgb4AmkVHY5OOBrC79Vv6EVd4QZEotqv+6jcvA212M=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ed142ab1b3a092c4d149245d0c4126a5d7ea00b0",
+        "rev": "48698d12cc10555a4f3e3222d9c669b884a49dfe",
         "type": "github"
       },
       "original": {
@@ -128,11 +128,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1769153255,
-        "narHash": "sha256-ardM8zEJWvTvsFMQZWivjGPB2uIqFw6QPAzrRjAHQKY=",
+        "lastModified": 1769436946,
+        "narHash": "sha256-lTd+Uni2PJjjIt8Qkt928ZvpDt2QoXK4cI2V9uKiC5U=",
         "owner": "anomalyco",
         "repo": "opencode",
-        "rev": "c130dd425a32fe1c1cd3747ea6565b0e6bf50100",
+        "rev": "7f75f71f6b970c714b9e74f5715073e07ca8e431",
         "type": "github"
       },
       "original": {
@@ -157,6 +157,26 @@
         "type": "github"
       }
     },
+    "openspec": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1769424684,
+        "narHash": "sha256-V5nWySqb45O5r7aKt00IfnDaYYrLpl6a0ojK8DhB6Nw=",
+        "owner": "Fission-AI",
+        "repo": "OpenSpec",
+        "rev": "d1551262351fabefe3cb5880bed6f69b3a1df593",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Fission-AI",
+        "repo": "OpenSpec",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "anthropicSkills": "anthropicSkills",
@@ -164,7 +184,8 @@
         "bun2nix": "bun2nix",
         "nixpkgs": "nixpkgs",
         "opencode": "opencode",
-        "opencode-cursor-auth": "opencode-cursor-auth"
+        "opencode-cursor-auth": "opencode-cursor-auth",
+        "openspec": "openspec"
       }
     },
     "systems": {
