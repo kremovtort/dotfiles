@@ -49,6 +49,13 @@
 
           # zsh-vi-mode overwrites keybindings after init, so we use its hook
           zvm_after_init_commands+=('bindkey "^r" _atuin_search_widget')
+
+          # Ghostty encodes Ctrl-[ as CSI-u (fixterms), e.g. ^[[91;5u.
+          # Without this binding, zsh may treat it as ESC + "...u" and run `u` (undo).
+          zvm_after_init_commands+=('bindkey -M viins "^[[91;5u" vi-cmd-mode')
+          zvm_after_init_commands+=('bindkey -M vicmd "^[[91;5u" vi-cmd-mode')
+          zvm_after_init_commands+=('bindkey -M viins "^[[91;5:3u" vi-cmd-mode')
+          zvm_after_init_commands+=('bindkey -M vicmd "^[[91;5:3u" vi-cmd-mode')
         '';
         # Ensure atuin keybinding is set after all other integrations (fzf, etc.)
         afterAll = lib.mkOrder 2000 ''
