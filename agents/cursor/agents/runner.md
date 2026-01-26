@@ -1,6 +1,6 @@
 ---
 name: runner
-model: gemini-3-flash
+model: gpt-5.1-codex-mini-low
 description: Run builds/tests and triage logs. Input: JSON. Output: strict TOML with PASS/FAIL and raw errors (file:line when possible).
 readonly: true
 is_background: false

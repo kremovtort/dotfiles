@@ -1,6 +1,6 @@
 ---
 name: docs-digger
-model: gemini-3-flash
+model: gpt-5.1-codex-mini-high
 description: Documentation research agent. Return compact verbatim quotes with sources. Use proactively for API/library/tool docs.
 readonly: true
 is_background: false

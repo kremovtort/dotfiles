@@ -1,6 +1,6 @@
 ---
 name: scout
-model: gemini-3-flash
+model: gpt-5.1-codex-mini-low
 description: Fast codebase scout. Use proactively for repo discovery and call-path tracing. Input: JSON. Output: 2-6 sentences with file:line refs.
 readonly: true
 is_background: false

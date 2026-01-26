@@ -1,6 +1,6 @@
 ---
 name: diff-indexer
-model: gemini-3-flash
+model: gpt-5.1-codex-mini-low
 description: Factual diff indexer (files + hunk anchors). Input: JSON. Output: strict TOML. No review, no opinions.
 readonly: true
 is_background: false
