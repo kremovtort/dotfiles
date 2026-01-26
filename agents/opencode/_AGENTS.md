@@ -34,8 +34,8 @@ Subagents solve 3 recurring problems:
 How each subagent helps:
 - `runner`: runs builds/tests/lints, then triages logs and returns only PASS/FAIL + the actionable errors.
 - `scout`: does multi-file codebase discovery and call-path tracing, then returns only the relevant `path:line` refs.
-- `docs_digger`: does multi-source documentation research, then returns compact verbatim quotes with sources.
-- `diff_indexer`: answers "what changed" with a compact file list + hunk anchors (no multi-page diffs).
+- `docs-digger`: does multi-source documentation research, then returns compact verbatim quotes with sources.
+- `diff-indexer`: answers "what changed" with a compact file list + hunk anchors (no multi-page diffs).
 
 Rule of thumb:
 - If you are about to (a) run a build/test/lint, (b) do more than one round of repo discovery reads/searches, (c) look up external docs, or (d) inspect a large diff, STOP and delegate to the right subagent first.
@@ -101,7 +101,7 @@ Situation: you need repo discovery ("where is X?"), indirect call-path tracing, 
 }
 ```
 
-#### `@docs_digger`
+#### `@docs-digger`
 
 Situation: you need authoritative docs for a CLI flag/API/config option, or to interpret an error via official documentation.
 
@@ -132,7 +132,7 @@ Situation: you need authoritative docs for a CLI flag/API/config option, or to i
 }
 ```
 
-#### `@diff_indexer`
+#### `@diff-indexer`
 
 Situation: you need "what changed?" without pasting full diffs (before commit/PR/review).
 
@@ -180,7 +180,7 @@ Situation: you need "what changed?" without pasting full diffs (before commit/PR
 }
 ```
 
-### `@docs_digger` input (JSON)
+### `@docs-digger` input (JSON)
 
 ```json
 {
@@ -192,7 +192,7 @@ Situation: you need "what changed?" without pasting full diffs (before commit/PR
 }
 ```
 
-### `@diff_indexer` input (JSON)
+### `@diff-indexer` input (JSON)
 
 ```json
 {
@@ -219,8 +219,8 @@ Situation: you need "what changed?" without pasting full diffs (before commit/PR
 
 - If the task needs codebase discovery ("where is X?", "who calls Y?", "find config for Z?"), delegate it to `@scout` immediately.
 - In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
-- If the task needs external documentation research, delegate it to `@docs_digger`.
-- If the task is "what changed" / diff structure / file list / hunk locations, delegate it to `@diff_indexer`.
+- If the task needs external documentation research, delegate it to `@docs-digger`.
+- If the task is "what changed" / diff structure / file list / hunk locations, delegate it to `@diff-indexer`.
 - If the task is call-path tracing ("how does X call Y", indirect call chains, wrappers/middleware), delegate it to `@scout` and ask for a chain + `path:line` refs.
 - If the task needs running builds/tests/lints (or interpreting their logs), delegate it to `@runner` immediately.
 - In the parent agent, do not run long test/build commands or paste their logs; ask `@runner` for PASS/FAIL + raw errors with `path:line` refs.

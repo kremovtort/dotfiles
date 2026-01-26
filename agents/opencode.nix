@@ -19,9 +19,9 @@ let
 
   opencodeAgents = [
     (localOpencodeAgent "scout")
-    (localOpencodeAgent "docs_digger")
+    (localOpencodeAgent "docs-digger")
     (localOpencodeAgent "runner")
-    (localOpencodeAgent "diff_indexer")
+    (localOpencodeAgent "diff-indexer")
   ];
 
   copyOpencodeAgent =

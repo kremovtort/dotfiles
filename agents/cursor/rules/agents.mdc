@@ -226,8 +226,8 @@ Situation: you need "what changed?" without pasting full diffs (before commit/PR
 
 - If the task needs codebase discovery ("where is X?", "who calls Y?", "find config for Z?"), delegate it to `@scout` immediately.
 - In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
-- If the task needs external documentation research, delegate it to `@docs_digger`.
-- If the task is "what changed" / diff structure / file list / hunk locations, delegate it to `@diff_indexer`.
+- If the task needs external documentation research, delegate it to `@docs-digger`.
+- If the task is "what changed" / diff structure / file list / hunk locations, delegate it to `@diff-indexer`.
 - If the task is call-path tracing ("how does X call Y", indirect call chains, wrappers/middleware), delegate it to `@scout` and ask for a chain + `path:line` refs.
 - If the task needs running builds/tests/lints (or interpreting their logs), delegate it to `@runner` immediately.
 - In the parent agent, do not run long test/build commands or paste their logs; ask `@runner` for PASS/FAIL + raw errors with `path:line` refs.
