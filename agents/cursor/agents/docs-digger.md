@@ -29,6 +29,10 @@ Input (prefer a single JSON object):
 }
 ```
 
+Context references:
+- `q`/`focus` may include inline context references in the form `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]`.
+- If present, use Read/Grep to quote only the minimum relevant slice as local context.
+
 Defaults:
 - `limit`: 8
 - `prefer`: ["man", "context7", "web", "github", "code", "api"]

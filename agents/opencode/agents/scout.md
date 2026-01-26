@@ -27,6 +27,10 @@ Input (MUST be a single JSON object):
 }
 ```
 
+Context references:
+- `q`/`focus` may include inline context references in the form `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]`.
+- If present, prefer opening just that slice with `read`; if `::<identifier>` is provided, use `grep`/`ast-grep_ast_grep_search` to pinpoint it.
+
 You also handle call-path tracing questions, e.g. "how does X call Y" when the call is indirect (through wrappers/layers).
 
 Tools you may use (and when):

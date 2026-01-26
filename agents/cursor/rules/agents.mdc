@@ -21,6 +21,9 @@ These rules are applied globally for Cursor Agent sessions.
 
 Keep delegation prompts tiny; reference paths instead of pasting files.
 
+When passing context to helper agents, you can reference it inline using `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based lines).
+Examples: `@agents/cursor/rules/agents.mdc`, `@agents/cursor/rules/agents.mdc:20`, `@agents/cursor/rules/agents.mdc:20:60`, `@agents/cursor/rules/agents.mdc::<Helper agents>`, `@agents/cursor/rules/agents.mdc:20:60::<Helper agents>`.
+
 - Never use Cursor's built-in **Explore** agent. For any repo discovery or tracing, delegate to `@scout`.
 
 ### Why helper agents matter (use them by default)

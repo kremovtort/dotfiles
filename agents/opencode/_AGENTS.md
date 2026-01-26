@@ -165,6 +165,8 @@ Situation: you need "what changed?" without pasting full diffs (before commit/PR
 
 - When invoking subagents, send a single **JSON object** (no prose) matching the contract below.
 - Keep subagent prompts tiny; do not paste long context.
+- When you need to point a subagent at local context, you can reference it inline using `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based lines).
+  Examples: `@agents/opencode/_AGENTS.md`, `@agents/opencode/_AGENTS.md:44`, `@agents/opencode/_AGENTS.md:44:72`, `@agents/opencode/_AGENTS.md::<Subagent usage>`, `@agents/opencode/_AGENTS.md:23:80::<Subagent usage>`.
 
 ### `@scout` input (JSON)
 

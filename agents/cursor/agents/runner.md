@@ -23,6 +23,10 @@ Input (prefer a single JSON object):
 }
 ```
 
+Context references:
+- Any input field may include inline context references in the form `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]`.
+- If present, use Read/Glob/Grep to load only the minimum relevant slice before running/triaging.
+
 Defaults:
 - `limit`: 5
 

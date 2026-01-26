@@ -43,6 +43,10 @@ Input (MUST be a single JSON object):
 }
 ```
 
+Context references:
+- Any input field may include inline context references in the form `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]`.
+- If present, use `read` (and `grep` when `::<identifier>` is provided) to load only the minimum relevant file slice before doing VCS diff collection.
+
 Defaults:
 - `scope`: "worktree"
 - `limit_files`: 25
