@@ -1,7 +1,8 @@
 ---
 description: Fast codebase scout. Input: JSON. Output: 2-6 sentences with code references.
 mode: subagent
-model: openrouter/x-ai/grok-4.1-fast
+model: openai/gpt-5.1-codex-mini
+reasoningEffort: low
 temperature: 0.1
 maxSteps: 30
 permission:

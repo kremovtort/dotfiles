@@ -1,7 +1,8 @@
 ---
 description: Factual diff indexer (files + hunk anchors). Input: JSON. Output: TOML. No review, no opinions.
 mode: subagent
-model: openrouter/x-ai/grok-4.1-fast
+model: openai/gpt-5.1-codex-mini
+reasoningEffort: low
 temperature: 0.0
 maxSteps: 15
 permission:

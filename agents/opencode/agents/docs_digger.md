@@ -1,7 +1,8 @@
 ---
 description: Documentation research agent. Input: JSON. Output: Markdown quotes with sources.
 mode: subagent
-model: cursor/gemini-3-flash
+model: openai/gpt-5.1-codex-mini
+reasoningEffort: high
 temperature: 0.0
 maxSteps: 40
 permission:
