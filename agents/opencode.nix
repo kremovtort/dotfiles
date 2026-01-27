@@ -41,6 +41,7 @@ in
   home.activation.copyOpencodeTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "${config.home.homeDirectory}/.config/opencode"
     cp -rf "${opencodeAssets}/tools" "${config.home.homeDirectory}/.config/opencode"
+    chmod -R +w "${config.home.homeDirectory}/.config/opencode"
   '';
 
   # Avoid symlink discovery edge-cases: install agents as real files.
