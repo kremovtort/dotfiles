@@ -259,20 +259,6 @@ in
               "basic.to_if_held_down_threshold_milliseconds" = 500;
             };
             rules = [
-              (mkRule "Fn tap to Option+Space" [
-                (mkManipulator {
-                  from = mkFromEvent { key_code = "fn"; };
-                  to = [
-                    (mkToEvent { key_code = "fn"; })
-                  ];
-                  to_if_alone = [
-                    (mkToEvent {
-                      key_code = "spacebar";
-                      modifiers = [ "left_option" ];
-                    })
-                  ];
-                })
-              ])
               (mkRule "Layer (Ctrl/Fn)" ((createManipulators "left_control") ++ (createManipulators "fn")))
               (mkRule "BSK V3 PRO BT Specific" (
                 mkDeviceSpecificRules "BSK V3 PRO BT" {
