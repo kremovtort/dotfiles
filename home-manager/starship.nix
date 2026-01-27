@@ -49,7 +49,7 @@
       perl.format = "(via [$symbol($version )]($style))";
       php.format = "(via [$symbol($version )]($style))";
       purescript.format = "(via [$symbol($version )]($style))";
-      python.format = ''(via [\$\{symbol\}\$\{pyenv_prefix\}($\{version\} )(\($virtualenv\) )]($style))'';
+      python.format = ''(via [$symbol$pyenv_prefix($version )(\($virtualenv\) )]($style))'';
       quarto.format = "(via [$symbol($version )]($style))";
       raku.format = "(via [$symbol($version-$vm_version )]($style))";
       red.format = "(via [$symbol($version )]($style))";
