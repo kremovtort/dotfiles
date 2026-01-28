@@ -12,8 +12,10 @@
       start_service = true;
       restart_service = "changed";
     }
+    "macism"
   ];
   taps = [
+    "laishulu/homebrew"
     "homebrew/services"
     {
       name = "yandex/arc";

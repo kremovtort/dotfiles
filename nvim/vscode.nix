@@ -1,6 +1,10 @@
 # Minimal NixVim configuration for VSCode integration
 { pkgs, ... }:
 {
+  imports = [
+    ./plugins/langmapper.nix
+  ];
+
   # =========================================================================
   # Global variables
   # =========================================================================

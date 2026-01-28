@@ -16,6 +16,7 @@ in
     ./opencode/provider-sudo-tee.nix
 
     ./plugins.nix
+    ./plugins/langmapper.nix
     ./plugins/lualine.nix
     ./keymaps.nix
     ./autoCmd.nix
