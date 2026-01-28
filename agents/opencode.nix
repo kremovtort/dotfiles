@@ -75,6 +75,8 @@ in
     package = agentsInputs.opencode.packages.${system}.default;
 
     settings = {
+      autoupdate = false;
+
       theme = "catppuccin-espresso";
 
       compaction = {
@@ -136,10 +138,10 @@ in
       };
 
       plugin = [
-        "opencode-pty"
-        "@mohak34/opencode-notifier@latest"
-        "opencode-websearch-cited@latest"
-        "cc-safety-net"
+        "opencode-pty@0.1.4"
+        "@mohak34/opencode-notifier@0.1.15"
+        "opencode-websearch-cited@1.2.0"
+        "cc-safety-net@0.7.1"
       ];
 
       provider = {
