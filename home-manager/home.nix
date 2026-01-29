@@ -64,6 +64,7 @@ in
     pkgs.nixd
     pkgs.nixfmt
     pkgs.nodejs
+    pkgs.nvim
     pkgs.nvim4vscode
     pkgs.ov
     pkgs.ripgrep
@@ -98,6 +99,8 @@ in
   ];
   home.sessionVariables.ARC = "${config.home.homeDirectory}/arcadia";
   home.sessionVariables.ARCADIA = "${config.home.homeDirectory}/arcadia";
+  home.sessionVariables.EDITOR = "nvim";
+  home.sessionVariables.VISUAL = "nvim";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
   home.sessionVariables.DO_NOT_TRACK = "1";
   home.sessionVariables.LC_ALL = "en_US.UTF-8";

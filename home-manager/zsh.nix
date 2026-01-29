@@ -17,6 +17,8 @@
       "cdi" = "zoxide query -a -i";
       "zi" = ''cd "$(zoxide query -a -i)"'';
       "zj" = "zellij";
+      "vi" = "nvim";
+      "vim" = "nvim";
     };
     plugins = [
       {

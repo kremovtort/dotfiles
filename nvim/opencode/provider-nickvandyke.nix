@@ -2,7 +2,7 @@
 # This is the plugin currently used in this config.
 { ... }:
 {
-  programs.nixvim.plugins.opencode = {
+  plugins.opencode = {
     enable = true;
     autoLoad = true;
     settings = {
@@ -19,7 +19,7 @@
     };
   };
 
-  programs.nixvim.keymaps = [
+  keymaps = [
     {
       mode = [
         "n"

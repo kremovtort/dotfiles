@@ -62,6 +62,7 @@
             overlays = [
               (final: prev: {
                 zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
+                nvim = inputs.nvim.packages.${prev.stdenv.hostPlatform.system}.default;
                 nvim4vscode = inputs.nvim.packages.${prev.stdenv.hostPlatform.system}.nvim4vscode;
                 jj-starship = inputs.jj-starship.packages.${prev.stdenv.hostPlatform.system}.default;
               })
@@ -88,7 +89,6 @@
           legacyPackages.homeConfigurations."kremovtort" = inputs.home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
             modules = [
-              inputs.nvim.homeModules.default
               inputs.agents.homeModules.default
               ./home-manager/home.nix
             ];
@@ -103,7 +103,6 @@
               {
                 inherit pkgs;
                 modules = [
-                  inputs.nvim.homeModules.default
                   inputs.agents.homeModules.default
                   ./home-manager/home.nix
                 ];

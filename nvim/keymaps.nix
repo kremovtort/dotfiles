@@ -1,5 +1,5 @@
 {
-  programs.nixvim.keymaps = [
+  keymaps = [
     # Better up/down for wrapped lines
     {
       mode = [
@@ -1258,7 +1258,7 @@
 
   # LSP-only keymaps (applied on LSP attach).
   # See: https://nix-community.github.io/nixvim/lsp/keymaps/index.html
-  programs.nixvim.lsp.keymaps = [
+  lsp.keymaps = [
     {
       mode = "n";
       key = "<leader>cl";

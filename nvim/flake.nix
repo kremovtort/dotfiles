@@ -43,22 +43,46 @@
       forAllSystems = nixpkgs.lib.genAttrs systems;
     in
     {
-      homeModules.default = import ./module.nix { inherit inputs self; };
+      lib = {
+        mkNvim =
+          {
+            system,
+            pkgs ? nixpkgs.legacyPackages.${system},
+            extraModules ? [ ],
+            extraSpecialArgs ? { },
+          }:
+          let
+            nixvim' = nixvim.legacyPackages.${system};
+          in
+          nixvim'.makeNixvimWithModule {
+            inherit pkgs;
+            module = {
+              imports = [ ./config/base.nix ] ++ extraModules;
+            };
+            extraSpecialArgs = {
+              nvimInputs = inputs;
+            }
+            // extraSpecialArgs;
+          };
+      };
 
-      # Standalone packages
       packages = forAllSystems (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           nixvim' = nixvim.legacyPackages.${system};
-          # Build base nvim for vscode
+
+          nvim-unwrapped = self.lib.mkNvim { inherit system pkgs; };
+
           nvim4vscode-unwrapped = nixvim'.makeNixvimWithModule {
             inherit pkgs;
             module = import ./vscode.nix;
           };
         in
         {
-          # Minimal Neovim for VSCode integration (renamed to avoid conflict)
+          default = nvim-unwrapped;
+          nvim = nvim-unwrapped;
+
           nvim4vscode = pkgs.runCommand "nvim4vscode" { } ''
             mkdir -p $out/bin
             ln -s ${nvim4vscode-unwrapped}/bin/nvim $out/bin/nvim4vscode
