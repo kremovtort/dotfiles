@@ -89,7 +89,7 @@ in
           type = "local";
           enabled = true;
           command = [
-            "npx"
+            "${pkgs.nodejs}/bin/npx"
             "-y"
             "@upstash/context7-mcp"
             "--api-key"
@@ -98,10 +98,16 @@ in
         };
 
         web_search = {
-          type = "remote";
-          enabled = false;
-          url = "https://api.z.ai/api/mcp/web_search_prime/mcp";
-          headers.Authorization = "Bearer {file:${config.sops.secrets.zai-api-key.path}}";
+          type = "local";
+          enabled = true;
+          command = [
+            "${pkgs.nodejs}/bin/npx"
+            "-y"
+            "exa-mcp-server"
+          ];
+          environment = {
+            EXA_API_KEY = "{file:${config.sops.secrets.exa-api-key.path}}";
+          };
         };
 
         grep_app = {
