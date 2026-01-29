@@ -48,7 +48,7 @@ in
 
       local inlay_hints_enabled = true
       local inlay_hints_exclude = { vue = true, haskell = true }
-      local folds_enabled = true
+      local folds_enabled = false
       local codelens_enabled = false
 
       if inlay_hints_enabled

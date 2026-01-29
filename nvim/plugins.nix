@@ -5,6 +5,7 @@
     ./plugins/vcsigns.nix
 
     ./plugins/auto-save.nix
+    ./plugins/origami.nix
     ./plugins/treesitter.nix
     ./plugins/lsp.nix
     ./plugins/supermaven.nix

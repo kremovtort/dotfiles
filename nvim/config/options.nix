@@ -15,6 +15,7 @@
     expandtab = true;
     fillchars = "foldopen: ,foldclose: ,fold: ,foldsep: ,diff:╱,eob: ";
     foldlevel = 99;
+    foldlevelstart = 99;
     foldmethod = "indent";
     formatoptions = "jcroqlnt";
     grepformat = "%f:%l:%c:%m";
