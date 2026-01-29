@@ -1,8 +1,16 @@
 # Minimal NixVim configuration for VSCode integration
-{ pkgs, ... }:
+{ lib, ... }:
 {
   imports = [
     ./plugins/langmapper.nix
+
+    # Reuse shared per-plugin modules.
+    ./plugins/treesitter.nix
+    ./plugins/leap.nix
+    ./plugins/mini-ai.nix
+    ./plugins/mini-surround.nix
+    ./plugins/ts-context-commentstring.nix
+    ./plugins/repeat.nix
   ];
 
   # =========================================================================
@@ -26,100 +34,17 @@
   };
 
   # =========================================================================
-  # Plugins (motion/text objects only)
+  # Plugins overrides (VSCode specifics)
   # =========================================================================
-  plugins = {
-    # Treesitter (needed for ts-context-commentstring)
-    treesitter = {
-      enable = true;
-      settings = {
-        highlight.enable = false; # VSCode handles highlighting
-        indent.enable = false;
-      };
-    };
-
-    # Leap (motion)
-    leap.enable = true;
-
-    # Flit (f/t with leap)
-    flit = {
-      enable = true;
-      settings.labeled_modes = "nx";
-    };
-
-    # Mini plugins
-    mini = {
-      enable = true;
-      modules = {
-        ai.n_lines = 500;
-        surround = {
-          mappings = {
-            add = "gza";
-            delete = "gzd";
-            find = "gzf";
-            find_left = "gzF";
-            highlight = "gzh";
-            replace = "gzr";
-            update_n_lines = "gzn";
-          };
-        };
-      };
-    };
-
-    # ts-context-commentstring
-    ts-context-commentstring.enable = true;
-
-    # repeat.nvim
-    repeat.enable = true;
+  plugins.treesitter.settings = {
+    highlight.enable = lib.mkForce false; # VSCode handles highlighting
+    indent.enable = lib.mkForce false;
   };
 
   # =========================================================================
   # Keymaps
   # =========================================================================
   keymaps = [
-    # Leap motions
-    {
-      mode = [
-        "n"
-        "x"
-        "o"
-      ];
-      key = "s";
-      action = "<Plug>(leap-forward)";
-      options.desc = "Leap forward";
-    }
-    {
-      mode = [
-        "n"
-        "x"
-        "o"
-      ];
-      key = "S";
-      action = "<Plug>(leap-backward)";
-      options.desc = "Leap backward";
-    }
-    # Russian layout
-    {
-      mode = [
-        "n"
-        "x"
-        "o"
-      ];
-      key = "ы";
-      action = "<Plug>(leap-forward)";
-      options.desc = "Leap forward";
-    }
-    {
-      mode = [
-        "n"
-        "x"
-        "o"
-      ];
-      key = "Ы";
-      action = "<Plug>(leap-backward)";
-      options.desc = "Leap backward";
-    }
-
     # Window navigation (Ctrl+hjkl) - VSCode commands
     {
       mode = [
@@ -358,26 +283,5 @@
       };
     }
   ];
-
-  # =========================================================================
-  # Extra Lua configuration
-  # =========================================================================
-  extraConfigLuaPre = ''
-    -- Russian keyboard layout support (langmap)
-    local function escape(str)
-      local escape_chars = [[;,."|\]]
-      return vim.fn.escape(str, escape_chars)
-    end
-
-    local en = [[`qwertyuiop[]asdfghjkl;'zxcvbnm]]
-    local ru = [[ёйцукенгшщзхъфывапролджэячсмить]]
-    local en_shift = [[~QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>]]
-    local ru_shift = [[ËЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ]]
-
-    vim.opt.langmap = vim.fn.join({
-      escape(ru_shift) .. ";" .. escape(en_shift),
-      escape(ru) .. ";" .. escape(en),
-    }, ",")
-  '';
 
 }

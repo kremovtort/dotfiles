@@ -1,0 +1,4 @@
+{ ... }:
+{
+  plugins.repeat.enable = true;
+}

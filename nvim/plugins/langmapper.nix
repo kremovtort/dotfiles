@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  options,
   ...
 }:
 let
@@ -9,12 +8,30 @@ let
   ruLayout = "ËЙЦУКЕНГШЩЗХЪ/ФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,ёйцукенгшщзхъфывапролджэячсмитьбю.";
 in
 {
+  # Built-in Neovim langmap (for motions/commands).
+  extraConfigLuaPre = lib.mkBefore ''
+    local function escape(str)
+      local escape_chars = [[;,."|\]]
+      return vim.fn.escape(str, escape_chars)
+    end
+
+    local en = [[`qwertyuiop[]asdfghjkl;'zxcvbnm]]
+    local ru = [[ёйцукенгшщзхъфывапролджэячсмить]]
+    local en_shift = [[~QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>]]
+    local ru_shift = [[ËЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ]]
+
+    vim.opt.langmap = vim.fn.join({
+      escape(ru_shift) .. ";" .. escape(en_shift),
+      escape(ru) .. ";" .. escape(en),
+    }, ",")
+  '';
+
   plugins.langmapper = {
     enable = true;
 
     # Ensure keymap wrappers are applied early.
     autoLoad = true;
-    automapping.enable = true; 
+    automapping.enable = true;
     automapping.argument = {
       buffer = true;
       global = true;

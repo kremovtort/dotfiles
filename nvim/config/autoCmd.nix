@@ -1,4 +1,3 @@
-{ ... }:
 {
   autoGroups.kremovtort_autocmds.clear = true;
 

@@ -57,7 +57,11 @@
           nixvim'.makeNixvimWithModule {
             inherit pkgs;
             module = {
-              imports = [ ./config/base.nix ] ++ extraModules;
+              imports = [
+                ./config.nix
+                ./plugins.nix
+              ]
+              ++ extraModules;
             };
             extraSpecialArgs = {
               nvimInputs = inputs;

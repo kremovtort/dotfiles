@@ -39,13 +39,19 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 │   └── zsh.nix               # Zsh shell configuration
 ├── nvim/                     # Neovim configuration (NixVim-based, separate flake)
 │   ├── flake.nix             # Neovim flake entry point
-│   ├── module.nix            # Main NixVim configuration
-│   ├── plugins.nix           # Plugin configurations (plus `nvim/plugins/`)
-│   ├── keymaps.nix           # Key mappings
-│   ├── autoCmd.nix           # Autocommands
-│   ├── icons.nix             # Icons and UI helpers
+│   ├── flake.lock            # Locked Neovim flake inputs
+│   ├── config.nix            # Base config module (imports `nvim/config/*`)
+│   ├── config/               # Core config split into modules
+│   │   ├── options.nix       # Neovim options
+│   │   ├── keymaps.nix       # Global (non-plugin) keymaps
+│   │   ├── autoCmd.nix       # Autocommands
+│   │   ├── colorscheme.nix   # Colorscheme setup
+│   │   └── clipboard.nix     # Clipboard/OSC52 handling
+│   ├── plugins.nix           # Plugin module aggregator (imports `nvim/plugins/*`)
+│   ├── plugins/              # Per-plugin modules (+ plugin-specific keymaps)
+│   │   └── opencode/         # OpenCode providers and shared config
 │   ├── vscode.nix            # VSCode-focused nvim build
-│   └── opencode/             # opencode.nvim providers and shared config
+│   └── README.md             # Neovim flake docs
 ├── agents/                   # AI agent configs (OpenCode/Cursor, skills, tools)
 │   ├── flake.nix             # Agents flake entry point
 │   ├── opencode.nix          # OpenCode home-manager module (installs rules/agents)
@@ -116,26 +122,37 @@ programs.<name> = {
 
 - Based on **NixVim** (declarative Neovim configuration via Nix)
 - Self-contained flake in `nvim/` directory
-- Plugin configs in `nvim/plugins.nix`
-- Key mappings in `nvim/keymaps.nix`
-- Core options in `nvim/module.nix`
-- Autocmds in `nvim/autoCmd.nix`
-- Extra per-plugin configs in `nvim/plugins/`
-- Russian keyboard layout support via `langmap`
-- AI integration via **opencode.nvim**
+- Base config is composed in `nvim/config.nix` (imports `nvim/config/*`)
+- Plugin config is composed in `nvim/plugins.nix` (imports `nvim/plugins/*`)
+- Global (non-plugin) keymaps live in `nvim/config/keymaps.nix`
+- Plugin-specific keymaps live next to the plugin config in `nvim/plugins/*.nix`
+- Autocmds live in `nvim/config/autoCmd.nix`
+- Russian keyboard layout support (`langmap` + langmapper.nvim) lives in `nvim/plugins/langmapper.nix`
+- Icons are provided via `_module.args.icons` from `nvim/plugins/icons.nix` (avoid `vim.g` globals)
+- OpenCode integration modules live in `nvim/plugins/opencode/`
 
 #### Adding Neovim Plugins
 
-For plugins with NixVim modules, add to `nvim/plugins.nix`:
+Prefer creating/adjusting a per-plugin module in `nvim/plugins/<plugin>.nix` and importing it from `nvim/plugins.nix`.
+
+For plugins with NixVim modules, set options inside the plugin module:
 
 ```nix
-plugins.<name> = {
-  enable = true;
-  settings = { ... };
-};
+{ ... }:
+{
+  plugins.<name> = {
+    enable = true;
+    settings = { ... };
+  };
+
+  # If the plugin needs keymaps, keep them here too.
+  keymaps = [
+    # ...
+  ];
+}
 ```
 
-For plugins without NixVim modules, use `extraPlugins` in `module.nix`:
+For plugins without NixVim modules, use `extraPlugins` inside the relevant plugin module (or, if truly shared, in `nvim/plugins.nix`):
 
 ```nix
 extraPlugins = [
@@ -178,7 +195,7 @@ Provides:
 
 ## Important Notes
 
-1. **Do not edit** `flake.lock` manually — use `nix flake update`
+1. **Do not edit** `flake.lock` / `nvim/flake.lock` manually — use `nix flake update`
 2. **Neovim config** is built via NixVim in `nvim/` (not symlinked)
 3. **Starship config** is at `starship.toml` (symlinked to `~/.config/`)
 4. **Catppuccin** is the primary theme family (Mocha in most tools; Espresso is used in some terminal/OpenCode assets)
