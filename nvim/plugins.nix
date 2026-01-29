@@ -14,6 +14,8 @@
     ./plugins/noice.nix
     ./plugins/notify.nix
 
+    ./plugins/trouble.nix
+
     ./plugins/icons.nix
     ./plugins/mini-pairs.nix
     ./plugins/mini-ai.nix
