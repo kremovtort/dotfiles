@@ -62,7 +62,6 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 ├── atuin/                    # Atuin shell history config
 ├── clickhouse-client/        # ClickHouse client config
 ├── ov.yaml                   # OpenCode configuration
-├── uv-tools.sh               # uv helpers
 ├── starship.toml             # Starship prompt config (legacy / direct)
 └── wezterm.lua               # WezTerm terminal config
 ```
