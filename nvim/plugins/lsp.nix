@@ -47,7 +47,7 @@ in
       if vim.bo[bufnr].buftype ~= "" then return end
 
       local inlay_hints_enabled = true
-      local inlay_hints_exclude = { vue = true, haskell = true }
+      local inlay_hints_exclude = { vue = true, cabal = true }
       local folds_enabled = false
       local codelens_enabled = false
 
