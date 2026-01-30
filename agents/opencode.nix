@@ -57,6 +57,7 @@ in
 
     ".config/opencode/skills/vcs-detect".source = "${agents}/skills/vcs-detect";
     ".config/opencode/skills/jujutsu".source = "${agents}/skills/jujutsu";
+    ".config/opencode/skills/add-nixvim-plugin".source = "${agents}/skills/add-nixvim-plugin";
     ".config/opencode/skills/ast-grep".source =
       "${agentsInputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source =
