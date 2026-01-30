@@ -24,6 +24,11 @@
       url = "github:algmyr/vclib.nvim";
       flake = false;
     };
+
+    plugins-virtual-types-nvim = {
+      url = "github:jubnzv/virtual-types.nvim";
+      flake = false;
+    };
   };
 
   outputs =

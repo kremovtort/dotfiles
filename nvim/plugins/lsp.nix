@@ -1,12 +1,36 @@
 {
+  pkgs,
+  lib,
   nvimInputs,
   icons,
   ...
 }:
 let
   nixvimLib = nvimInputs.nixvim.lib;
+
+  virtualTypes = pkgs.vimUtils.buildVimPlugin {
+    name = "virtual-types-nvim";
+    src = nvimInputs.plugins-virtual-types-nvim;
+  };
 in
 {
+  extraPlugins = [ virtualTypes ];
+
+  extraConfigLua = lib.mkAfter ''
+    -- virtual-types.nvim hard-codes TypeAnnot highlight; keep it theme-friendly.
+    do
+      local function set_type_annot_hl()
+        pcall(vim.api.nvim_set_hl, 0, "TypeAnnot", { link = "Comment" })
+      end
+
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        callback = set_type_annot_hl,
+      })
+
+      set_type_annot_hl()
+    end
+  '';
+
   plugins.lsp = {
     enable = true;
     servers = {
@@ -92,6 +116,32 @@ in
           end,
         })
       end
+
+      do
+        local enabled = vim.g._kremovtort_virtual_types_enabled
+        if enabled == nil then enabled = true end
+
+        if enabled
+          and client.supports_method
+          and client:supports_method("textDocument/codeLens")
+        then
+          local ok, virtualtypes = pcall(require, "virtualtypes")
+          if ok and virtualtypes and type(virtualtypes.on_attach) == "function" then
+            local ft = vim.bo[bufnr].filetype
+            local allow = {
+              ocaml = true,
+              ocamlinterface = true,
+              reason = true,
+            }
+
+            if allow[ft] then
+              pcall(vim.api.nvim_buf_call, bufnr, function()
+                virtualtypes.on_attach(client, bufnr)
+              end)
+            end
+          end
+        end
+      end
     '';
 
     luaConfig.post = ''
@@ -159,6 +209,31 @@ in
         end
       '';
       options.desc = "Toggle Inlay Hints";
+    }
+    {
+      mode = "n";
+      key = "<leader>uT";
+      action.__raw = ''
+        function()
+          local ok, vt = pcall(require, "virtualtypes")
+          if not ok or not vt then
+            vim.notify("virtual-types.nvim is not available", vim.log.levels.WARN)
+            return
+          end
+
+          local enabled = vim.g._kremovtort_virtual_types_enabled
+          if enabled == nil then enabled = true end
+
+          if enabled then
+            pcall(vt.disable)
+          else
+            pcall(vt.enable)
+          end
+
+          vim.g._kremovtort_virtual_types_enabled = not enabled
+        end
+      '';
+      options.desc = "Toggle Virtual Types";
     }
   ];
 

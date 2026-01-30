@@ -59,22 +59,6 @@
         "type": "github"
       }
     },
-    "plugins-haskell-tools": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1769424451,
-        "narHash": "sha256-8NKIvWLe4miYJgP8EfDqtPiA1KI+an/jphmFplqnBHI=",
-        "owner": "mrcjkb",
-        "repo": "haskell-tools.nvim",
-        "rev": "c7d0249f81bdcdd2b29dcf6aaf9b7926f88bc559",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mrcjkb",
-        "repo": "haskell-tools.nvim",
-        "type": "github"
-      }
-    },
     "plugins-opencode-nvim": {
       "flake": false,
       "locked": {
@@ -123,14 +107,30 @@
         "type": "github"
       }
     },
+    "plugins-virtual-types-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1680873610,
+        "narHash": "sha256-WznB8eiwG7dIKg4LeblUQwb6E8yxAFLnV1wMwWq5/JI=",
+        "owner": "jubnzv",
+        "repo": "virtual-types.nvim",
+        "rev": "d652ec0b1781bbb0e83dc588fb62d638006cf61e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jubnzv",
+        "repo": "virtual-types.nvim",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
         "nixvim": "nixvim",
-        "plugins-haskell-tools": "plugins-haskell-tools",
         "plugins-opencode-nvim": "plugins-opencode-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
-        "plugins-vcsigns-nvim": "plugins-vcsigns-nvim"
+        "plugins-vcsigns-nvim": "plugins-vcsigns-nvim",
+        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim"
       }
     },
     "systems": {
