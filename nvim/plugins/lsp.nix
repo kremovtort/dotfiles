@@ -97,11 +97,15 @@ in
     luaConfig.post = ''
       do
         local diag = ${nixvimLib.nixvim.lua.toLuaObject icons.diagnostics}
+        local border = "single"
 
         vim.diagnostic.config({
           underline = true,
           update_in_insert = false,
           severity_sort = true,
+          float = {
+            border = border,
+          },
           virtual_text = {
             spacing = 4,
             source = "if_many",
@@ -115,6 +119,10 @@ in
               [vim.diagnostic.severity.INFO] = diag.Info or "I",
             },
           },
+        })
+
+        vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
+          border = border,
         })
       end
     '';
