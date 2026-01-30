@@ -29,7 +29,6 @@ in
   plugins.langmapper = {
     enable = true;
 
-    # Ensure keymap wrappers are applied early.
     autoLoad = true;
     automapping.enable = true;
     automapping.argument = {
@@ -69,5 +68,9 @@ in
         "ru_win"
       ];
     };
+  
+    luaConfig.post = ''
+      require("langmapper").hack_get_keymap()
+    '';
   };
 }

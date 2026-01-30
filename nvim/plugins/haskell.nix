@@ -9,7 +9,6 @@
         };
       };
     };
-    autoLoad = true;
   };
 
   plugins."haskell-scope-highlighting".enable = false;

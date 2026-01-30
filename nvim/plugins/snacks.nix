@@ -101,6 +101,28 @@
   keymaps = [
     {
       mode = "n";
+      key = "<leader>e";
+      action.__raw = ''
+        function()
+          require("snacks").picker.pick({
+            source = "explorer",
+            jump = {close = true},
+            auto_close = true,
+            layout = {preset = "default", preview = "preview"},
+            win = {
+              list = {
+                keys = {
+                  ["<C-c>"] = "close",
+                  ["<C-t>"] = "",
+                },
+              },
+            },
+          })
+        end
+      '';
+    }
+    {
+      mode = "n";
       key = "<leader>n";
       action.__raw = "function() require('snacks').picker.notifications() end";
       options.desc = "Notification History";

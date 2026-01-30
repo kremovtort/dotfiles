@@ -32,7 +32,7 @@
     ./plugins/haskell.nix
 
     ./plugins/edgy.nix
-    ./plugins/neo-tree.nix
+    # ./plugins/neo-tree.nix
     ./plugins/toggleterm.nix
 
     ./plugins/repeat.nix
