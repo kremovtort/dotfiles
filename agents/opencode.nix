@@ -162,9 +162,12 @@ in
 
         openrouter = {
           options = {
+            apiKey = "{file:${config.sops.secrets.openrouter-api-key.path}}";
             websearch_cited.model = "x-ai/grok-4.1-fast";
           };
         };
+
+        opencode.options.apiKey = "{file:${config.sops.secrets.opencode-api-key.path}}";
 
         cursor.name = "Cursor";
       };

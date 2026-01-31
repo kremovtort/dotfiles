@@ -27,5 +27,6 @@
     secrets.tavily-api-key = {};
     secrets.zai-api-key = {};
     secrets.exa-api-key = {};
+    secrets.opencode-api-key = {};
   };
 }
