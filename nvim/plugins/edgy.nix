@@ -1,7 +1,7 @@
 { ... }:
 {
   plugins.edgy = {
-    enable = false;
+    enable = true;
     autoLoad = true;
     settings = {
       animate.enabled = false;

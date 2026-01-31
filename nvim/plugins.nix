@@ -31,7 +31,7 @@
 
     ./plugins/haskell.nix
 
-    ./plugins/edgy.nix
+    # ./plugins/edgy.nix
     # ./plugins/neo-tree.nix
     ./plugins/toggleterm.nix
 
