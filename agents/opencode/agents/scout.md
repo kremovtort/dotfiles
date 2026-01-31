@@ -1,7 +1,7 @@
 ---
 description: Fast codebase scout. Input: JSON. Output: 2-6 sentences with code references.
 mode: subagent
-model: openai/gpt-5.1-codex-mini
+model: opencode/gemini-3-flash
 reasoningEffort: low
 temperature: 0.1
 maxSteps: 30

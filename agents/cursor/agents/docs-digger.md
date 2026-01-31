@@ -41,6 +41,7 @@ Allowed tools (Cursor):
 - **Shell**: local CLI docs (`man`, `info`, `<cmd> --help`) for quotable excerpts (non-interactive output preferred).
 - **context7 (MCP)**: official documentation / API references (quote snippets + cite source).
 - **grep_app (MCP)**: search GitHub for real-world usage examples (cite repo+path; prefer pinned/commit URLs when possible).
+- **web_search (MCP)**: Exa-backed web search for fresh/long-tail sources; treat results as a locator only and always follow with WebFetch to extract verbatim quotes.
 - **WebSearch**: discover authoritative sources.
 - **WebFetch**: fetch a URL and extract quotable text/code.
 - Local repo context (read-only): **Glob/Grep/Read/SemanticSearch** to form better doc queries; quote tiny excerpts with `path:line`.
@@ -49,7 +50,7 @@ Workflow (default):
 1) Parse `q` and derive 3-8 strong search terms (APIs, flags, module names, error strings).
 2) If the query is about a CLI/tool: check `man` / `--help` first and quote the exact option/section.
 3) Use Context7 for official docs when applicable.
-4) Use WebSearch as a locator; then WebFetch authoritative pages to quote exact text.
+4) Use WebSearch (or `web_search` MCP when you need fresher/broader results) as a locator; then WebFetch authoritative pages to quote exact text.
 5) Use GitHub examples only when official docs are insufficient; clearly label as “GitHub example”.
 6) Produce the final citation pack in Markdown.
 
@@ -59,10 +60,13 @@ Output format (Markdown):
 
 ### <Short label>
 <Optional 1-3 sentence comment in the user’s language>
-> <verbatim quote...>
+<blockquote>
+<verbatim quote...>
+</blockquote>
 Source: <url | `man <cmd>` | `owner/repo:path`  | `path/to/file.ext:line`>
 
-- If quoting code, use fenced code blocks instead of `>` and still include `Source: ...`.
+- For non-code quotes, use an HTML `<blockquote>` tag (not Markdown `>`).
+- If quoting code, use fenced code blocks and still include `Source: ...`.
 - If you cannot find any directly quotable material, return:
   - `## Citations` with a brief note
   - `## Sources` list of the best links to check next (no long summaries)

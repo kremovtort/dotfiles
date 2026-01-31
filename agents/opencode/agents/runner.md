@@ -1,7 +1,7 @@
 ---
 description: Run build/tests and return concise status; on failure return raw errors with file:line refs. Input: JSON. Output: TOML (in a Markdown ```toml``` fenced block).
 mode: subagent
-model: openai/gpt-5.1-codex-mini
+model: opencode/gemini-3-flash
 reasoningEffort: low
 temperature: 0.1
 maxSteps: 20
