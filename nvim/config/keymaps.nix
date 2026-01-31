@@ -214,20 +214,79 @@
       options.desc = "Switch to Other Buffer";
     }
 
+    # Tab navigation
+    {
+      mode = "n";
+      key = "gtn";
+      action = "<cmd>tabnew<cr>";
+      options.desc = "New Tab";
+    }
+    {
+      mode = "n";
+      key = "gtd";
+      action = "<cmd>tabclose<cr>";
+      options.desc = "Close Tab";
+    }
+    {
+      mode = "n";
+      key = "g1";
+      action = "1gt";
+      options.desc = "Go to Tab 1";
+    }
+    {
+      mode = "n";
+      key = "g2";
+      action = "2gt";
+      options.desc = "Go to Tab 2";
+    }
+    {
+      mode = "n";
+      key = "g3";
+      action = "3gt";
+      options.desc = "Go to Tab 3";
+    }
+    {
+      mode = "n";
+      key = "g4";
+      action = "4gt";
+      options.desc = "Go to Tab 4";
+    }
+    {
+      mode = "n";
+      key = "g5";
+      action = "5gt";
+      options.desc = "Go to Tab 5";
+    }
+    {
+      mode = "n";
+      key = "g6";
+      action = "6gt";
+      options.desc = "Go to Tab 6";
+    }
+    {
+      mode = "n";
+      key = "g7";
+      action = "7gt";
+      options.desc = "Go to Tab 7";
+    }
+    {
+      mode = "n";
+      key = "g8";
+      action = "8gt";
+      options.desc = "Go to Tab 8";
+    }
+    {
+      mode = "n";
+      key = "g9";
+      action = "9gt";
+      options.desc = "Go to Tab 9";
+    }
+
     # Buffer delete
     {
       mode = "n";
       key = "<leader>bd";
-      action.__raw = ''
-        function()
-          local bufnr = 0
-          if vim.bo[bufnr].modified then
-            local choice = vim.fn.confirm("Buffer modified. Delete anyway?", "&Yes\n&No", 2)
-            if choice ~= 1 then return end
-          end
-          vim.api.nvim_buf_delete(bufnr, { force = true })
-        end
-      '';
+      action.__raw = "function() require('snacks').bufdelete() end";
       options.desc = "Delete Buffer";
     }
 
@@ -383,7 +442,7 @@
     {
       mode = "n";
       key = "<leader>uA";
-      action.__raw = "function() vim.o.showtabline = vim.o.showtabline == 0 and 2 or 0 end";
+      action.__raw = "function() vim.o.showtabline = vim.o.showtabline == 0 and 1 or 0 end";
       options.desc = "Toggle Tabline";
     }
     {

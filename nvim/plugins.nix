@@ -41,6 +41,7 @@
 
     ./plugins/langmapper.nix
     ./plugins/lualine.nix
+    ./plugins/tabby.nix
 
     ./plugins/opencode/provider-nickvandyke.nix
   ];

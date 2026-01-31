@@ -24,6 +24,7 @@
     inccommand = "nosplit";
     jumpoptions = "view";
     laststatus = 3;
+    showtabline = 1;
     linebreak = true;
     list = true;
     mouse = "a";
