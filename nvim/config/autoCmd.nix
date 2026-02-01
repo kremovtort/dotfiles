@@ -38,34 +38,19 @@
       group = "kremovtort_autocmds";
       pattern = "term://*";
       callback.__raw = ''
-        function()
+        function(ev)
           vim.opt_local.number = false
           vim.opt_local.relativenumber = false
-          vim.cmd("startinsert")
-        end
-      '';
-    }
 
-    # Disable mouse/trackpad scrolling in opencode terminal window
-    {
-      event = "FileType";
-      group = "kremovtort_autocmds";
-      pattern = "opencode_terminal";
-      callback.__raw = ''
-        function(ev)
-          local modes = { "n", "i", "v", "t" }
-          for _, key in ipairs({
-            "<ScrollWheelUp>",
-            "<ScrollWheelDown>",
-            "<S-ScrollWheelUp>",
-            "<S-ScrollWheelDown>",
-            "<C-ScrollWheelUp>",
-            "<C-ScrollWheelDown>",
-            "<ScrollWheelLeft>",
-            "<ScrollWheelRight>",
-          }) do
-            pcall(vim.keymap.del, modes, key, { buffer = ev.buf })
-          end
+          -- Avoid forcing insert mode when a plugin briefly switches buffers.
+          -- Only enter insert if we are still in this terminal buffer
+          -- on the next tick (typical for user-driven :term enters).
+          vim.schedule(function()
+            if not vim.api.nvim_buf_is_valid(ev.buf) then return end
+            if vim.api.nvim_get_current_buf() ~= ev.buf then return end
+
+            vim.cmd("startinsert")
+          end)
         end
       '';
     }
