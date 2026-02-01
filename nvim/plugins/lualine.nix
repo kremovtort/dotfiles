@@ -31,7 +31,7 @@
                 b = mix(c1 % 256, c2 % 256, t),
               }
             end
-            local blended = blend(fg, bg, 0.55)
+            local blended = blend(fg, bg, 0.7)
             local hex = string.format("#%02x%02x%02x", blended.r, blended.g, blended.b)
             pcall(vim.api.nvim_set_hl, 0, "LualineCSeparator", { fg = hex, bg = hls.bg, default = true })
           else
@@ -100,6 +100,22 @@
           callback = schedule_update_lualine_jj_branch,
         })
 
+        -- Refresh lualine when starting/stopping macro recording.
+        vim.api.nvim_create_autocmd("RecordingEnter", {
+          callback = function()
+            pcall(require("lualine").refresh)
+          end,
+        })
+
+        vim.api.nvim_create_autocmd("RecordingLeave", {
+          callback = function()
+            -- reg_recording() clears slightly after the event.
+            vim.defer_fn(function()
+              pcall(require("lualine").refresh)
+            end, 50)
+          end,
+        })
+
         vim.api.nvim_create_autocmd("ColorScheme", {
           callback = function()
             set_lualine_term_hl()
@@ -122,8 +138,8 @@
           right = "";
         };
         component_separators = {
-          left = "";
-          right = "";
+          left = "";
+          right = "";
         };
         disabled_filetypes.statusline = [
           "dashboard"
@@ -157,7 +173,7 @@
                 return vim.fn.fnamemodify(root, ":t")
               end
             '';
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "diagnostics";
@@ -167,7 +183,7 @@
               info = icons.diagnostics.Info;
               hint = icons.diagnostics.Hint;
             };
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "filetype";
@@ -259,7 +275,7 @@
               left = -1;
               right = 1;
             };
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "diff";
@@ -291,6 +307,16 @@
         ];
 
         lualine_x = [
+          {
+            __unkeyed-1.__raw = ''
+              function()
+                local reg = vim.fn.reg_recording()
+                if reg == "" then return "" end
+                return "%#@error#󰑋 " .. reg .. "%*"
+              end
+            '';
+            separator = "%#LualineCSeparator#%*";
+          }
           {
             __unkeyed-1 = "lsp_status";
             icon = ""; # f013
