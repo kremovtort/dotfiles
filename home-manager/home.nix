@@ -175,7 +175,7 @@ in
       theme = "catppuccin-espresso";
       shell-integration-features = true;
       font-family = "JetBrainsMono Nerd Font Mono";
-      font-size = 12;
+      font-size = 11.5;
       macos-titlebar-style = "tabs";
       macos-option-as-alt = true;
       # Pass Cmd+[, Cmd+], Cmd+' to Neovim as <D-...> via CSI u protocol

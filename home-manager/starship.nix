@@ -42,6 +42,7 @@
       kotlin.format = "(via [$symbol($version )]($style))";
       lua.format = "(via [$symbol($version )]($style))";
       nim.format = "(via [$symbol($version )]($style))";
+      nix_shell.symbol = "❄️ ";
       nodejs.format = "(via [$symbol($version )]($style))";
       ocaml.format = ''(via [$symbol($version )(\($switch_indicator$switch_name\) )]($style))'';
       opa.format = "(via [$symbol($version )]($style))";
