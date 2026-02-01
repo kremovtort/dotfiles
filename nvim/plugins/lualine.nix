@@ -116,6 +116,15 @@
       options = {
         theme = "auto";
         globalstatus = true;
+        # Use slanted Powerline separators instead of arrow ones.
+        section_separators = {
+          left = "";
+          right = "";
+        };
+        component_separators = {
+          left = "";
+          right = "";
+        };
         disabled_filetypes.statusline = [
           "dashboard"
           "alpha"
@@ -148,7 +157,7 @@
                 return vim.fn.fnamemodify(root, ":t")
               end
             '';
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "diagnostics";
@@ -158,7 +167,7 @@
               info = icons.diagnostics.Info;
               hint = icons.diagnostics.Hint;
             };
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "filetype";
@@ -250,7 +259,7 @@
               left = -1;
               right = 1;
             };
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "diff";
