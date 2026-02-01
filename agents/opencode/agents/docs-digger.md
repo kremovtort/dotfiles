@@ -1,7 +1,7 @@
 ---
-description: Documentation research agent. Input: JSON. Output: Markdown quotes with sources.
+description: "Documentation research agent. Input: JSON. Output: Markdown quotes with sources."
 mode: subagent
-model: opencode/gemini-3-flash
+model: opencode/minimax-m2.1
 reasoningEffort: high
 temperature: 0.0
 maxSteps: 40

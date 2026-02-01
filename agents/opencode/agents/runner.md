@@ -1,9 +1,9 @@
 ---
-description: Run build/tests and return concise status; on failure return raw errors with file:line refs. Input: JSON. Output: TOML (in a Markdown ```toml``` fenced block).
+description: "Run build/tests and return concise status; on failure return raw errors with file:line refs. Input: JSON. Output: TOML (in a Markdown ```toml``` fenced block)."
 mode: subagent
-model: opencode/gemini-3-flash
+model: opencode/minimax-m2.1
 reasoningEffort: low
-temperature: 0.1
+temperature: 0.0
 maxSteps: 20
 permission:
   edit: deny
