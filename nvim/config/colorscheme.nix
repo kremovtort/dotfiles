@@ -11,6 +11,13 @@
         neotree = true;
         leap = true;
       };
+      lsp_styles.underlines = {
+        errors = ["undercurl"];
+        hints = ["undercurl"];
+        warnings = ["undercurl"];
+        information = ["undercurl"];
+        ok = ["undercurl"];
+      };
       color_overrides = {
         mocha = {
           base = "#1c1c1c";
