@@ -52,6 +52,10 @@
           group = "git";
         }
         {
+          __unkeyed-1 = "<leader>o";
+          group = "overseer";
+        }
+        {
           __unkeyed-1 = "<leader>j";
           group = "vcs";
           icon = "";

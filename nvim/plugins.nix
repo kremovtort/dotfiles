@@ -16,6 +16,8 @@
 
     ./plugins/trouble.nix
 
+    ./plugins/overseer.nix
+
     ./plugins/icons.nix
     ./plugins/mini-pairs.nix
     ./plugins/mini-ai.nix

@@ -10,13 +10,14 @@
         blink_cmp.enable = true;
         neotree = true;
         leap = true;
+        overseer = true;
       };
       lsp_styles.underlines = {
-        errors = ["undercurl"];
-        hints = ["undercurl"];
-        warnings = ["undercurl"];
-        information = ["undercurl"];
-        ok = ["undercurl"];
+        errors = [ "undercurl" ];
+        hints = [ "undercurl" ];
+        warnings = [ "undercurl" ];
+        information = [ "undercurl" ];
+        ok = [ "undercurl" ];
       };
       color_overrides = {
         mocha = {
