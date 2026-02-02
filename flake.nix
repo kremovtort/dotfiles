@@ -116,5 +116,7 @@
             modules = [ ./darwin/configuration.nix ];
           };
         };
+    } // { 
+      lib.mkNvim = inputs.nvim.lib.mkNvim;
     };
 }
