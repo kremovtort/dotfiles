@@ -2,6 +2,9 @@
 {
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
 
+  home.sessionVariables.SOY_TOKEN = ''$(cat "${config.sops.secrets.soy-token.path}")'';
+  home.sessionVariables.VMCTL_TOKEN = ''$(cat "${config.sops.secrets.vmctl-token.path}")'';
+
   home.packages = [
     pkgs.age
     pkgs.sops
@@ -28,5 +31,7 @@
     secrets.zai-api-key = {};
     secrets.exa-api-key = {};
     secrets.opencode-api-key = {};
+    secrets.soy-token = {};
+    secrets.vmctl-token = {};
   };
 }
