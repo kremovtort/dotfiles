@@ -33,5 +33,6 @@
     secrets.opencode-api-key = {};
     secrets.soy-token = {};
     secrets.vmctl-token = {};
+    secrets.mcp-token = {};
   };
 }
