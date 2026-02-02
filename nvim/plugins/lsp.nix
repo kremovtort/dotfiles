@@ -34,6 +34,8 @@ in
   plugins.lsp = {
     enable = true;
     servers = {
+      bashls.enable = true;
+      jsonls.enable = true;
       lua_ls = {
         enable = true;
         settings = {
@@ -57,7 +59,7 @@ in
         };
       };
       nixd.enable = true;
-      bashls.enable = true;
+      yamlls.enable = true;
     };
 
     capabilities = ''

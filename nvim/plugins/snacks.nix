@@ -70,6 +70,8 @@
       quickfile.enabled = true;
       picker = {
         enabled = true;
+        matcher.cwd_bonus = true;
+        matcher.frecency = true;
         win.input.keys = {
           "<a-c>" = {
             __unkeyed-1 = "toggle_cwd";
