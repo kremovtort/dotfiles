@@ -9,7 +9,7 @@
     autowrite = true;
     clipboard.__raw = ''vim.env.SSH_CONNECTION and "" or "unnamedplus"'';
     completeopt = "menu,menuone,noselect";
-    conceallevel = 2;
+    conceallevel = 0;
     confirm = true;
     cursorline = true;
     expandtab = true;
