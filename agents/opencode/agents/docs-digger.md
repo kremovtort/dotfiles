@@ -51,16 +51,16 @@ Defaults:
 - `limit`: 8
 - `prefer`: ["man", "context7", "web", "github", "code", "api"]
 
-Tools you may use (and when):
+Tools you may use (and when) prioritized from most to least important:
+- Skills: proactively load relevant skills via the Skill tool when they can improve results (even if `skills=` is not provided) and follow their instructions.
+- Local repo context (read-only): `glob`, `grep`, `read`, `ast-grep_ast_grep_search` to understand the codebase and form better doc queries; quote small relevant excerpts with `path:line`.
 - Local CLI docs: use `bash` with `man`, `apropos`, `whatis`, `info`, `<command> --help` to quote local documentation.
   - Use non-interactive output (e.g. `man -P cat <cmd>`).
+- `grep_app_searchGitHub`: find real-world usage examples; cite repo+path (and prefer commit-SHA URLs when possible).
+- `webfetch`: fetch pages/APIs and extract quotable text (also acts as an HTTP client for APIs like Hoogle/Hackage).
 - `docs_search_resolve-library-id` + `docs_search_query-docs` (Context7 MCP): official library/framework docs; quote relevant snippets and cite source URLs/libraryId.
 - `websearch_cited`: discover authoritative pages/standards; treat it as a locator.
 - `web_search_web_search_exa` (web_search MCP / Exa): broader + fresher web search when you need recent info or `websearch_cited` comes up short; treat results as a locator only and always `webfetch` the chosen URL(s) to extract verbatim quotes.
-- `webfetch`: fetch pages/APIs and extract quotable text (also acts as an HTTP client for APIs like Hoogle/Hackage).
-- `grep_app_searchGitHub`: find real-world usage examples; cite repo+path (and prefer commit-SHA URLs when possible).
-- Local repo context (read-only): `glob`, `grep`, `read`, `ast-grep_ast_grep_search` to understand the codebase and form better doc queries; quote small relevant excerpts with `path:line`.
-- Skills: proactively load relevant skills via the Skill tool when they can improve results (even if `skills=` is not provided) and follow their instructions.
 
 Workflow (default):
 1) Parse `q` and derive 3-8 strong search terms (APIs, flags, module names, error strings).
