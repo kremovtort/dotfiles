@@ -29,6 +29,11 @@
       url = "github:jubnzv/virtual-types.nvim";
       flake = false;
     };
+
+    plugins-seeker-nvim = {
+      url = "github:2KAbhishek/seeker.nvim";
+      flake = false;
+    };
   };
 
   outputs =

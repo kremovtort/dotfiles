@@ -29,6 +29,7 @@
     ./plugins/ts-context-commentstring.nix
     ./plugins/grug-far.nix
     ./plugins/snacks.nix
+    ./plugins/seeker.nix
     ./plugins/render-markdown.nix
 
     ./plugins/haskell.nix

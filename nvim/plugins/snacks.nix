@@ -178,17 +178,6 @@
     }
     {
       mode = "n";
-      key = "<leader><space>";
-      action.__raw = ''
-        function()
-          local root = vim.fs.root(0, { ".git", ".jj" }) or vim.fs.normalize((vim.uv or vim.loop).cwd() or ".")
-          require("snacks").picker.files({ cwd = root })
-        end
-      '';
-      options.desc = "Find Files (Root Dir)";
-    }
-    {
-      mode = "n";
       key = "<leader>fb";
       action.__raw = "function() require('snacks').picker.buffers() end";
       options.desc = "Buffers";
@@ -207,26 +196,9 @@
     }
     {
       mode = "n";
-      key = "<leader>ff";
-      action.__raw = ''
-        function()
-          local root = vim.fs.root(0, { ".git", ".jj" }) or vim.fs.normalize((vim.uv or vim.loop).cwd() or ".")
-          require("snacks").picker.files({ cwd = root })
-        end
-      '';
-      options.desc = "Find Files (Root Dir)";
-    }
-    {
-      mode = "n";
       key = "<leader>fF";
       action.__raw = "function() require('snacks').picker.files({ cwd = (vim.uv or vim.loop).cwd() or '.' }) end";
       options.desc = "Find Files (cwd)";
-    }
-    {
-      mode = "n";
-      key = "<leader>fg";
-      action.__raw = "function() require('snacks').picker.git_files() end";
-      options.desc = "Find Files (git-files)";
     }
     {
       mode = "n";
@@ -281,17 +253,6 @@
       key = "<leader>sB";
       action.__raw = "function() require('snacks').picker.grep_buffers() end";
       options.desc = "Grep Open Buffers";
-    }
-    {
-      mode = "n";
-      key = "<leader>sg";
-      action.__raw = ''
-        function()
-          local root = vim.fs.root(0, { ".git", ".jj" }) or vim.fs.normalize((vim.uv or vim.loop).cwd() or ".")
-          require("snacks").picker.grep({ cwd = root })
-        end
-      '';
-      options.desc = "Grep (Root Dir)";
     }
     {
       mode = "n";
