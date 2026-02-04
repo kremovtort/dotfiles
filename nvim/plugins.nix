@@ -46,6 +46,8 @@
     ./plugins/lualine.nix
     ./plugins/tabby.nix
 
+    ./plugins/nvim-bqf.nix
+
     ./plugins/opencode/provider-nickvandyke.nix
   ];
 }
