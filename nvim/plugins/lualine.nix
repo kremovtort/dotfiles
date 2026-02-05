@@ -1,5 +1,7 @@
 { icons, ... }:
 {
+  extraFiles."lua/plugins/lualine/branch.lua".source = ./lualine/branch.lua;
+
   plugins.lualine = {
     enable = true;
 
@@ -39,66 +41,12 @@
           end
         end
 
-        local function trim(s)
-          return (s or ""):gsub("^%s+", ""):gsub("%s+$", "")
-        end
-
-        local function update_lualine_jj_branch()
-          local ok_jj, jj_root = pcall(vim.fs.root, 0, { ".jj" })
-          if not (ok_jj and jj_root and jj_root ~= "") then
-            vim.g.__lualine_jj_branch = nil
-            pcall(require("lualine").refresh)
-            return
+        do
+          local ok, mod = pcall(require, "plugins.lualine.branch")
+          if ok and mod and mod.setup then
+            mod.setup()
           end
-
-          local function run_async(cmd, cb)
-            vim.system(cmd, { text = true, cwd = jj_root }, function(res)
-              cb(trim(res.stdout), res.code)
-            end)
-          end
-
-          run_async({
-            "jj",
-            "log",
-            "-r",
-            "heads(::@ & bookmarks())",
-            "-T",
-            "bookmarks.map(|b| b.name()).join('\\n')",
-            "--no-graph",
-            "-n",
-            "1",
-          }, function(bookmark, code)
-            if code ~= 0 then
-              vim.g.__lualine_jj_branch = "jj"
-              return
-            end
-
-            if bookmark == "" then
-              vim.g.__lualine_jj_branch = "jj"
-              pcall(require("lualine").refresh)
-              return
-            end
-
-            run_async({ "jj", "log", "--count", "-r", (bookmark .. "..@") }, function(count_str)
-              local count = tonumber(count_str) or 0
-              vim.g.__lualine_jj_branch = count > 0 and (bookmark .. "~" .. tostring(count)) or bookmark
-              pcall(require("lualine").refresh)
-            end)
-          end)
         end
-
-        local function schedule_update_lualine_jj_branch()
-          if vim.g.__lualine_jj_branch_running then return end
-          vim.g.__lualine_jj_branch_running = true
-          vim.defer_fn(function()
-            update_lualine_jj_branch()
-            vim.g.__lualine_jj_branch_running = false
-          end, 10)
-        end
-
-        vim.api.nvim_create_autocmd({ "BufEnter", "DirChanged", "VimEnter" }, {
-          callback = schedule_update_lualine_jj_branch,
-        })
 
         -- Refresh lualine when starting/stopping macro recording.
         vim.api.nvim_create_autocmd("RecordingEnter", {
@@ -119,12 +67,10 @@
         vim.api.nvim_create_autocmd("ColorScheme", {
           callback = function()
             set_lualine_term_hl()
-            schedule_update_lualine_jj_branch()
           end,
         })
 
         set_lualine_term_hl()
-        schedule_update_lualine_jj_branch()
       end
     '';
 
@@ -155,7 +101,8 @@
           {
             __unkeyed-1.__raw = ''
               function()
-                local branch = vim.g.__lualine_jj_branch or (vim.b.gitsigns_head or "")
+                local ok, mod = pcall(require, "plugins.lualine.branch")
+                local branch = ok and mod and mod.get and mod.get(0) or ""
                 if branch == "" then
                   return ""
                 end
