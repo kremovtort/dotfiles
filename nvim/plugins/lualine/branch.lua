@@ -13,6 +13,55 @@ local function now_ms()
   return math.floor(vim.fn.reltimefloat(vim.fn.reltime()) * 1000)
 end
 
+local function is_dir(path)
+  if not path or path == "" then
+    return false
+  end
+  if not uv or not uv.fs_stat then
+    return vim.fn.isdirectory(path) == 1
+  end
+  local stat = uv.fs_stat(path)
+  return stat and stat.type == "directory" or false
+end
+
+local function normalize_dir(path)
+  path = tostring(path or "")
+  if path == "" then
+    return ""
+  end
+
+  -- Expand only when needed (avoid vim.fn in hot paths).
+  if not path:find("~", 1, true) and not path:find("$", 1, true) then
+    return path
+  end
+
+  -- Expand ~ and env vars, but avoid forcing :p on non-path strings.
+  local expanded = vim.fn.expand(path)
+  if expanded == "" then
+    return path
+  end
+  return expanded
+end
+
+local function fallback_cwd()
+  do
+    local ok, cwd = pcall(vim.fn.getcwd)
+    if ok then
+      cwd = normalize_dir(cwd)
+      if is_dir(cwd) then
+        return cwd
+      end
+    end
+  end
+
+  local home = normalize_dir(vim.env.HOME or "")
+  if is_dir(home) then
+    return home
+  end
+
+  return "/"
+end
+
 local function safe_refresh_lualine()
   pcall(require("lualine").refresh)
 end
@@ -29,7 +78,7 @@ local function buf_context_dir(bufnr)
   bufnr = norm_bufnr(bufnr)
 
   if not vim.api.nvim_buf_is_valid(bufnr) then
-    return vim.fn.getcwd()
+    return fallback_cwd()
   end
 
   local bt = vim.bo[bufnr].buftype
@@ -37,20 +86,26 @@ local function buf_context_dir(bufnr)
     local bufname = vim.api.nvim_buf_get_name(bufnr)
     local cwd = bufname:match("^term://(.-)//%d+:")
     if cwd and cwd ~= "" then
-      return cwd
+      cwd = normalize_dir(cwd)
+      if is_dir(cwd) then
+        return cwd
+      end
     end
-    return vim.fn.getcwd()
+    return fallback_cwd()
   end
 
   local name = vim.api.nvim_buf_get_name(bufnr)
   if name ~= "" and not name:find("://", 1, true) then
     local dir = vim.fs.dirname(name)
     if dir and dir ~= "" then
-      return dir
+      dir = normalize_dir(dir)
+      if is_dir(dir) then
+        return dir
+      end
     end
   end
 
-  return vim.fn.getcwd()
+  return fallback_cwd()
 end
 
 local function find_root(source, markers)
@@ -61,11 +116,38 @@ local function find_root(source, markers)
 end
 
 local function system_async(cmd, opts, cb)
+  if vim.in_fast_event and vim.in_fast_event() then
+    -- vim.system() callbacks run in fast-event context; schedule any follow-up
+    -- system calls back onto the main loop.
+    local cmd2 = vim.deepcopy(cmd)
+    local opts2 = opts and vim.deepcopy(opts) or nil
+    vim.schedule(function()
+      system_async(cmd2, opts2, cb)
+    end)
+    return
+  end
+
   opts = opts or {}
   opts.text = true
-  vim.system(cmd, opts, function(res)
-    cb(trim(res.stdout), res.code, res)
+  if opts.cwd then
+    opts.cwd = normalize_dir(opts.cwd)
+    if not is_dir(opts.cwd) then
+      opts.cwd = fallback_cwd()
+    end
+  else
+    -- If Neovim's current cwd is invalid (e.g. after unmount), vim.system can error.
+    opts.cwd = fallback_cwd()
+  end
+
+  local ok, err = pcall(function()
+    vim.system(cmd, opts, function(res)
+      cb(trim(res.stdout), res.code, res)
+    end)
   end)
+
+  if not ok then
+    cb("", 127, { stderr = tostring(err) })
+  end
 end
 
 local function json_decode(s)

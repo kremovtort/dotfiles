@@ -31,7 +31,7 @@
     number = true;
     pumblend = 10;
     pumheight = 10;
-    relativenumber = true;
+    relativenumber = false;
     ruler = false;
     scrolloff = 4;
     sessionoptions = [
