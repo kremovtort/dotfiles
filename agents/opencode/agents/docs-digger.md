@@ -17,6 +17,7 @@ permission:
     "git push*": deny
     "git reset*": deny
     "jj *": deny
+    "jj help *": allow
 ---
 
 You are **Docs Digger** — a documentation research subagent designed to avoid bloating the parent agent context.
