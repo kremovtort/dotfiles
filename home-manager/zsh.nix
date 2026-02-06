@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, system, ... }:
 {
   home.packages = [
     (pkgs.writeShellScriptBin "lla-for-fzf" ''
@@ -40,6 +40,10 @@
     ];
     initContent =
       let
+        darwinUlimit = lib.mkIf (system == "aarch64-darwin") (lib.mkOrder 1 ''
+          ulimit -Sn 8192
+        '');
+
         beforeZsh = lib.mkOrder 500 ''
           CATPUCCIN_COLORS_FZF="bg+:#2c2c2c,bg:#1c1c1c,spinner:#f5e0dc,hl:#f38ba8,fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc,marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8,selected-bg:#3c3c3c"
 
@@ -65,6 +69,7 @@
         '';
       in
       lib.mkMerge [
+        darwinUlimit
         beforeZsh
         afterAll
       ];
