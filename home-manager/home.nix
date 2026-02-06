@@ -90,15 +90,15 @@ in
   home.shell.enableZshIntegration = true;
   home.sessionPath = [
     "/opt/homebrew/bin"
-    "/a"
     "/codenv/arcadia"
+    "${config.home.homeDirectory}/arcadia"
     "${config.home.homeDirectory}/.local/bin"
     "${config.home.homeDirectory}/.rd/bin"
     "${config.home.homeDirectory}/.npm-globals/bin"
     "${config.home.homeDirectory}/.bun/bin"
   ];
-  home.sessionVariables.ARC = "/a";
-  home.sessionVariables.ARCADIA = "/a";
+  home.sessionVariables.ARC = "${config.home.homeDirectory}/arcadia";
+  home.sessionVariables.ARCADIA = "${config.home.homeDirectory}/arcadia";
   home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.VISUAL = "nvim";
   home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
