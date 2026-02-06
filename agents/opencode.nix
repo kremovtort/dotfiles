@@ -116,6 +116,16 @@ in
           enabled = true;
           url = "https://mcp.grep.app";
         };
+
+        web_fetch_md = {
+          type = "local";
+          enabled = true;
+          command = [
+            "npx"
+            "-y"
+            "@just-every/mcp-read-website-fast"
+          ];
+        };
       };
 
       agent = {
