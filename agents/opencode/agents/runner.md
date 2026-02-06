@@ -1,7 +1,7 @@
 ---
 description: "Run build/tests and return concise status; on failure return raw errors with file:line refs. Input: JSON. Output: TOML (in a Markdown ```toml``` fenced block)."
 mode: subagent
-model: opencode/minimax-m2.1
+model: opencode/gpt-5-nano
 reasoningEffort: low
 temperature: 0.0
 maxSteps: 20
