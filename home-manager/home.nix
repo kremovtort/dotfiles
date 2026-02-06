@@ -69,6 +69,7 @@ in
     pkgs.ov
     pkgs.ripgrep
     pkgs.shellcheck
+    pkgs.stow
     pkgs.tokei
     pkgs.tree-sitter
     pkgs.uv
