@@ -131,18 +131,18 @@ in
       agent = {
         plan = {
           mode = "primary";
-          model = "openai/gpt-5.2";
+          model = "openai/gpt-5.3-codex";
         };
 
         build = {
           mode = "primary";
-          model = "openai/gpt-5.2";
+          model = "openai/gpt-5.3-codex";
         };
 
         ask = {
           mode = "primary";
-          model = "openai/gpt-5.2";
-          reasoningEffort = "low";
+          model = "openai/gpt-5.3-codex";
+          reasoningEffort = "high";
           description = "Answer questions and analyze without editing code";
           permission = {
             edit = "deny";
@@ -157,7 +157,6 @@ in
       plugin = [
         "opencode-pty@0.1.4"
         "@mohak34/opencode-notifier@0.1.15"
-        "opencode-websearch-cited@1.2.0"
         "cc-safety-net@0.7.1"
       ];
 
@@ -167,13 +166,6 @@ in
             "gpt-5.1-codex-mini".options = {
               reasoningEffort = "high";
             };
-          };
-        };
-
-        openrouter = {
-          options = {
-            apiKey = "{file:${config.sops.secrets.openrouter-api-key.path}}";
-            websearch_cited.model = "x-ai/grok-4.1-fast";
           };
         };
 
@@ -187,12 +179,69 @@ in
       };
 
       keybinds = {
-        app_exit = "ctrl+d,ctrl+в,<leader>q";
+        leader = "ctrl+x,ctrl+ч";
+        app_exit = "ctrl+d,ctrl+в,<leader>q,<leader>й";
+        editor_open = "<leader>e,<leader>у";
+        theme_list = "<leader>t,<leader>е";
+        sidebar_toggle = "<leader>b,<leader>и";
+        status_view = "<leader>s,<leader>ы";
+        session_export = "<leader>x,<leader>ч";
+        session_new = "<leader>n,<leader>т";
+        session_list = "<leader>l,<leader>д";
+        session_timeline = "<leader>g,<leader>п";
+        session_rename = "ctrl+r,ctrl+к";
+        session_delete = "ctrl+d,ctrl+в";
+        stash_delete = "ctrl+d,ctrl+в";
+        model_provider_list = "ctrl+a,ctrl+ф";
+        model_favorite_toggle = "ctrl+f,ctrl+а";
         session_interrupt = "ctrl+c,ctrl+с";
+        session_compact = "<leader>c,<leader>с";
+        messages_page_up = "pageup,ctrl+alt+b,ctrl+alt+и";
+        messages_page_down = "pagedown,ctrl+alt+f,ctrl+alt+а";
+        messages_line_up = "ctrl+alt+y,ctrl+alt+н";
+        messages_line_down = "ctrl+alt+e,ctrl+alt+у";
+        messages_half_page_up = "ctrl+alt+u,ctrl+alt+г";
+        messages_half_page_down = "ctrl+alt+d,ctrl+alt+в";
+        messages_first = "ctrl+g,ctrl+п,home";
+        messages_last = "ctrl+alt+g,ctrl+alt+п,end";
+        messages_copy = "<leader>y,<leader>н";
+        messages_undo = "<leader>u,<leader>г";
+        messages_redo = "<leader>r,<leader>к";
+        messages_toggle_conceal = "<leader>h,<leader>р";
+        model_list = "<leader>m,<leader>ь";
+        command_list = "ctrl+p,ctrl+з";
+        agent_list = "<leader>a,<leader>ф";
+        variant_cycle = "ctrl+t,ctrl+е";
+        input_clear = "ctrl+c,ctrl+с";
+        input_paste = "ctrl+v,ctrl+м";
+        input_newline = "shift+return,ctrl+return,alt+return,ctrl+j,ctrl+о";
+        input_move_left = "left,ctrl+b,ctrl+и";
+        input_move_right = "right,ctrl+f,ctrl+а";
+        input_line_home = "ctrl+a,ctrl+ф";
+        input_line_end = "ctrl+e,ctrl+у";
+        input_select_line_home = "ctrl+shift+a,ctrl+shift+ф";
+        input_select_line_end = "ctrl+shift+e,ctrl+shift+у";
+        input_visual_line_home = "alt+a,alt+ф";
+        input_visual_line_end = "alt+e,alt+у";
+        input_select_visual_line_home = "alt+shift+a,alt+shift+ф";
+        input_select_visual_line_end = "alt+shift+e,alt+shift+у";
+        input_delete_line = "ctrl+shift+d,ctrl+shift+в";
+        input_delete_to_line_end = "ctrl+k,ctrl+л";
+        input_delete_to_line_start = "ctrl+u,ctrl+г";
+        input_delete = "ctrl+d,ctrl+в,delete,shift+delete";
+        input_undo = "ctrl+-,super+z,super+я";
+        input_redo = "ctrl+.,ctrl+ю,super+shift+z,super+shift+я";
+        input_word_forward = "alt+f,alt+а,alt+right,ctrl+right";
+        input_word_backward = "alt+b,alt+и,alt+left,ctrl+left";
+        input_select_word_forward = "alt+shift+f,alt+shift+а,alt+shift+right";
+        input_select_word_backward = "alt+shift+b,alt+shift+и,alt+shift+left";
+        input_delete_word_forward = "alt+d,alt+в,alt+delete,ctrl+delete";
         session_child_cycle = "ctrl+],ctrl+ъ";
         session_child_cycle_reverse = "ctrl+[,ctrl+х";
         input_delete_word_backward = "ctrl+w,ctrl+ц,ctrl+backspace,alt+backspace";
-        session_parent = "<leader>o";
+        session_parent = "<leader>o,<leader>щ";
+        terminal_suspend = "ctrl+z,ctrl+я";
+        tips_toggle = "<leader>h,<leader>р";
       };
     };
   };
