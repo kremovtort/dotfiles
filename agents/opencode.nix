@@ -38,6 +38,10 @@ let
   };
 in
 {
+  imports = [
+    # ./opencode/dcp.nix
+  ];
+
   home.activation.copyOpencodeTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "${config.home.homeDirectory}/.config/opencode"
     cp -rf "${opencodeAssets}/tools" "${config.home.homeDirectory}/.config/opencode"
