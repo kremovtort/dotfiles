@@ -33,11 +33,12 @@ Subagents solve 3 recurring problems:
 
 How each subagent helps:
 - `runner`: runs builds/tests/lints, then triages logs and returns only PASS/FAIL + the actionable errors.
-- `scout`: does multi-file codebase discovery and call-path tracing, then returns only the relevant `path:line` refs.
+- `scout`: does multi-file codebase discovery and call-path tracing, then returns only the relevant `path:line` refs. It is a discovery/indexing helper, not a reviewer.
 - `docs-digger`: does multi-source documentation research, then returns compact verbatim quotes with sources.
 
 Rule of thumb:
-- If you are about to (a) run a build/test/lint, (b) do more than one round of repo discovery reads/searches, (c) look up external docs, or (d) inspect a large diff, STOP and delegate to the right subagent first.
+- If you are about to (a) run a build/test/lint, (b) do more than one round of repo discovery reads/searches, (c) look up external docs, or (d) inspect a large diff, STOP and delegate the mechanical part to the right subagent first.
+- Keep ownership of conclusions in the parent agent: subagents gather evidence, parent agent decides.
 - Only skip delegation when the task is truly trivial (one small tool call) and will not bloat the parent context.
 
 ### Examples (copy/paste JSON)
@@ -73,6 +74,19 @@ Situation: you need to run builds/tests/lints, or you have a long failing log an
 #### `@scout`
 
 Situation: you need repo discovery ("where is X?"), indirect call-path tracing, or pinpointing the right file to edit.
+
+Use `@scout` for:
+- locating files, symbols, config entries, and references across many files;
+- tracing call paths (who calls what, wrappers/middleware chains);
+- collecting concise evidence with `path:line` refs for the parent agent.
+
+Do **not** use `@scout` for:
+- full review of completed work ("full code review", "acceptance review", "find all bugs");
+- final quality/security/performance verdicts or architecture decisions;
+- autonomous bug hunting that requires iterative hypothesis/testing loops;
+- producing final "LGTM / not LGTM" decisions.
+
+For review/bug-finding tasks, `@scout` may assist only as a first discovery step. The parent agent must do the actual analysis and conclusions, and use `@runner` to validate via tests/lints/builds when needed.
 
 ```json
 {
@@ -176,5 +190,6 @@ Situation: you need authoritative docs for a CLI flag/API/config option, or to i
 - In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
 - If the task needs external documentation research, delegate it to `@docs-digger`.
 - If the task is call-path tracing ("how does X call Y", indirect call chains, wrappers/middleware), delegate it to `@scout` and ask for a chain + `path:line` refs.
+- If the user asks for full review/bug search, do **not** delegate the whole task to `@scout`; use `@scout` only for evidence gathering, then review in the parent agent.
 - If the task needs running builds/tests/lints (or interpreting their logs), delegate it to `@runner` immediately.
 - In the parent agent, do not run long test/build commands or paste their logs; ask `@runner` for PASS/FAIL + raw errors with `path:line` refs.
