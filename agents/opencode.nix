@@ -31,11 +31,6 @@ let
     '';
 
   opencodeAgentsDir = "${config.home.homeDirectory}/.config/opencode/agents";
-
-  opencodeCursorAuth = pkgs.callPackage (opencodeAssets + "/pkgs/opencode-cursor-auth/default.nix") {
-    inherit bun2nix;
-    opencode-cursor-auth-src = agentsInputs."opencode-cursor-auth";
-  };
 in
 {
   imports = [
@@ -66,10 +61,6 @@ in
       "${agentsInputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
     ".config/opencode/skills/skill-creator".source =
       "${agentsInputs.anthropicSkills}/skills/skill-creator";
-
-    ".config/opencode/plugins/cursor-auth.ts".text = ''
-      export { CursorOAuthPlugin } from "${opencodeCursorAuth}/dist/plugin/index.js";
-    '';
 
     ".config/opencode/AGENTS.md".source = "${opencodeAssets}/_AGENTS.md";
   };

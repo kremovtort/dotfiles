@@ -9,19 +9,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    bun2nix = {
-      url = "git+https://github.com/nix-community/bun2nix?ref=refs/tags/2.0.6";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     opencode = {
       url = "github:anomalyco/opencode";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    opencode-cursor-auth = {
-      url = "github:Yukaii/yet-another-opencode-cursor-auth";
-      flake = false;
     };
 
     anthropicSkills = {
@@ -48,7 +38,6 @@
           _module.args.agents = self;
 
           imports = [
-            ./cursor.nix
             ./opencode.nix
           ];
 
