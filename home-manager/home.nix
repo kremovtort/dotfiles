@@ -25,6 +25,7 @@ in
     # ./zellij.nix
     ./zsh.nix
     ./starship.nix
+    ./wezterm.nix
   ];
 
   home.username = "kremovtort";
@@ -252,6 +253,5 @@ in
   programs.wezterm = {
     enable = true;
     enableZshIntegration = true;
-    extraConfig = builtins.readFile ../wezterm.lua;
   };
 }

@@ -88,7 +88,7 @@
         "t"
         "x"
       ];
-      key = "<D-k>";
+      key = "<D-a>";
       action.__raw = ''
         function()
           require("opencode").toggle()

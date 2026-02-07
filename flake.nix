@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    # zjstatus.url = "github:dj95/zjstatus";
     karabinix.url = "github:pepegar/karabinix";
     jj-starship.url = "github:dmmulroy/jj-starship";
 
@@ -61,7 +60,6 @@
             inherit system;
             overlays = [
               (final: prev: {
-                zjstatus = inputs.zjstatus.packages.${prev.stdenv.hostPlatform.system}.default;
                 nvim = inputs.nvim.packages.${prev.stdenv.hostPlatform.system}.default;
                 nvim4vscode = inputs.nvim.packages.${prev.stdenv.hostPlatform.system}.nvim4vscode;
                 jj-starship = inputs.jj-starship.packages.${prev.stdenv.hostPlatform.system}.default;
