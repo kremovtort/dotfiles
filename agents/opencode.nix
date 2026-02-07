@@ -21,6 +21,7 @@ let
     (localOpencodeAgent "scout")
     (localOpencodeAgent "docs-digger")
     (localOpencodeAgent "runner")
+    (localOpencodeAgent "pair-programming")
   ];
 
   copyOpencodeAgent =

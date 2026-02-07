@@ -1,5 +1,13 @@
 ---
-description: "Run build/tests and return concise status; on failure return raw errors with file:line refs. Input: JSON. Output: TOML (in a Markdown ```toml``` fenced block)."
+description: |
+  Build/test/lint execution and log-triage subagent used to keep parent context clean.
+  Delegate here by default whenever command output can be noisy: project builds/checks, test suites, linters, or long failure logs that need quick actionable extraction.
+  Input contract (single JSON object): {"cmd":"exact command", "limit":5, "focus":"optional regex/keywords/paths"}.
+  Output contract: one Markdown ```toml``` block containing strict TOML with `result` (PASS/FAIL), included/omitted counters, and up to `limit` raw actionable diagnostics.
+  Diagnostic rules: it MUST really run `cmd`; never simulate. On failure, include verbatim error text and resolved `path:line[:col]` when possible. On PASS, include warnings (up to `limit`) and aggregate the rest.
+  Selection rules: prioritize `focus` matches, root-cause-like earliest errors, and cross-file/module coverage; if errors exist, do not emit full warnings (counts only).
+  Path handling: prefer repo-relative locations; attempt path resolution for toolchains that print non-repo-relative paths.
+  Not for final product decisions: parent agent owns interpretation, fixes, and user-facing conclusions.
 mode: subagent
 model: opencode/gpt-5-nano
 reasoningEffort: low
