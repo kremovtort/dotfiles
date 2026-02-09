@@ -59,6 +59,7 @@ in
     pkgs.kind
     pkgs.kubectl
     pkgs.kubernetes-helm
+    pkgs.jetbrains-mono
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nixd
     pkgs.nixfmt

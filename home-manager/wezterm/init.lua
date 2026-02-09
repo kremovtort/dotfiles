@@ -131,9 +131,14 @@ espresso.tab_bar.new_tab = {
 espresso.scrollbar_thumb = "#2c2c2c" -- surface0
 
 local config = {
+  allow_square_glyphs_to_overflow_width = "Never",
   animation_fps = 60,
-  font = wezterm.font("JetbrainsMono Nerd Font"),
+  font = wezterm.font_with_fallback {
+    'JetBrains Mono',
+    { family = 'JetbrainsMono Nerd Font', scale = 1 },
+  },
   font_size = 12,
+  line_height = 1,
   color_schemes = {
     ["Catppuccin Espresso"] = espresso,
   },
@@ -171,6 +176,7 @@ local config = {
   unix_domains = {
     { name = "unix" }
   },
+  term = "wezterm",
 }
 
 wezterm.plugin.require("https://github.com/sei40kr/wez-tmux").apply_to_config(config, {})
