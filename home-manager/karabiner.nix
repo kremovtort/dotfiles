@@ -321,6 +321,14 @@ in
             {
               identifiers = {
                 is_keyboard = true;
+                product_id = 12871;
+                vendor_id = 6645;
+              };
+              fn_function_keys = keychronFnKeys;
+            }
+            {
+              identifiers = {
+                is_keyboard = true;
                 product_id = 53296;
                 vendor_id = 13364;
               };
