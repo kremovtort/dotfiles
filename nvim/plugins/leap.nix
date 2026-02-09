@@ -1,5 +1,7 @@
 { ... }:
 {
+  colorschemes.catppuccin.settings.integrations.leap = true;
+
   plugins.leap.enable = true;
 
   # Flit (f/t motions with leap)

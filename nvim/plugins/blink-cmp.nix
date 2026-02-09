@@ -1,12 +1,14 @@
 { ... }:
 {
-  plugins."friendly-snippets".enable = true;
-  plugins."blink-compat".enable = true;
+  colorschemes.catppuccin.settings.integrations.blink_cmp.enable = true;
 
-  plugins."blink-cmp" = {
+  plugins.friendly-snippets.enable = true;
+  plugins.blink-compat.enable = true;
+
+  plugins.blink-cmp = {
     enable = true;
     settings = {
-      snippets.preset = "default";
+      snippets.preset = ''default'';
       appearance = {
         use_nvim_cmp_as_default = false;
         nerd_font_variant = "mono";

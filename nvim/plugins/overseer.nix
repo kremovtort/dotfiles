@@ -1,5 +1,7 @@
 { pkgs, lib, ... }:
 {
+  colorschemes.catppuccin.settings.integrations.overseer = true;
+
   extraPlugins = [ pkgs.vimPlugins.overseer-nvim ];
 
   extraConfigLua = lib.mkAfter ''

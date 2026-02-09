@@ -26,7 +26,6 @@
 
     ./plugins/leap.nix
     ./plugins/hunk.nix
-    ./plugins/ts-context-commentstring.nix
     ./plugins/grug-far.nix
     ./plugins/snacks.nix
     ./plugins/seeker.nix
@@ -34,8 +33,6 @@
 
     ./plugins/haskell.nix
 
-    # ./plugins/edgy.nix
-    # ./plugins/neo-tree.nix
     ./plugins/toggleterm.nix
 
     ./plugins/repeat.nix
@@ -49,5 +46,6 @@
     ./plugins/nvim-bqf.nix
 
     ./plugins/opencode/provider-nickvandyke.nix
+    ./plugins/dropbar.nix
   ];
 }

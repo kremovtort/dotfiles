@@ -1,17 +1,8 @@
 {
-  # =========================================================================
-  # Colorscheme
-  # =========================================================================
   colorschemes.catppuccin = {
     enable = true;
     settings = {
       flavour = "mocha";
-      integrations = {
-        blink_cmp.enable = true;
-        neotree = true;
-        leap = true;
-        overseer = true;
-      };
       lsp_styles.underlines = {
         errors = [ "undercurl" ];
         hints = [ "undercurl" ];

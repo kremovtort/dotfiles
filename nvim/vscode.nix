@@ -9,7 +9,6 @@
     ./plugins/leap.nix
     ./plugins/mini-ai.nix
     ./plugins/mini-surround.nix
-    ./plugins/ts-context-commentstring.nix
     ./plugins/repeat.nix
   ];
 
@@ -40,6 +39,9 @@
     highlight.enable = lib.mkForce false; # VSCode handles highlighting
     indent.enable = lib.mkForce false;
   };
+
+  plugins.treesitter-context.enable = lib.mkForce false;
+  colorschemes.catppuccin.settings.integrations.treesitter_context.enable = lib.mkForce false;
 
   # =========================================================================
   # Keymaps

@@ -84,8 +84,8 @@
           right = "";
         };
         component_separators = {
-          left = "";
-          right = "";
+          left = "";
+          right = "";
         };
         disabled_filetypes.statusline = [
           "dashboard"
@@ -120,7 +120,7 @@
                 return vim.fn.fnamemodify(root, ":t")
               end
             '';
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "diagnostics";
@@ -130,7 +130,7 @@
               info = icons.diagnostics.Info;
               hint = icons.diagnostics.Hint;
             };
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "filetype";
@@ -222,7 +222,7 @@
               left = -1;
               right = 1;
             };
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "diff";
@@ -262,7 +262,7 @@
                 return "%#@error#󰑋 " .. reg .. "%*"
               end
             '';
-            separator = "%#LualineCSeparator#%*";
+            separator = "%#LualineCSeparator#%*";
           }
           {
             __unkeyed-1 = "lsp_status";
@@ -290,17 +290,9 @@
 
         lualine_y = [
           {
-            __unkeyed-1 = "progress";
-            separator = " ";
-            padding = {
-              left = 1;
-              right = 0;
-            };
-          }
-          {
             __unkeyed-1 = "location";
             padding = {
-              left = 0;
+              left = 1;
               right = 1;
             };
           }
@@ -308,17 +300,17 @@
 
         lualine_z = [
           {
-            __unkeyed-1.__raw = ''
-              function()
-                return " " .. os.date("%R")
-              end
-            '';
+            __unkeyed-1 = "progress";
+            separator = " ";
+            padding = {
+              left = 1;
+              right = 1;
+            };
           }
         ];
       };
 
       extensions = [
-        "neo-tree"
         "trouble"
       ];
     };
