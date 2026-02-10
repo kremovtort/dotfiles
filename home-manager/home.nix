@@ -84,6 +84,9 @@ in
     ".config/opencode/themes/catppuccin-espresso.json".source =
       "${self}/catppuccin/opencode-theme-catppuccin-espresso.json";
     ".config/ov/config.yaml".source = "${self}/ov.yaml";
+    ".npmrc".text = ''
+      @vertis:registry=https://npm.yandex-team.ru/
+    '';
   };
 
   home.shell.enableZshIntegration = true;

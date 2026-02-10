@@ -154,6 +154,7 @@ in
         "opencode-pty@0.1.4"
         "@mohak34/opencode-notifier@0.1.15"
         "cc-safety-net@0.7.1"
+        "@vertis/opencode-eliza-auth-plugin"
       ];
 
       provider = {
