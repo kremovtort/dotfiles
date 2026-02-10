@@ -131,11 +131,10 @@ espresso.tab_bar.new_tab = {
 espresso.scrollbar_thumb = "#2c2c2c" -- surface0
 
 local config = {
-  allow_square_glyphs_to_overflow_width = "Never",
   animation_fps = 60,
   font = wezterm.font_with_fallback {
     'JetBrains Mono',
-    { family = 'JetbrainsMono Nerd Font', scale = 1 },
+    { family = 'Symbols Nerd Font', scale = 1, style = "Normal" },
   },
   font_size = 12,
   line_height = 1,
