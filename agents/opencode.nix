@@ -8,8 +8,6 @@
   ...
 }:
 let
-  bun2nix = agentsInputs.bun2nix.packages.${system}.default;
-
   opencodeAssets = agents + "/opencode";
 
   localOpencodeAgent = name: {
@@ -94,9 +92,19 @@ in
           ];
         };
 
+        MiniMax = {
+          type = "local";
+          command = ["uvx" "minimax-coding-plan-mcp"  "-y"];
+          environment = {
+            "MINIMAX_API_KEY" = "{file:${config.sops.secrets.minimax-coding-plan-key.path}}";
+            "MINIMAX_API_HOST" = "https://api.minimax.io";
+          };
+          enabled = true;
+        };
+
         web_search = {
           type = "local";
-          enabled = true;
+          enabled = false;
           command = [
             "${pkgs.nodejs}/bin/npx"
             "-y"
@@ -154,7 +162,7 @@ in
         "opencode-pty@0.1.4"
         "@mohak34/opencode-notifier@0.1.15"
         "cc-safety-net@0.7.1"
-        "@vertis/opencode-eliza-auth-plugin"
+        "@vertis/opencode-eliza-auth-plugin@0.1.2"
       ];
 
       provider = {
@@ -165,6 +173,8 @@ in
             };
           };
         };
+
+        minimax.options.apiKey = "{file:${config.sops.secrets.minimax-coding-plan-key.path}}";
 
         opencode.options.apiKey = "{file:${config.sops.secrets.opencode-api-key.path}}";
 

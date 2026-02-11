@@ -9,8 +9,7 @@ description: |
   Hard scope boundary: discovery/indexing helper only. Do not use for full code review, final quality/security/performance verdicts, or autonomous bug-finding loops.
   Parent agent keeps ownership of interpretation, architecture decisions, and validation via `runner` when execution checks are needed.
 mode: subagent
-model: opencode/minimax-m2.1
-reasoningEffort: low
+model: minimax/MiniMax-M2.5
 temperature: 0.1
 maxSteps: 30
 permission:

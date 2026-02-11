@@ -9,8 +9,7 @@ description: |
   Quality rules: no paraphrasing inside quote blocks, clearly label non-official/community evidence, and avoid dumping large pages.
   Not for codebase tracing or command execution triage; those belong to `scout` and `runner` respectively.
 mode: subagent
-model: opencode/minimax-m2.1
-reasoningEffort: high
+model: minimax/MiniMax-M2.5
 temperature: 0.1
 maxSteps: 40
 permission:
