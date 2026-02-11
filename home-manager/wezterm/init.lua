@@ -176,6 +176,7 @@ local config = {
     { name = "unix" }
   },
   term = "wezterm",
+  native_macos_fullscreen_mode = true,
 }
 
 wezterm.plugin.require("https://github.com/sei40kr/wez-tmux").apply_to_config(config, {})
