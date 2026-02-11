@@ -7,7 +7,7 @@
     autoLoad = true;
     settings = {
       provider.enabled = "snacks";
-      provider.snacks.win.width = 0.45;
+      provider.snacks.win.width = 90;
 
       keymap_prefix = "<leader>a";
 
