@@ -161,6 +161,12 @@
     }
     {
       mode = "n";
+      key = "<D-,>";
+      action.__raw = "function() require('snacks').picker.buffers({ focus = 'list' }) end";
+      options.desc = "Buffers (focus list)";
+    }
+    {
+      mode = "n";
       key = "<leader>/";
       action.__raw = ''
         function()
