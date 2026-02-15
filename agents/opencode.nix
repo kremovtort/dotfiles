@@ -19,6 +19,7 @@ let
     (localOpencodeAgent "scout")
     (localOpencodeAgent "docs-digger")
     (localOpencodeAgent "runner")
+    (localOpencodeAgent "codemodder")
     (localOpencodeAgent "pair-programming")
   ];
 
@@ -53,6 +54,9 @@ in
     ".config/opencode/commands/rmslop.md".source = "${agents}/commands/rmslop.md";
     ".config/opencode/commands/spellcheck.md".source = "${agents}/commands/spellcheck.md";
 
+    ".config/opencode/instructions/subagent-json-format.md".source =
+      "${opencodeAssets}/instructions/subagent-json-format.md";
+
     ".config/opencode/skills/vcs-detect".source = "${agents}/skills/vcs-detect";
     ".config/opencode/skills/jujutsu".source = "${agents}/skills/jujutsu";
     ".config/opencode/skills/add-nixvim-plugin".source = "${agents}/skills/add-nixvim-plugin";
@@ -79,6 +83,10 @@ in
         auto = false;
       };
 
+      instructions = [
+        "${config.home.homeDirectory}/.config/opencode/instructions/subagent-json-format.md"
+      ];
+
       mcp = {
         docs_search = {
           type = "local";
@@ -94,7 +102,11 @@ in
 
         MiniMax = {
           type = "local";
-          command = ["uvx" "minimax-coding-plan-mcp"  "-y"];
+          command = [
+            "uvx"
+            "minimax-coding-plan-mcp"
+            "-y"
+          ];
           environment = {
             "MINIMAX_API_KEY" = "{file:${config.sops.secrets.minimax-coding-plan-key.path}}";
             "MINIMAX_API_HOST" = "https://api.minimax.io";

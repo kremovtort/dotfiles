@@ -42,6 +42,7 @@ Subagents solve 3 recurring problems:
 - `runner`: command execution + build/test/lint log triage. See `agents/opencode/agents/runner.md`.
 - `scout`: read-only codebase discovery + call-path tracing. See `agents/opencode/agents/scout.md`.
 - `docs-digger`: source-backed documentation research with verbatim quotes. See `agents/opencode/agents/docs-digger.md`.
+- `codemodder`: deterministic mechanical multi-file edits with `plan|apply` workflow and safety guardrails. See `agents/opencode/agents/codemodder.md`.
 
 ### Invocation rules (all subagents)
 
@@ -56,4 +57,5 @@ Subagents solve 3 recurring problems:
 - In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
 - If the task needs external documentation research, delegate to `@docs-digger`.
 - If the task needs build/test/lint execution or long log interpretation, delegate to `@runner`.
+- If the task is a repetitive large mechanical refactor (rename, import-path migration, structural replacement), delegate to `@codemodder`.
 - For full review/bug-finding, `@scout` is only evidence gathering; parent does analysis and uses `@runner` for validation.
