@@ -34,11 +34,6 @@
       url = "github:2KAbhishek/seeker.nvim";
       flake = false;
     };
-
-    plugins-haskell-tools-nvim = {
-      url = "github:mrcjkb/haskell-tools.nvim";
-      flake = false;
-    };
   };
 
   outputs =
