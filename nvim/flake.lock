@@ -59,22 +59,6 @@
         "type": "github"
       }
     },
-    "plugins-haskell-tools-nvim": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1769906358,
-        "narHash": "sha256-LHTpyiap8K+11j9JFakdNjgMpa7vvrsU00aRXUwb1pQ=",
-        "owner": "mrcjkb",
-        "repo": "haskell-tools.nvim",
-        "rev": "128a7e36331050603b3145b1efe1a219115464e8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "mrcjkb",
-        "repo": "haskell-tools.nvim",
-        "type": "github"
-      }
-    },
     "plugins-opencode-nvim": {
       "flake": false,
       "locked": {
@@ -159,7 +143,6 @@
       "inputs": {
         "nixpkgs": "nixpkgs",
         "nixvim": "nixvim",
-        "plugins-haskell-tools-nvim": "plugins-haskell-tools-nvim",
         "plugins-opencode-nvim": "plugins-opencode-nvim",
         "plugins-seeker-nvim": "plugins-seeker-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",

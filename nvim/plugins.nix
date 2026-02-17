@@ -43,7 +43,7 @@
     ./plugins/lualine.nix
     ./plugins/tabby.nix
 
-    ./plugins/nvim-bqf.nix
+    ./plugins/quickfix.nix
 
     ./plugins/opencode/provider-nickvandyke.nix
     ./plugins/dropbar.nix
