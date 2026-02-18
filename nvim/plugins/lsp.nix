@@ -60,6 +60,7 @@ in
       };
       nixd.enable = true;
       yamlls.enable = true;
+      ts_ls.enable = true;
     };
 
     capabilities = ''
