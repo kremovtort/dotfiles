@@ -7,7 +7,7 @@ mode: primary
 model: openai/gpt-5.3-codex
 reasoningEffort: high
 temperature: 0.2
-steps: 12
+steps: 32
 permission:
   edit: allow
   webfetch: allow
