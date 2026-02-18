@@ -9,7 +9,7 @@ description: |
   Path handling: prefer repo-relative locations; attempt path resolution for toolchains that print non-repo-relative paths.
   Not for final product decisions: parent agent owns interpretation, fixes, and user-facing conclusions.
 mode: subagent
-model: minimax/MiniMax-M2.5
+model: opencode/minimax-m2.5
 temperature: 0.0
 maxSteps: 20
 permission:

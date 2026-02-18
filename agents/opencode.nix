@@ -111,12 +111,12 @@ in
             "MINIMAX_API_KEY" = "{file:${config.sops.secrets.minimax-coding-plan-key.path}}";
             "MINIMAX_API_HOST" = "https://api.minimax.io";
           };
-          enabled = true;
+          enabled = false;
         };
 
         web_search = {
           type = "local";
-          enabled = false;
+          enabled = true;
           command = [
             "${pkgs.nodejs}/bin/npx"
             "-y"
