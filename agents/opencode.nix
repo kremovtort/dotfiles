@@ -100,20 +100,6 @@ in
           ];
         };
 
-        MiniMax = {
-          type = "local";
-          command = [
-            "uvx"
-            "minimax-coding-plan-mcp"
-            "-y"
-          ];
-          environment = {
-            "MINIMAX_API_KEY" = "{file:${config.sops.secrets.minimax-coding-plan-key.path}}";
-            "MINIMAX_API_HOST" = "https://api.minimax.io";
-          };
-          enabled = false;
-        };
-
         web_search = {
           type = "local";
           enabled = true;
@@ -190,7 +176,7 @@ in
 
         opencode.options.apiKey = "{file:${config.sops.secrets.opencode-api-key.path}}";
 
-        cursor.name = "Cursor";
+        opencode-go.options.apiKey = "{file:${config.sops.secrets.opencode-api-key.path}}";
       };
 
       lsp = {

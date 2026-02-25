@@ -6,7 +6,7 @@ description: |
   Output contract: single machine-readable JSON object with status, counts, changed paths, skipped items, manual follow-ups, and idempotency remainder.
   Hard scope: mechanical edits only. No architecture decisions, no tests/builds, no VCS operations.
 mode: subagent
-model: opencode/minimax-m2.5
+model: opencode-go/minimax-m2.5
 temperature: 0.0
 maxSteps: 60
 permission:
