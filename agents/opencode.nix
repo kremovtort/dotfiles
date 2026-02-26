@@ -157,21 +157,14 @@ in
       };
 
       plugin = [
-        "opencode-pty@0.1.4"
-        "@mohak34/opencode-notifier@0.1.15"
+        "@mohak34/opencode-notifier@0.1.28"
         "cc-safety-net@0.7.1"
         "@vertis/opencode-eliza-auth-plugin@0.3.2"
+        "@franlol/opencode-md-table-formatter@0.0.6"
+        "@plannotator/opencode@0.9.3"
       ];
 
       provider = {
-        openai = {
-          models = {
-            "gpt-5.1-codex-mini".options = {
-              reasoningEffort = "high";
-            };
-          };
-        };
-
         minimax.options.apiKey = "{file:${config.sops.secrets.minimax-coding-plan-key.path}}";
 
         opencode.options.apiKey = "{file:${config.sops.secrets.opencode-api-key.path}}";
