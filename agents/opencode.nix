@@ -88,7 +88,7 @@ in
       ];
 
       mcp = {
-        docs_search = {
+        context7 = {
           type = "local";
           enabled = true;
           command = [
@@ -100,9 +100,9 @@ in
           ];
         };
 
-        web_search = {
+        exa = {
           type = "local";
-          enabled = true;
+          enabled = false;
           command = [
             "${pkgs.nodejs}/bin/npx"
             "-y"
@@ -117,6 +117,12 @@ in
           type = "remote";
           enabled = true;
           url = "https://mcp.grep.app";
+        };
+
+        tavily = {
+          type = "remote";
+          enabled = true;
+          url = "https://mcp.tavily.com/mcp/?tavilyApiKey={file:${config.sops.secrets.tavily-api-key.path}}";
         };
 
         web_fetch_md = {
@@ -159,7 +165,7 @@ in
       plugin = [
         "@mohak34/opencode-notifier@0.1.28"
         "cc-safety-net@0.7.1"
-        "@vertis/opencode-eliza-auth-plugin@0.3.2"
+        # "@vertis/opencode-eliza-auth-plugin@0.3.2"
         "@franlol/opencode-md-table-formatter@0.0.6"
         "@plannotator/opencode@0.9.3"
       ];
