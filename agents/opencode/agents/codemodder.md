@@ -2,6 +2,8 @@
 description: |
   Deterministic mechanical-edit subagent for large repetitive refactors.
   Delegate here for broad but simple code transformations that follow explicit rules.
+  How it helps: faster repetitive refactors, less context bloat from large edit loops, and grounded edit evidence via deterministic machine-readable results.
+  Invocation rules: send one small JSON object only (no prose wrapper), keep requests task-focused (no large context blobs), and pass local context via inline refs `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based), typically in `goal`/`focus`.
   Input contract (single JSON object): {"goal":"what to transform", "mode":"plan|apply", "include":["glob"], "exclude":["glob"], "edits":[{"id":"rule-id","kind":"ast_replace|regex_replace|literal_replace", "lang":"optional", "pattern":"match", "rewrite":"replacement"}], "safety":{"max_files":200,"max_edits_per_file":50,"allow_new_files":false,"allow_delete_files":false,"stop_on_ambiguous":true}, "focus":"optional keywords/paths"}.
   Output contract: single machine-readable JSON object with status, counts, changed paths, skipped items, manual follow-ups, and idempotency remainder.
   Hard scope: mechanical edits only. No architecture decisions, no tests/builds, no VCS operations.

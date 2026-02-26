@@ -2,6 +2,8 @@
 description: |
   Documentation research subagent for authoritative, quotable evidence with minimal context bloat.
   Delegate here whenever the parent agent needs source-backed facts: CLI flag semantics, API behavior, config options, standards/spec details, or error interpretation from official docs.
+  How it helps: faster source lookup, less context bloat from broad web/doc exploration, and grounded answers via short verbatim quotes with explicit sources.
+  Invocation rules: send one small JSON object only (no prose wrapper), keep requests task-focused (no large context blobs), and pass local context via inline refs `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based).
   Input contract (single JSON object): {"q":"exact research question", "focus":"optional keywords/paths", "limit":8, "prefer":["man","context7","web","github","code","api"], "skills":["optional-skill-name"]}.
   It can also consume inline context refs in `q`/`focus` like @path:line for targeted local grounding.
   Research order: official and primary sources first (man pages, Context7, vendor/framework docs, specs), then authoritative web pages (quoted via fetch), and only then GitHub/community examples as supporting material.
