@@ -2,12 +2,10 @@
   agents,
   agentsInputs,
   config,
-  lib,
   pkgs,
   ...
 }:
 let
-  opencodeAssets = agents + "/opencode";
   system = pkgs.stdenv.hostPlatform.system;
   isAarch64Darwin = system == "aarch64-darwin";
 
@@ -33,62 +31,13 @@ let
       pkgs;
 
   opencodePackage = opencodePkgs.opencode;
-
-  localOpencodeAgent = name: {
-    inherit name;
-    src = "${opencodeAssets}/agents/${name}.md";
-  };
-
-  opencodeAgents = [
-    (localOpencodeAgent "scout")
-    (localOpencodeAgent "docs-digger")
-    (localOpencodeAgent "runner")
-    (localOpencodeAgent "codemodder")
-  ];
-
-  copyOpencodeAgent =
-    { name, src }:
-    ''
-      cp -f "${src}" "${opencodeAgentsDir}/${name}.md"
-      chmod +w "${opencodeAgentsDir}/${name}.md"
-    '';
-
-  opencodeAgentsDir = "${config.home.homeDirectory}/.config/opencode/agents";
 in
 {
   imports = [
     # ./opencode/dcp.nix
   ];
 
-  home.activation.copyOpencodeTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    mkdir -p "${config.home.homeDirectory}/.config/opencode"
-    cp -rf "${opencodeAssets}/tools" "${config.home.homeDirectory}/.config/opencode"
-    chmod -R +w "${config.home.homeDirectory}/.config/opencode"
-  '';
-
-  # Avoid symlink discovery edge-cases: install agents as real files.
-  home.activation.copyOpencodeAgents = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    mkdir -p "${opencodeAgentsDir}"
-
-    ${lib.concatStringsSep "\n" (map copyOpencodeAgent opencodeAgents)}
-  '';
-
   home.file = {
-    ".config/opencode/commands/rmslop.md".source = "${agents}/commands/rmslop.md";
-    ".config/opencode/commands/spellcheck.md".source = "${agents}/commands/spellcheck.md";
-
-    ".config/opencode/instructions/subagent-json-format.md".source =
-      "${opencodeAssets}/instructions/subagent-json-format.md";
-
-    ".config/opencode/skills/vcs-detect".source = "${agents}/skills/vcs-detect";
-    ".config/opencode/skills/jujutsu".source = "${agents}/skills/jujutsu";
-    ".config/opencode/skills/add-nixvim-plugin".source = "${agents}/skills/add-nixvim-plugin";
-    ".config/opencode/skills/ast-grep".source =
-      "${agentsInputs.astGrepClaudeSkill}/ast-grep/skills/ast-grep";
-    ".config/opencode/skills/skill-creator".source =
-      "${agentsInputs.anthropicSkills}/skills/skill-creator";
-
-    ".config/opencode/AGENTS.md".source = "${opencodeAssets}/_AGENTS.md";
     ".config/opencode/tui.json".text = builtins.toJSON {
       keybinds = {
         leader = "ctrl+x,ctrl+ч";
@@ -148,11 +97,11 @@ in
         input_select_word_forward = "alt+shift+f,alt+shift+а,alt+shift+right";
         input_select_word_backward = "alt+shift+b,alt+shift+и,alt+shift+left";
         input_delete_word_forward = "alt+d,alt+в,alt+delete,ctrl+delete";
-        session_child_first = "<leader>i,<leader>ш";
+        session_child_first = "ctrl+i,ctrl+ш";
         session_child_cycle = "ctrl+],ctrl+ъ";
         session_child_cycle_reverse = "ctrl+[,ctrl+х";
         input_delete_word_backward = "ctrl+w,ctrl+ц,ctrl+backspace,alt+backspace";
-        session_parent = "<leader>o,<leader>щ";
+        session_parent = "ctrl+o,ctrl+щ";
         terminal_suspend = "ctrl+z,ctrl+я";
         tips_toggle = "<leader>h,<leader>р";
       };
@@ -162,6 +111,17 @@ in
   programs.opencode = {
     package = opencodePackage;
     enable = true;
+    rules = ./opencode/instructions;
+    agents = ./opencode/agents;
+    commands = ./commands;
+    skills = {
+      vcs-detect = agents + "/skills/vcs-detect";
+      jujutsu = agents + "/skills/jujutsu";
+      add-nixvim-plugin = agents + "/skills/add-nixvim-plugin";
+      ast-grep = agentsInputs.astGrepClaudeSkill + "/ast-grep/skills/ast-grep";
+      skill-creator = agentsInputs.anthropicSkills + "/skills/skill-creator";
+    };
+    # tools = ./opencode/tools;
 
     settings = {
       autoupdate = false;
@@ -172,10 +132,6 @@ in
         prune = false;
         auto = false;
       };
-
-      instructions = [
-        "${config.home.homeDirectory}/.config/opencode/instructions/subagent-json-format.md"
-      ];
 
       mcp = {
         context7 = {
@@ -255,10 +211,9 @@ in
       };
 
       plugin = [
-        "@mohak34/opencode-notifier@0.1.28"
-        "cc-safety-net@0.7.1"
-        "@vertis/opencode-eliza-auth-plugin@0.4.0"
-        "@plannotator/opencode@0.9.3"
+        "@mohak34/opencode-notifier@0.2.0"
+        "cc-safety-net@0.8.2"
+        "@plannotator/opencode@0.16.0"
       ];
 
       provider = {
