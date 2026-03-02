@@ -1,7 +1,7 @@
 ---
 description: Documentation research subagent for authoritative, quotable evidence.
 mode: subagent
-model: opencode-go/minimax-m2.5
+model: opencode-go/minimax-m2.7
 temperature: 0.1
 maxSteps: 40
 permission:
