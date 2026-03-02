@@ -37,7 +37,7 @@ in
   nixpkgs.config.allowUnfree = true;
 
   programs.home-manager.enable = true;
-  home.stateVersion = "24.11";
+  home.stateVersion = "25.05";
 
   home.packages = [
     pkgs.ast-grep
@@ -53,6 +53,7 @@ in
     pkgs.fd
     pkgs.gnumake
     pkgs.htop
+    pkgs.hydra-check
     pkgs.jiq
     pkgs.jless
     pkgs.jq
