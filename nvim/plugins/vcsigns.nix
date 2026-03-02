@@ -12,7 +12,15 @@ let
 
   vcsigns = pkgs.vimUtils.buildVimPlugin {
     name = "vcsigns-nvim";
-    src = nvimInputs.plugins-vcsigns-nvim;
+    src = pkgs.lib.cleanSourceWith {
+      src = nvimInputs.plugins-vcsigns-nvim;
+      filter =
+        path: type:
+        let
+          p = toString path;
+        in
+        !(pkgs.lib.hasInfix "/vcsigns_tests" p || pkgs.lib.hasInfix "/tests" p);
+    };
     dependencies = [ vcsignsVclib ];
   };
 in

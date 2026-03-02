@@ -383,6 +383,39 @@
       action = "<cmd>normal! K<cr>";
       options.desc = "Keywordprg";
     }
+    {
+      mode = "n";
+      key = "gx";
+      action.__raw = ''
+        function()
+          local target = vim.fn.expand("<cfile>")
+          if target == "" then
+            target = vim.fn.expand("<cWORD>")
+          end
+
+          target = target
+            :gsub("^%(", "")
+            :gsub("%)$", "")
+            :gsub("^<", "")
+            :gsub(">$", "")
+            :gsub("[.,;:]+$", "")
+
+          if target == "" then
+            vim.notify("No link under cursor", vim.log.levels.WARN)
+            return
+          end
+
+          local opener = vim.fn.has("mac") == 1 and "open" or "xdg-open"
+          if vim.fn.executable(opener) ~= 1 then
+            vim.notify("No system opener found for links", vim.log.levels.ERROR)
+            return
+          end
+
+          vim.fn.jobstart({ opener, target }, { detach = true })
+        end
+      '';
+      options.desc = "Open Link";
+    }
 
     # New file
     {
