@@ -3,14 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgsNode20.url = "github:NixOS/nixpkgs/400de68cd101e8cfebffea121397683caf7f5a34";
 
     openspec = {
       url = "github:Fission-AI/OpenSpec";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    opencode = {
-      url = "github:anomalyco/opencode";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -33,6 +29,22 @@
     {
       homeModules.default =
         { system, ... }:
+        let
+          openspecPackage =
+            if system == "aarch64-darwin" then
+              let
+                pinnedPkgs = import inputs.nixpkgsNode20 {
+                  inherit system;
+                };
+              in
+              inputs.openspec.packages.${system}.default.overrideAttrs (old: {
+                nativeBuildInputs = map (
+                  pkg: if (pkg.pname or "") == "nodejs" then pinnedPkgs.nodejs_20 else pkg
+                ) old.nativeBuildInputs;
+              })
+            else
+              inputs.openspec.packages.${system}.default;
+        in
         {
           _module.args.agentsInputs = inputs;
           _module.args.agents = self;
@@ -41,7 +53,7 @@
             ./opencode.nix
           ];
 
-          home.packages = [ inputs.openspec.packages.${system}.default ];
+          home.packages = [ openspecPackage ];
         };
     };
 }
