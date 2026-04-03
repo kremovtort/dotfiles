@@ -45,7 +45,8 @@
 
     ./plugins/quickfix.nix
 
-    ./plugins/opencode/provider-nickvandyke.nix
+    ./plugins/opencode/provider-sudo-tee.nix
+    # ./plugins/opencode/provider-nickvandyke.nix
     ./plugins/dropbar.nix
   ];
 }
