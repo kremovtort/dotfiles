@@ -5,14 +5,6 @@
   plugins.opencode = {
     enable = true;
     autoLoad = true;
-    settings = {
-      provider.enabled = "snacks";
-      provider.snacks.win.width = 90;
-
-      keymap_prefix = "<leader>a";
-
-      default_global_keymaps = false;
-    };
   };
 
   autoCmd = [

@@ -31,24 +31,71 @@ in
   ];
 
   extraConfigLua = lib.mkAfter ''
-    local common = require("vcsigns.repo_def.common")
-    local util = require("vcsigns.util")
+    local common = require("vcrepo.common")
+    local run = require("vclib.run")
     require("vcsigns.repo").register_vcs({
       name = "Arc",
-      detect = {
-        cmd = function()
-          return { "arc", "root" }
-        end,
-        check = common.check_and_extract_root,
-      },
+
+      detect = function(dir)
+        if vim.fn.executable "arc" == 0 then
+          return nil
+        end
+        local cmd = {"arc", "root"}
+        local out = run.run_with_timeout(cmd, {cwd = dir}):wait()
+        if out.code ~= 0 or not out.stdout then
+          return nil
+        end
+        return vim.trim(out.stdout)
+      end,
+
       show = function(target, root, lines_cb)
         local cmd = {
           "arc",
           "show",
           string.format("HEAD~%d", target.commit) .. ":" .. target.file,
         }
-        util.run_with_timeout(cmd, { cwd = root }, function(out)
+        run.run_with_timeout(cmd, { cwd = root }, function(out)
           lines_cb(common.content_to_lines(out.stdout))
+        end)
+      end,
+
+      blame = function(self, file, template, annotations_cb)
+        assert(template == nil, "Arc blame does not support custom templates")
+
+        local cmd = { "arc", "blame", "--json", "--", file }
+        run.run_with_timeout(cmd, { cwd = self.root }, function(out)
+          if out.code ~= 0 or not out.stdout or out.stdout == "" then
+            annotations_cb(nil)
+            return
+          end
+
+          local ok, payload = pcall(vim.json.decode, out.stdout)
+          if not ok or type(payload) ~= "table" or type(payload.annotation) ~= "table" then
+            annotations_cb(nil)
+            return
+          end
+
+          local annotations = {}
+          for _, entry in ipairs(payload.annotation) do
+            if type(entry) == "table" and entry.line and entry.commit and entry.text then
+              local content = entry.text
+              if content:sub(-1) == "\n" then
+                content = content:sub(1, -2)
+              end
+
+              table.insert(annotations, {
+                line_num = entry.line,
+                annotation = entry.commit:sub(1, 8),
+                content = content,
+              })
+            end
+          end
+
+          table.sort(annotations, function(a, b)
+            return a.line_num < b.line_num
+          end)
+
+          annotations_cb(annotations)
         end)
       end,
       -- Rename resolution not implemented for git.
