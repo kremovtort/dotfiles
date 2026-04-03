@@ -48,13 +48,13 @@ in
         return vim.trim(out.stdout)
       end,
 
-      show = function(target, root, lines_cb)
+      show = function(self, target, lines_cb)
         local cmd = {
           "arc",
           "show",
           string.format("HEAD~%d", target.commit) .. ":" .. target.file,
         }
-        run.run_with_timeout(cmd, { cwd = root }, function(out)
+        run.run_with_timeout(cmd, { cwd = self.root }, function(out)
           lines_cb(common.content_to_lines(out.stdout))
         end)
       end,
