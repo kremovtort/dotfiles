@@ -98,6 +98,9 @@ in
           annotations_cb(annotations)
         end)
       end,
+      needs_refresh = function(self, needs_refresh_cb)
+        needs_refresh_cb(true)
+      end,
       -- Rename resolution not implemented for git.
       resolve_rename = nil,
     })
