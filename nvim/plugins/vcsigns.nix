@@ -19,7 +19,7 @@ let
         let
           p = toString path;
         in
-        !(pkgs.lib.hasInfix "/vcsigns_tests" p || pkgs.lib.hasInfix "/tests" p);
+        !(pkgs.lib.hasInfix "/vcsigns_tests" p || pkgs.lib.hasInfix "/vcrepo_tests" p || pkgs.lib.hasInfix "/tests" p);
     };
     dependencies = [ vcsignsVclib ];
   };
