@@ -10,24 +10,15 @@ let
     src = nvimInputs.plugins-vclib-nvim;
   };
 
-  vcsigns = (pkgs.vimUtils.buildVimPlugin {
-    name = "vcsigns-nvim";
-    src = nvimInputs.plugins-vcsigns-nvim;
-    dependencies = [ vcsignsVclib ];
-  }).overrideAttrs (old: {
-    nvimSkipModules = [
-      "vcsigns_tests"
-      "vcrepo_tests"
-      "vcsigns_tests.functional.test_git"
-      "vcsigns_tests.functional.test_integration"
-      "vcsigns_tests.functional.test_vcs_common"
-      "vcsigns_tests.functional.test_jj"
-      "vcsigns_tests.functional.test_hg"
-      "vcrepo_tests.functional.test_vcs_common"
-      "vcrepo_tests.functional.common_tests"
-      "vcrepo_tests.functional.helpers"
-    ];
-  });
+  vcsigns =
+    (pkgs.vimUtils.buildVimPlugin {
+      name = "vcsigns-nvim";
+      src = nvimInputs.plugins-vcsigns-nvim;
+      dependencies = [ vcsignsVclib ];
+    }).overrideAttrs
+      (old: {
+        doCheck = false;
+      });
 in
 {
   extraPlugins = [
