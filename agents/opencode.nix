@@ -6,6 +6,15 @@
   ...
 }:
 {
+
+  home.file.".config/opencode/magic-context.jsonc".text = builtins.toJSON {
+    "$schema" =
+      "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
+    enabled = true;
+
+    historian.model = "opencode-go/glm-5.1";
+  };
+
   programs.opencode = {
     enable = true;
     rules = ./opencode/instructions;
@@ -22,7 +31,6 @@
 
     settings = {
       autoupdate = false;
-
 
       compaction = {
         prune = false;
@@ -109,8 +117,8 @@
       plugin = [
         "@mohak34/opencode-notifier@0.2.1"
         "cc-safety-net@0.8.2"
-        "@plannotator/opencode@0.17.1"
-        "@cortexkit/opencode-magic-context@0.7.4"
+        "@plannotator/opencode@0.17.3"
+        "@cortexkit/opencode-magic-context@0.8.3"
       ];
 
       provider = {
