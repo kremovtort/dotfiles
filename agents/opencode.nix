@@ -107,9 +107,10 @@
       };
 
       plugin = [
-        "@mohak34/opencode-notifier@0.2.0"
+        "@mohak34/opencode-notifier@0.2.1"
         "cc-safety-net@0.8.2"
-        "@plannotator/opencode@0.16.0"
+        "@plannotator/opencode@0.17.1"
+        "@cortexkit/opencode-magic-context@0.7.4"
       ];
 
       provider = {
