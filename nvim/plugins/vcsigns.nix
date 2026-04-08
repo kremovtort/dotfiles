@@ -10,11 +10,23 @@ let
     src = nvimInputs.plugins-vclib-nvim;
   };
 
+  asyncNvim =
+    (pkgs.vimUtils.buildVimPlugin {
+      name = "async-nvim";
+      src = nvimInputs.plugins-async-nvim;
+    }).overrideAttrs
+      (_: {
+        doCheck = false;
+      });
+
   vcsigns =
     (pkgs.vimUtils.buildVimPlugin {
       name = "vcsigns-nvim";
       src = nvimInputs.plugins-vcsigns-nvim;
-      dependencies = [ vcsignsVclib ];
+      dependencies = [
+        vcsignsVclib
+        asyncNvim
+      ];
     }).overrideAttrs
       (old: {
         doCheck = false;
@@ -23,13 +35,16 @@ in
 {
   extraPlugins = [
     vcsignsVclib
+    asyncNvim
     vcsigns
   ];
 
   extraConfigLua = lib.mkAfter ''
+    local vcrepo = require("vcrepo")
     local common = require("vcrepo.common")
+    local util = require("vcrepo.util")
     local run = require("vclib.run")
-    require("vcsigns.repo").register_vcs({
+    vcrepo.add_backend({
       name = "Arc",
 
       detect = function(dir)
@@ -44,58 +59,54 @@ in
         return vim.trim(out.stdout)
       end,
 
-      show = function(self, target, lines_cb)
+      show = function(self, target)
         local cmd = {
           "arc",
           "show",
           string.format("HEAD~%d", target.commit) .. ":" .. target.file,
         }
-        run.run_with_timeout(cmd, { cwd = self.root }, function(out)
-          lines_cb(common.content_to_lines(out.stdout))
-        end)
+        local out = util.run_async(cmd, { cwd = self.root })
+        return common.content_to_lines(out.stdout)
       end,
 
-      blame = function(self, file, template, annotations_cb)
+      blame = function(self, file, template)
         assert(template == nil, "Arc blame does not support custom templates")
 
         local cmd = { "arc", "blame", "--json", "--", file }
-        run.run_with_timeout(cmd, { cwd = self.root }, function(out)
-          if out.code ~= 0 or not out.stdout or out.stdout == "" then
-            annotations_cb(nil)
-            return
-          end
+        local out = util.run_async(cmd, { cwd = self.root })
+        if out.code ~= 0 or not out.stdout or out.stdout == "" then
+          return nil
+        end
 
-          local ok, payload = pcall(vim.json.decode, out.stdout)
-          if not ok or type(payload) ~= "table" or type(payload.annotation) ~= "table" then
-            annotations_cb(nil)
-            return
-          end
+        local ok, payload = pcall(vim.json.decode, out.stdout)
+        if not ok or type(payload) ~= "table" or type(payload.annotation) ~= "table" then
+          return nil
+        end
 
-          local annotations = {}
-          for _, entry in ipairs(payload.annotation) do
-            if type(entry) == "table" and entry.line and entry.commit and entry.text then
-              local content = entry.text
-              if content:sub(-1) == "\n" then
-                content = content:sub(1, -2)
-              end
-
-              table.insert(annotations, {
-                line_num = entry.line,
-                annotation = entry.commit:sub(1, 8),
-                content = content,
-              })
+        local annotations = {}
+        for _, entry in ipairs(payload.annotation) do
+          if type(entry) == "table" and entry.line and entry.commit and entry.text then
+            local content = entry.text
+            if content:sub(-1) == "\n" then
+              content = content:sub(1, -2)
             end
+
+            table.insert(annotations, {
+              line_num = entry.line,
+              annotation = entry.commit:sub(1, 8),
+              content = content,
+            })
           end
+        end
 
-          table.sort(annotations, function(a, b)
-            return a.line_num < b.line_num
-          end)
-
-          annotations_cb(annotations)
+        table.sort(annotations, function(a, b)
+          return a.line_num < b.line_num
         end)
+
+        return annotations
       end,
-      needs_refresh = function(self, needs_refresh_cb)
-        needs_refresh_cb(true)
+      needs_refresh = function(self)
+        return true
       end,
       -- Rename resolution not implemented for git.
       resolve_rename = nil,

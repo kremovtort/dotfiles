@@ -25,6 +25,11 @@
       flake = false;
     };
 
+    plugins-async-nvim = {
+      url = "github:lewis6991/async.nvim";
+      flake = false;
+    };
+
     plugins-virtual-types-nvim = {
       url = "github:jubnzv/virtual-types.nvim";
       flake = false;
