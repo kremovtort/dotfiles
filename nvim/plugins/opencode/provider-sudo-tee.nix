@@ -21,6 +21,17 @@ in
 
       default_global_keymaps = true,
       keymap_prefix = "<leader>a",
+      keymap = {
+        editor = {
+          ['<D-a>'] = { 'toggle' },
+        },
+      },
+      ui = {
+        window_width = 0.35,
+        output = {
+          compact_assistant_headers = false,
+        },
+      },
     })
   '';
 }

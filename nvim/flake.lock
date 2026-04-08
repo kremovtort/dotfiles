@@ -78,11 +78,11 @@
     "plugins-opencode-nvim": {
       "flake": false,
       "locked": {
-        "lastModified": 1775572562,
-        "narHash": "sha256-yG43d7lRcX1IftgWWmIa+WNNZ6DYgeRR4EE1VxiylSA=",
+        "lastModified": 1775653001,
+        "narHash": "sha256-CZ5qH/QmVwcP7UEe8a5DP5o6G8ASfI1y1F7nDhlVPW4=",
         "owner": "sudo-tee",
         "repo": "opencode.nvim",
-        "rev": "700066edad52ccde207d9f2bc1683cf91af06b29",
+        "rev": "6ffda7d33cdc96a699cc227d7c3094f4ee897873",
         "type": "github"
       },
       "original": {
