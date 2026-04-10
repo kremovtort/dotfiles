@@ -118,7 +118,7 @@
         "@mohak34/opencode-notifier@0.2.1"
         "cc-safety-net@0.8.2"
         "@plannotator/opencode@0.17.3"
-        "@cortexkit/opencode-magic-context@0.8.3"
+        # "@cortexkit/opencode-magic-context@0.8.3"
       ];
 
       provider = {
