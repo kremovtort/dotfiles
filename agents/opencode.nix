@@ -6,7 +6,6 @@
   ...
 }:
 {
-
   home.file.".config/opencode/magic-context.jsonc".text = builtins.toJSON {
     "$schema" =
       "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
@@ -15,9 +14,11 @@
     historian.model = "opencode-go/glm-5.1";
   };
 
+  programs.bun.enable = true; # need for plannotator
+
   programs.opencode = {
     enable = true;
-    rules = ./opencode/instructions;
+    context = ./opencode/instructions;
     agents = ./opencode/agents;
     commands = ./commands;
     skills = {
@@ -30,6 +31,8 @@
     # tools = ./opencode/tools;
 
     settings = {
+      "$schema" = "https://opencode.ai/config.json";
+
       autoupdate = false;
 
       compaction = {
@@ -115,9 +118,9 @@
       };
 
       plugin = [
-        "@mohak34/opencode-notifier@0.2.1"
+        "@mohak34/opencode-notifier@0.2.2"
         "cc-safety-net@0.8.2"
-        "@plannotator/opencode@0.17.3"
+        "@plannotator/opencode@0.17.10"
         # "@cortexkit/opencode-magic-context@0.8.3"
       ];
 
