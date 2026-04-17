@@ -10,7 +10,7 @@
     settings.server = {
       start.__raw = ''
         function()
-          local opencode_cmd = vim.g .. " --port"
+          local opencode_cmd = vim.g.opencode_cmd .. " --port"
           require("snacks.terminal").open(opencode_cmd, {
             win = {
               position = "right",
@@ -25,7 +25,7 @@
       '';
       stop.__raw = ''
         function()
-          local opencode_cmd = vim.g .. " --port"
+          local opencode_cmd = vim.g.opencode_cmd .. " --port"
           local term = require("snacks.terminal").get(opencode_cmd, {
             create = false,
             win = {
@@ -44,7 +44,7 @@
       '';
       toggle.__raw = ''
         function()
-          local opencode_cmd = vim.g .. " --port"
+          local opencode_cmd = vim.g.opencode_cmd .. " --port"
           require("snacks.terminal").toggle(opencode_cmd, {
             win = {
               position = "right",

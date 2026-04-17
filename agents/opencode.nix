@@ -5,20 +5,24 @@
   pkgs,
   ...
 }:
-{
-  home.file.".config/opencode/magic-context.jsonc".text = builtins.toJSON {
+let
+  configDir = ".config/opencode";
+in {
+  home.file."${configDir}/magic-context.jsonc".text = builtins.toJSON {
     "$schema" =
       "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
     enabled = true;
 
-    historian.model = "opencode-go/glm-5.1";
+    historian.model = "opencode-go/minimax-m2.7";
   };
+
+  home.file."${configDir}/instructions/base.md".source = ./opencode/instructions/base.md;
+  home.file."${configDir}/instructions/subagent-json-format.md".source = ./opencode/instructions/subagent-json-format.md;
 
   programs.bun.enable = true; # need for plannotator
 
   programs.opencode = {
     enable = true;
-    context = ./opencode/instructions;
     agents = ./opencode/agents;
     commands = ./commands;
     skills = {
@@ -34,6 +38,20 @@
       "$schema" = "https://opencode.ai/config.json";
 
       autoupdate = false;
+
+      plugin = [
+        "@mohak34/opencode-notifier@0.2.2"
+        "cc-safety-net@0.8.2"
+        "@plannotator/opencode@0.17.10"
+        "@cortexkit/opencode-magic-context@0.12.0"
+        "github:JRedeker/opencode-morph-fast-apply#v1.8.2"
+      ];
+
+      instructions = [ 
+        "~/.config/opencode/node_modules/opencode-morph-fast-apply/instructions/morph-tools.md"
+        "~/.config/opencode/instructions/base.md"
+        "~/.config/opencode/instructions/subagent-json-format.md"
+      ];
 
       compaction = {
         prune = false;
@@ -116,13 +134,6 @@
         general.disable = true;
         explore.disable = true;
       };
-
-      plugin = [
-        "@mohak34/opencode-notifier@0.2.2"
-        "cc-safety-net@0.8.2"
-        "@plannotator/opencode@0.17.10"
-        # "@cortexkit/opencode-magic-context@0.8.3"
-      ];
 
       provider = {
         minimax.options.apiKey = "{file:${config.sops.secrets.minimax-coding-plan-key.path}}";

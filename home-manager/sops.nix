@@ -35,5 +35,6 @@
     secrets.vmctl-token = {};
     secrets.mcp-token = {};
     secrets.minimax-coding-plan-key = {};
+    secrets.morphllm-key = {};
   };
 }

@@ -100,15 +100,18 @@ in
     "${config.home.homeDirectory}/.npm-globals/bin"
     "${config.home.homeDirectory}/.bun/bin"
   ];
-  home.sessionVariables.ARC = "${config.home.homeDirectory}/arcadia";
-  home.sessionVariables.ARCADIA = "${config.home.homeDirectory}/arcadia";
-  home.sessionVariables.EDITOR = "nvim";
-  home.sessionVariables.VISUAL = "nvim";
-  home.sessionVariables.SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
-  home.sessionVariables.DO_NOT_TRACK = "1";
-  home.sessionVariables.LC_ALL = "en_US.UTF-8";
-  home.sessionVariables.PAGER = "ov";
-  home.sessionVariables.MANPAGER = "ov";
+  home.sessionVariables = {
+    ARC = "${config.home.homeDirectory}/arcadia";
+    ARCADIA = "${config.home.homeDirectory}/arcadia";
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+    SANDBOX_TOKEN = "\$(cat ~/.ya_token 2> /dev/null || true)";
+    DO_NOT_TRACK = "1";
+    LC_ALL = "en_US.UTF-8";
+    PAGER = "ov";
+    MANPAGER = "ov";
+    MORPH_API_KEY = "\$(cat ${config.sops.secrets.morphllm-key.path} 2> /dev/null || true)";
+  };
 
   programs.atuin = {
     enable = true;
