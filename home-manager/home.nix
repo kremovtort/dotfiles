@@ -214,6 +214,17 @@ in
   programs.less.enable = true;
   programs.man.enable = true;
 
+  programs.neovide = {
+    enable = true;
+    settings = {
+      font = {
+        normal = [ "JetbrainsMono Nerd Font" ];
+        size = 12;
+        title-hidden = true;
+      };
+    };
+  };
+
   programs.nix-your-shell = {
     enable = true;
     enableZshIntegration = true;

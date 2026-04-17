@@ -1,4 +1,18 @@
+{ lib, ... }:
 {
+  extraConfigLua = lib.mkAfter ''
+    if vim.g.neovide then
+      local function paste()
+        vim.api.nvim_paste(vim.fn.getreg("+"), true, -1)
+      end
+
+      vim.keymap.set({ "n", "i", "v", "c", "t" }, "<D-v>", paste, {
+        silent = true,
+        desc = "Paste from system clipboard",
+      })
+    end
+  '';
+
   keymaps = [
     # Better up/down for wrapped lines
     {

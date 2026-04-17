@@ -1,7 +1,12 @@
 {
   globals = {
     mapleader = " ";
-    maplocalleader = ",";
+    neovide_input_macos_option_key_is_meta = "only_left";
+    neovide_scroll_animation_length = 0.1;
+    neovide_position_animation_length = 0.1;
+    neovide_cursor_animation_length = 0.1;
+    neovide_show_border = false;
+    neovide_cursor_vfx_mode = "";
   };
 
   opts = {

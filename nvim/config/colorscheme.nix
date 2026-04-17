@@ -3,6 +3,7 @@
     enable = true;
     settings = {
       flavour = "mocha";
+      term_colors = true;
       lsp_styles.underlines = {
         errors = [ "undercurl" ];
         hints = [ "undercurl" ];
