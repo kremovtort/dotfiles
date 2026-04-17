@@ -2,9 +2,62 @@
 {
   dependencies.opencode.enable = lib.mkForce false;
 
+  globals.opencode_cmd = lib.mkDefault "opencode";
+
   plugins.opencode = {
     enable = true;
     autoLoad = true;
+    settings.server = {
+      start.__raw = ''
+        function()
+          local opencode_cmd = vim.g .. " --port"
+          require("snacks.terminal").open(opencode_cmd, {
+            win = {
+              position = "right",
+              width = 0.5,
+              enter = false,
+              on_win = function(win)
+                require("opencode.terminal").setup(win.win)
+              end,
+            },
+          })
+        end
+      '';
+      stop.__raw = ''
+        function()
+          local opencode_cmd = vim.g .. " --port"
+          local term = require("snacks.terminal").get(opencode_cmd, {
+            create = false,
+            win = {
+              position = "right",
+              width = 0.5,
+              enter = false,
+              on_win = function(win)
+                require("opencode.terminal").setup(win.win)
+              end,
+            },
+          })
+          if term then
+            term:close()
+          end
+        end
+      '';
+      toggle.__raw = ''
+        function()
+          local opencode_cmd = vim.g .. " --port"
+          require("snacks.terminal").toggle(opencode_cmd, {
+            win = {
+              position = "right",
+              width = 0.5,
+              enter = false,
+              on_win = function(win)
+                require("opencode.terminal").setup(win.win)
+              end,
+            },
+          })
+        end
+      '';
+    };
   };
 
   autoCmd = [
@@ -72,6 +125,7 @@
       ];
       key = "<leader>ax";
       action.__raw = ''function() require("opencode").select() end'';
+
       options.desc = "Execute opencode action…";
     }
     {

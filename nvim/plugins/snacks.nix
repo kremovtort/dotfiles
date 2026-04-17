@@ -95,8 +95,15 @@
       scope.enabled = true;
       scroll.enabled = false;
       statuscolumn.enabled = false;
+      terminal = {
+        enabled = true;
+        win = {
+          border = true;
+          position = "float";
+          keys = { };
+        };
+      };
       words.enabled = true;
-      terminal.win.keys = { };
     };
   };
 
@@ -134,6 +141,54 @@
       key = "<leader>un";
       action.__raw = "function() require('snacks').notifier.hide() end";
       options.desc = "Dismiss All Notifications";
+    }
+    {
+      mode = [
+        "n"
+        "t"
+      ];
+      key = "<C-/>";
+      action.__raw = "function() require('snacks').terminal.focus() end";
+      options.desc = "Toggle terminal";
+    }
+    {
+      mode = [
+        "n"
+        "t"
+      ];
+      key = "<D-j>";
+      action.__raw = ''
+        function()
+          local Snacks = require("snacks")
+          local term = rawget(_G, "__jjui_term")
+
+          if term and term:buf_valid() then
+            term:toggle()
+            if term:valid() then
+              term:focus()
+            end
+            return
+          end
+
+          term = Snacks.terminal.open("jjui", {
+            auto_close = false,
+            auto_insert = true,
+            start_insert = true,
+          })
+
+          term:on("TermClose", function(self)
+            _G.__jjui_term = nil
+
+            if type(vim.v.event) == "table" and vim.v.event.status == 0 then
+              self:close()
+              vim.cmd.checktime()
+            end
+          end, { buf = true })
+
+          _G.__jjui_term = term
+        end
+      '';
+      options.desc = "jjui (float)";
     }
     {
       mode = "n";
@@ -269,8 +324,8 @@
     {
       mode = "n";
       key = "<leader>sp";
-      action.__raw = "function() require('snacks').picker.lazy() end";
-      options.desc = "Search for Plugin Spec";
+      action.__raw = "function() require('snacks').picker() end";
+      options.desc = "Search for Picker";
     }
     {
       mode = [
@@ -402,6 +457,12 @@
       key = "<leader>su";
       action.__raw = "function() require('snacks').picker.undo() end";
       options.desc = "Undotree";
+    }
+    {
+      mode = "n";
+      key = "<leader>sz";
+      action.__raw = "function() require('snacks').picker.zoxide() end";
+      options.desc = "Zoxide";
     }
     {
       mode = "n";

@@ -33,8 +33,6 @@
 
     ./plugins/haskell.nix
 
-    ./plugins/toggleterm.nix
-
     ./plugins/repeat.nix
     ./plugins/auto-session.nix
     ./plugins/yanky.nix

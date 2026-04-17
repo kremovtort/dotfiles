@@ -189,11 +189,6 @@
                   local title_hl = hl("LualineTermCommand", title)
                   local cwd_hl = cwd_tail ~= "" and hl("LualineTermCwd", cwd_tail) or hl("LualineTermCwd", tail(vim.fn.getcwd()))
 
-                  if vim.bo.filetype == "toggleterm" and vim.b.toggle_number then
-                    local num_hl = hl("LualineTermNumber", tostring(vim.b.toggle_number))
-                    return "term " .. num_hl .. " runs " .. title_hl .. " in " .. cwd_hl
-                  end
-
                   return title_hl .. " in " .. cwd_hl
                 end
 
@@ -219,7 +214,7 @@
               end
             '';
             padding = {
-              left = -1;
+              left = 1;
               right = 1;
             };
             separator = "%#LualineCSeparator#%*";
