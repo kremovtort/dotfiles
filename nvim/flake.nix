@@ -39,6 +39,16 @@
       url = "github:2KAbhishek/seeker.nvim";
       flake = false;
     };
+
+    plugins-floaterm = {
+      url = "github:nvzone/floaterm";
+      flake = false;
+    };
+
+    plugins-volt = {
+      url = "github:nvzone/volt";
+      flake = false;
+    };
   };
 
   outputs =

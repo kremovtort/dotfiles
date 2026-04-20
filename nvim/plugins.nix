@@ -46,5 +46,6 @@
     # ./plugins/opencode/provider-sudo-tee.nix
     ./plugins/opencode/provider-nickvandyke.nix
     ./plugins/dropbar.nix
+    ./plugins/tabterm.nix
   ];
 }

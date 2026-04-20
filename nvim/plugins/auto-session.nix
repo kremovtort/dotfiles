@@ -18,6 +18,16 @@
       ];
       args_allow_single_directory = true;
       args_allow_files_auto_save = false;
+      save_extra_data.__raw = ''
+        function(_)
+          return require("tabterm").save_session_data()
+        end
+      '';
+      restore_extra_data.__raw = ''
+        function(_, extra_data)
+          require("tabterm").restore_session_data(extra_data)
+        end
+      '';
     };
   };
 }
