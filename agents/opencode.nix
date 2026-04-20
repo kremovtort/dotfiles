@@ -51,8 +51,8 @@ in {
       plugin = [
         "@mohak34/opencode-notifier@0.2.2"
         "cc-safety-net@0.8.2"
-        "@plannotator/opencode@0.18.0"
-        "@cortexkit/opencode-magic-context@0.12.0"
+        "@plannotator/opencode@0.19.0"
+        "@cortexkit/opencode-magic-context@0.13.0"
         "@morphllm/opencode-morph-plugin@${morph-plugin-version}"
       ];
 
