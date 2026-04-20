@@ -110,7 +110,6 @@ in
     LC_ALL = "en_US.UTF-8";
     PAGER = "ov";
     MANPAGER = "ov";
-    MORPH_API_KEY = "\$(cat ${config.sops.secrets.morphllm-key.path} 2> /dev/null || true)";
   };
 
   programs.atuin = {

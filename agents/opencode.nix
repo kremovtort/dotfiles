@@ -8,12 +8,19 @@
 let
   configDir = ".config/opencode";
 in {
+  home.sessionVariables = {
+    MORPH_COMPACT = "false";
+    MORPH_WARPGREP = "false";
+    MORPH_WARPGREP_GITHUB = "false";
+    MORPH_API_KEY = "\$(cat ${config.sops.secrets.morphllm-key.path} 2> /dev/null || true)";
+  };
+
   home.file."${configDir}/magic-context.jsonc".text = builtins.toJSON {
     "$schema" =
       "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
     enabled = true;
 
-    historian.model = "opencode-go/minimax-m2.7";
+    historian.model = "opencode-go/kimi-k2.6";
   };
 
   home.file."${configDir}/instructions/base.md".source = ./opencode/instructions/base.md;
@@ -34,7 +41,9 @@ in {
     };
     # tools = ./opencode/tools;
 
-    settings = {
+    settings = let
+      morph-plugin-version = "2.0.9";
+    in {
       "$schema" = "https://opencode.ai/config.json";
 
       autoupdate = false;
@@ -44,13 +53,13 @@ in {
         "cc-safety-net@0.8.2"
         "@plannotator/opencode@0.18.0"
         "@cortexkit/opencode-magic-context@0.12.0"
-        "github:JRedeker/opencode-morph-fast-apply#v1.8.2"
+        "@morphllm/opencode-morph-plugin@${morph-plugin-version}"
       ];
 
       instructions = [ 
-        "~/.config/opencode/node_modules/opencode-morph-fast-apply/instructions/morph-tools.md"
-        "~/.config/opencode/instructions/base.md"
-        "~/.config/opencode/instructions/subagent-json-format.md"
+        "~/.cache/opencode/packages/@morphllm/opencode-morph-plugin@${morph-plugin-version}/node_modules/@morphllm/opencode-morph-plugin/instructions/morph-tools.md"
+        "instructions/base.md"
+        "instructions/subagent-json-format.md"
       ];
 
       compaction = {
@@ -112,12 +121,14 @@ in {
           mode = "primary";
           model = "openai/gpt-5.4";
           reasoningEffort = "high";
+          step = 128;
         };
 
         build = {
           mode = "primary";
           model = "openai/gpt-5.4";
           reasoningEffort = "high";
+          step = 128;
         };
 
         ask = {
@@ -129,6 +140,7 @@ in {
             edit = "deny";
             bash = "allow";
           };
+          step = 128;
         };
 
         general.disable = true;
