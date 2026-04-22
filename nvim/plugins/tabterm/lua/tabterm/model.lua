@@ -548,30 +548,30 @@ function M.placeholder_model(workspace)
       context = nil,
       status = nil,
       detail = workspace.active_terminal_id == nil and "Create a shell or command terminal" or "Select another terminal or reopen the workspace",
-      hint = workspace.active_terminal_id == nil and "<CR> new shell   c new command" or "q close",
+      hint = workspace.active_terminal_id == nil and "i/a/I/A shell   c[iaIA] cmd" or "q close",
     }
   end
 
   if terminal.runtime.phase == "stopped" then
     return {
       kind = "stopped",
-      title = M.display_name(terminal),
-      context = M.context_line(terminal),
-      status = "not started",
-      detail = nil,
-      hint = "<CR> start   r rename   d delete",
-    }
+        title = M.display_name(terminal),
+        context = M.context_line(terminal),
+        status = "not started",
+        detail = nil,
+        hint = "<CR> start   i/a/I/A shell   c[iaIA] cmd",
+      }
   end
 
   if terminal.runtime.phase == "exited" then
     return {
       kind = "exited",
-      title = M.display_name(terminal),
-      context = M.context_line(terminal),
-      status = M.result_label(terminal),
-      detail = M.detail_line(terminal),
-      hint = "<CR> start again   r rename   d delete",
-    }
+        title = M.display_name(terminal),
+        context = M.context_line(terminal),
+        status = M.result_label(terminal),
+        detail = M.detail_line(terminal),
+        hint = "<CR> start again   i/a/I/A shell   c[iaIA] cmd",
+      }
   end
 
   return {

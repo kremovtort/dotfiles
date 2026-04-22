@@ -4,7 +4,10 @@ local M = {
   workspaces_by_tab = {},
   buf_index = {},
   suppress_winclosed = {},
+  suppress_bufdelete = {},
   refresh_scheduled = {},
+  suspend_autoclose = false,
+  pending_shell_dispose = {},
 }
 
 function M.current_tabpage()

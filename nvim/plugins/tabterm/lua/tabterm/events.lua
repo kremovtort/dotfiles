@@ -8,6 +8,131 @@ local M = {
   types = types,
 }
 
+local function valid_win(winid)
+  return winid and winid > 0 and vim.api.nvim_win_is_valid(winid)
+end
+
+local function stabilize_panel_for_terminal_dispose(workspace)
+  if not workspace or not workspace.runtime.visible then
+    return false
+  end
+
+  local sidebar_win = workspace.runtime.sidebar.winid
+  if #workspace.terminal_order > 1 and valid_win(sidebar_win) and vim.api.nvim_get_current_win() ~= sidebar_win then
+    pcall(vim.api.nvim_set_current_win, sidebar_win)
+  end
+
+  local panel_win = workspace.runtime.panel.winid
+  if not valid_win(panel_win) then
+    return false
+  end
+
+  local scratch = vim.api.nvim_create_buf(false, true)
+  vim.bo[scratch].buftype = "nofile"
+  vim.bo[scratch].bufhidden = "wipe"
+  vim.bo[scratch].swapfile = false
+  vim.bo[scratch].modifiable = false
+  pcall(vim.api.nvim_win_set_buf, panel_win, scratch)
+  return true
+end
+
+local function prepare_shell_delete_transition(workspace, terminal_id)
+  if not workspace or not workspace.runtime.visible or workspace.active_terminal_id ~= terminal_id then
+    return false
+  end
+
+  if valid_win(workspace.runtime.panel.winid) then
+    state.suppress_winclosed[workspace.runtime.panel.winid] = true
+  end
+
+  stabilize_panel_for_terminal_dispose(workspace)
+
+  state.suspend_autoclose = true
+  return true
+end
+
+local function set_suspend_autoclose_from_pending()
+  state.suspend_autoclose = next(state.pending_shell_dispose) ~= nil
+end
+
+local function schedule_shell_dispose(workspace, terminal, ref)
+  if not workspace or not terminal or not ref or terminal.spec.kind ~= "shell" then
+    return false
+  end
+
+  local panel_winid = workspace.runtime.panel.winid
+
+  local key = state.tab_key(ref.tabpage)
+  local pending = state.pending_shell_dispose[key]
+  if pending and pending.terminal_id == ref.terminal_id then
+    return true
+  end
+
+  local keep_open = prepare_shell_delete_transition(workspace, ref.terminal_id)
+  state.pending_shell_dispose[key] = {
+    terminal_id = ref.terminal_id,
+    keep_open = keep_open,
+    panel_winid = panel_winid,
+  }
+  set_suspend_autoclose_from_pending()
+
+  vim.schedule(function()
+    local latest_pending = state.pending_shell_dispose[key]
+    if not latest_pending or latest_pending.terminal_id ~= ref.terminal_id then
+      if panel_winid then
+        state.suppress_winclosed[panel_winid] = nil
+      end
+      set_suspend_autoclose_from_pending()
+      return
+    end
+
+    state.pending_shell_dispose[key] = nil
+
+    M.dispatch({
+      type = types.TERMINAL_DELETE_REQUESTED,
+      tabpage = ref.tabpage,
+      terminal_id = ref.terminal_id,
+    }, { defer_refresh = true })
+
+    local latest = state.get_workspace(ref.tabpage, false)
+    if latest_pending.keep_open and latest then
+      if #latest.terminal_order > 0 then
+        local ok, tabterm = pcall(require, "tabterm")
+        if ok then
+          tabterm.open()
+          tabterm.focus_sidebar()
+        else
+          latest.runtime.visible = true
+          ui.ensure_open(latest)
+          reconcile.workspace(latest)
+          ui.refresh(latest)
+          if valid_win(latest.runtime.sidebar.winid) then
+            pcall(vim.api.nvim_set_current_win, latest.runtime.sidebar.winid)
+          end
+        end
+      else
+        latest.runtime.visible = true
+        ui.ensure_open(latest)
+        reconcile.workspace(latest)
+        ui.refresh(latest)
+        if valid_win(latest.runtime.sidebar.winid) then
+          pcall(vim.api.nvim_set_current_win, latest.runtime.sidebar.winid)
+        end
+      end
+    end
+
+    if latest_pending.panel_winid then
+      state.suppress_winclosed[latest_pending.panel_winid] = nil
+    end
+
+    vim.defer_fn(function()
+      set_suspend_autoclose_from_pending()
+    end, 100)
+  end)
+
+  return true
+end
+
 local function refresh_workspace_now(workspace)
   reconcile.workspace(workspace)
   ui.refresh(workspace)
@@ -148,13 +273,8 @@ local function attach_output_listener(bufnr, tabpage, terminal_id)
       end
     end,
     on_detach = function()
-      if state.lookup_buffer(bufnr) then
-        M.dispatch({
-          type = types.TERMINAL_BUFFER_WIPED_EXTERNALLY,
-          tabpage = tabpage,
-          terminal_id = terminal_id,
-        }, { defer_refresh = true })
-      end
+      -- Detach also happens on normal terminal job shutdown; real buffer removal
+      -- is handled via BufDelete/BufWipeout below.
     end,
   })
 end
@@ -241,8 +361,13 @@ function M.setup_autocmds()
   vim.api.nvim_create_autocmd("TermClose", {
     group = state.augroup,
     callback = function(ev)
-      local ref = state.lookup_buffer(ev.buf)
+      local workspace, terminal, ref = tracked_terminal_from_buffer(ev.buf)
       if not ref then
+        return
+      end
+
+      if terminal and terminal.spec.kind == "shell" then
+        schedule_shell_dispose(workspace, terminal, ref)
         return
       end
 
@@ -332,6 +457,9 @@ function M.setup_autocmds()
   vim.api.nvim_create_autocmd("WinClosed", {
     group = state.augroup,
     callback = function(ev)
+      if state.suspend_autoclose then
+        return
+      end
       local winid = tonumber(ev.match)
       if not winid or state.suppress_winclosed[winid] then
         return
@@ -343,7 +471,26 @@ function M.setup_autocmds()
           return
         end
         if workspace.runtime.panel.winid == winid then
-          M.dispatch({ type = types.PANEL_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
+          local active_id = workspace.active_terminal_id
+          local active = active_id and workspace.terminals_by_id[active_id] or nil
+          if active and active.spec.kind == "shell" then
+            vim.schedule(function()
+              local latest = state.get_workspace(tabpage, false)
+              local terminal = latest and active_id and latest.terminals_by_id[active_id] or nil
+              local bufnr = terminal and terminal.runtime.bufnr or nil
+              if terminal and (not bufnr or not vim.api.nvim_buf_is_valid(bufnr)) then
+                schedule_shell_dispose(latest, terminal, {
+                  tabpage = tabpage,
+                  terminal_id = active_id,
+                })
+                return
+              end
+
+              M.dispatch({ type = types.PANEL_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
+            end)
+          else
+            M.dispatch({ type = types.PANEL_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
+          end
           return
         end
       end
@@ -353,8 +500,17 @@ function M.setup_autocmds()
   vim.api.nvim_create_autocmd({ "BufWipeout", "BufDelete" }, {
     group = state.augroup,
     callback = function(ev)
+      if state.suppress_bufdelete[ev.buf] then
+        return
+      end
       local ref = state.lookup_buffer(ev.buf)
       if ref then
+        local workspace = state.get_workspace(ref.tabpage, false)
+        local terminal = workspace and workspace.terminals_by_id[ref.terminal_id] or nil
+        if terminal and terminal.spec.kind == "shell" then
+          schedule_shell_dispose(workspace, terminal, ref)
+          return
+        end
         M.dispatch({
           type = types.TERMINAL_BUFFER_WIPED_EXTERNALLY,
           tabpage = ref.tabpage,
@@ -402,6 +558,9 @@ function M.setup_autocmds()
     callback = function()
       local current_win = vim.api.nvim_get_current_win()
       vim.schedule(function()
+        if state.suspend_autoclose then
+          return
+        end
         for tabpage, workspace in pairs(state.workspaces_by_tab) do
           if workspace.runtime.visible then
             local in_tabterm = current_win == workspace.runtime.sidebar.winid or current_win == workspace.runtime.panel.winid

@@ -32,12 +32,13 @@ local function open_workspace_ui(workspace)
   })
 end
 
-local function create_and_start(tabpage, spec)
+local function create_and_start(tabpage, spec, opts)
   dispatch({
     type = types.TERMINAL_CREATE_REQUESTED,
     tabpage = tabpage,
     payload = {
       spec = spec,
+      to_index = opts and opts.to_index or nil,
     },
   })
 
@@ -51,7 +52,103 @@ local function create_and_start(tabpage, spec)
   end
 end
 
-local function sidebar_terminal_id(workspace)
+local sidebar_terminal_id
+
+local function terminal_index(workspace, terminal_id)
+  if not workspace or not terminal_id then
+    return nil
+  end
+
+  for index, id in ipairs(workspace.terminal_order) do
+    if id == terminal_id then
+      return index
+    end
+  end
+
+  return nil
+end
+
+local function insertion_index(workspace, placement)
+  if not workspace then
+    return 1
+  end
+
+  if placement == "first" then
+    return 1
+  end
+
+  if placement == "last" or #workspace.terminal_order == 0 then
+    return #workspace.terminal_order + 1
+  end
+
+  local anchor = sidebar_terminal_id(workspace) or workspace.active_terminal_id
+  local index = terminal_index(workspace, anchor) or #workspace.terminal_order
+
+  if placement == "before" then
+    return index
+  end
+
+  if placement == "after" then
+    return index + 1
+  end
+
+  return #workspace.terminal_order + 1
+end
+
+local function create_at(workspace, spec, placement)
+  open_workspace_ui(workspace)
+  create_and_start(workspace.runtime.tabpage, spec, { to_index = insertion_index(workspace, placement) })
+  M.focus_panel()
+end
+
+local function preserve_tabterm_focus_after_delete(workspace)
+  if not workspace or not workspace.runtime.visible or #workspace.terminal_order == 0 then
+    state.suspend_autoclose = false
+    return
+  end
+
+  vim.defer_fn(function()
+    local latest = current_workspace(false)
+    if latest and #latest.terminal_order > 0 then
+      if not latest.runtime.visible then
+        open_workspace_ui(latest)
+      end
+      M.focus_sidebar()
+    end
+    state.suspend_autoclose = false
+  end, 20)
+end
+
+local function move_focus_to_sidebar_before_delete(workspace)
+  if not workspace or not workspace.runtime.visible then
+    return
+  end
+
+  local sidebar_win = workspace.runtime.sidebar.winid
+  if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) and vim.api.nvim_get_current_win() ~= sidebar_win then
+    vim.api.nvim_set_current_win(sidebar_win)
+  end
+end
+
+local function stabilize_panel_before_delete(workspace)
+  if not workspace or not workspace.runtime.visible then
+    return
+  end
+
+  local panel_win = workspace.runtime.panel.winid
+  if not panel_win or not vim.api.nvim_win_is_valid(panel_win) then
+    return
+  end
+
+  local scratch = vim.api.nvim_create_buf(false, true)
+  vim.bo[scratch].buftype = "nofile"
+  vim.bo[scratch].bufhidden = "wipe"
+  vim.bo[scratch].swapfile = false
+  vim.bo[scratch].modifiable = false
+  pcall(vim.api.nvim_win_set_buf, panel_win, scratch)
+end
+
+sidebar_terminal_id = function(workspace)
   if not workspace or not workspace.runtime.visible or not workspace.runtime.sidebar.winid then
     return nil
   end
@@ -164,12 +261,19 @@ end
 
 function M.new_shell(spec)
   local workspace = current_workspace(true)
-  open_workspace_ui(workspace)
-  create_and_start(workspace.runtime.tabpage, default_shell_spec(spec))
-  M.focus_panel()
+  create_at(workspace, default_shell_spec(spec), "last")
+end
+
+function M.insert_shell(placement, spec)
+  local workspace = current_workspace(true)
+  create_at(workspace, default_shell_spec(spec), placement)
 end
 
 function M.new_command(cmd)
+  return M.insert_command("last", cmd)
+end
+
+function M.insert_command(placement, cmd)
   local workspace = current_workspace(true)
 
   local create = function(value)
@@ -178,13 +282,11 @@ function M.new_command(cmd)
       return
     end
 
-    open_workspace_ui(workspace)
-    create_and_start(workspace.runtime.tabpage, {
+    create_at(workspace, {
       kind = "cmd",
       cmd = value,
       cwd = (vim.uv or vim.loop).cwd() or vim.fn.getcwd(),
-    })
-    M.focus_panel()
+    }, placement)
   end
 
   if cmd then
@@ -245,11 +347,22 @@ function M.delete_active()
     return
   end
 
+  local should_preserve_focus = workspace.runtime.visible and #workspace.terminal_order > 1
+  if should_preserve_focus then
+    state.suspend_autoclose = true
+    move_focus_to_sidebar_before_delete(workspace)
+    stabilize_panel_before_delete(workspace)
+  end
+
   dispatch({
     type = types.TERMINAL_DELETE_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     terminal_id = workspace.active_terminal_id,
   })
+
+  if should_preserve_focus then
+    preserve_tabterm_focus_after_delete(workspace)
+  end
 end
 
 function M.next_terminal()
@@ -318,11 +431,22 @@ function M.delete_sidebar_cursor()
      end
    end
 
-  dispatch({
-    type = types.TERMINAL_DELETE_REQUESTED,
-    tabpage = workspace.runtime.tabpage,
-    terminal_id = terminal_id,
-  })
+   local should_preserve_focus = workspace.runtime.visible and terminal_id == workspace.active_terminal_id and #workspace.terminal_order > 1
+   if should_preserve_focus then
+     state.suspend_autoclose = true
+     move_focus_to_sidebar_before_delete(workspace)
+     stabilize_panel_before_delete(workspace)
+   end
+
+   dispatch({
+     type = types.TERMINAL_DELETE_REQUESTED,
+     tabpage = workspace.runtime.tabpage,
+     terminal_id = terminal_id,
+   })
+
+   if should_preserve_focus then
+     preserve_tabterm_focus_after_delete(workspace)
+   end
 end
 
 function M.move_sidebar_cursor(delta)
@@ -356,6 +480,34 @@ function M.sidebar_step(delta)
   end
 
   vim.api.nvim_win_set_cursor(workspace.runtime.sidebar.winid, { row, 0 })
+end
+
+function M.sidebar_goto(index)
+  local workspace = current_workspace(false)
+  if not workspace or not workspace.runtime.visible or not vim.api.nvim_win_is_valid(workspace.runtime.sidebar.winid) then
+    return
+  end
+
+  if #workspace.terminal_order == 0 then
+    return
+  end
+
+  index = math.max(1, math.min(#workspace.terminal_order, tonumber(index) or 1))
+  local terminal_id = workspace.terminal_order[index]
+  local row = sidebar_row_for_terminal(workspace, terminal_id)
+  if not row then
+    return
+  end
+
+  vim.api.nvim_win_set_cursor(workspace.runtime.sidebar.winid, { row, 0 })
+
+  if workspace.active_terminal_id ~= terminal_id then
+    dispatch({
+      type = types.TERMINAL_SELECT_REQUESTED,
+      tabpage = workspace.runtime.tabpage,
+      terminal_id = terminal_id,
+    })
+  end
 end
 
 function M.sync_sidebar_cursor()

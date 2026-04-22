@@ -38,7 +38,9 @@ local function delete_terminal_buffer(terminal)
 
   state.clear_buffer_index(terminal.runtime.bufnr)
   if vim.api.nvim_buf_is_valid(terminal.runtime.bufnr) then
+    state.suppress_bufdelete[terminal.runtime.bufnr] = true
     pcall(vim.api.nvim_buf_delete, terminal.runtime.bufnr, { force = true })
+    state.suppress_bufdelete[terminal.runtime.bufnr] = nil
   end
 end
 
@@ -71,11 +73,13 @@ local function prune_hidden_exited_cmds(workspace, visible_terminal_id)
   end
 end
 
-local function create_terminal(workspace, spec)
+local function create_terminal(workspace, spec, to_index)
   local id = next_id(workspace)
   local terminal = model.new_terminal(id, spec)
   workspace.terminals_by_id[id] = terminal
-  table.insert(workspace.terminal_order, id)
+  local index = tonumber(to_index) or (#workspace.terminal_order + 1)
+  index = math.max(1, math.min(#workspace.terminal_order + 1, index))
+  table.insert(workspace.terminal_order, index, id)
   workspace.active_terminal_id = id
   return terminal
 end
@@ -114,7 +118,8 @@ function M.apply(event)
   end
 
   if event.type == types.TERMINAL_CREATE_REQUESTED then
-    local created = create_terminal(workspace, event.payload and event.payload.spec or {})
+    local payload = event.payload or {}
+    local created = create_terminal(workspace, payload.spec or {}, payload.to_index)
     prune_hidden_exited_cmds(workspace, created and created.id or workspace.active_terminal_id)
     return workspace
   end
