@@ -1,5 +1,6 @@
 local reconcile = require("tabterm.reconcile")
 local reducer = require("tabterm.reducer")
+local model = require("tabterm.model")
 local state = require("tabterm.state")
 local types = require("tabterm.types")
 local ui = require("tabterm.ui")
@@ -164,6 +165,76 @@ end
 local function refresh_all_later()
   for _, other in pairs(state.workspaces_by_tab) do
     refresh_workspace_later(other)
+  end
+end
+
+local function workspace_has_waiting_terminal(workspace)
+  if not workspace then
+    return false
+  end
+
+  for _, terminal in pairs(workspace.terminals_by_id) do
+    if model.is_waiting(terminal) then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function visible_waiting_workspaces()
+  local waiting = {}
+  for _, workspace in pairs(state.workspaces_by_tab) do
+    if workspace.runtime.visible and workspace_has_waiting_terminal(workspace) then
+      table.insert(waiting, workspace)
+    end
+  end
+  return waiting
+end
+
+local function stop_spinner_ticker()
+  if state.spinner_timer then
+    state.spinner_timer:stop()
+    state.spinner_timer:close()
+    state.spinner_timer = nil
+  end
+  state.reset_spinner_frame()
+end
+
+local function ensure_spinner_ticker()
+  if state.spinner_timer then
+    return
+  end
+
+  local timer = (vim.uv or vim.loop).new_timer()
+  if not timer then
+    return
+  end
+
+  state.spinner_timer = timer
+  timer:start(
+    state.spinner_interval,
+    state.spinner_interval,
+    vim.schedule_wrap(function()
+      local waiting = visible_waiting_workspaces()
+      if #waiting == 0 then
+        stop_spinner_ticker()
+        return
+      end
+
+      state.advance_spinner_frame()
+      for _, workspace in ipairs(waiting) do
+        refresh_workspace_now(workspace)
+      end
+    end)
+  )
+end
+
+local function update_spinner_ticker()
+  if #visible_waiting_workspaces() > 0 then
+    ensure_spinner_ticker()
+  else
+    stop_spinner_ticker()
   end
 end
 
@@ -357,6 +428,8 @@ function M.dispatch(event, opts)
       refresh_all_now()
     end
   end
+
+  update_spinner_ticker()
 
   return workspace
 end

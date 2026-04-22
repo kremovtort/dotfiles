@@ -41,6 +41,64 @@ local function border()
   return config().border == "none" and "none" or config().border
 end
 
+local function hl_fg(name)
+  local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
+  if not ok or type(hl) ~= "table" then
+    return nil
+  end
+  return hl.fg
+end
+
+local function hl_bg(name)
+  local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
+  if not ok or type(hl) ~= "table" then
+    return nil
+  end
+  return hl.bg
+end
+
+local function split_rgb(color)
+  if type(color) ~= "number" then
+    return nil
+  end
+
+  local r = math.floor(color / 0x10000) % 0x100
+  local g = math.floor(color / 0x100) % 0x100
+  local b = color % 0x100
+  return r, g, b
+end
+
+local function compose_rgb(r, g, b)
+  return r * 0x10000 + g * 0x100 + b
+end
+
+local function blend_colors(fg, bg, alpha)
+  local fr, fg_g, fb = split_rgb(fg)
+  local br, bg_g, bb = split_rgb(bg)
+  if not fr or not br then
+    return fg
+  end
+
+  local function blend_channel(foreground, background)
+    return math.floor((foreground * alpha) + (background * (1 - alpha)) + 0.5)
+  end
+
+  return compose_rgb(
+    blend_channel(fr, br),
+    blend_channel(fg_g, bg_g),
+    blend_channel(fb, bb)
+  )
+end
+
+local function faded_hl(base_group, fallback_group, alpha)
+  local fg = hl_fg(base_group) or hl_fg(fallback_group)
+  local bg = hl_bg("Normal") or hl_bg("NormalFloat") or 0x000000
+  if not fg then
+    return nil
+  end
+  return blend_colors(fg, bg, alpha)
+end
+
 function M.setup_highlights()
   pcall(vim.api.nvim_set_hl, 0, "TabtermSidebarNumberActive", { default = true, link = "CursorLineNr" })
   pcall(vim.api.nvim_set_hl, 0, "TabtermSidebarNumberInactive", { default = true, link = "LineNr" })
@@ -58,17 +116,29 @@ function M.setup_highlights()
     default = true,
     link = "DiagnosticInfo",
   })
+  vim.api.nvim_set_hl(0, "TabtermSidebarLoader", {
+    default = true,
+    link = "Comment",
+  })
   vim.api.nvim_set_hl(0, "TabtermSidebarError", {
     default = true,
     link = "DiagnosticError",
   })
-  vim.api.nvim_set_hl(0, "TabtermSidebarFade1", {
-    default = true,
-    link = "Comment",
+  vim.api.nvim_set_hl(0, "TabtermSidebarCommandFade1", {
+    fg = faded_hl("String", "Comment", 0.55),
+    italic = false,
   })
-  vim.api.nvim_set_hl(0, "TabtermSidebarFade2", {
-    default = true,
-    link = "NonText",
+  vim.api.nvim_set_hl(0, "TabtermSidebarCommandFade2", {
+    fg = faded_hl("String", "NonText", 0.28),
+    italic = false,
+  })
+  vim.api.nvim_set_hl(0, "TabtermSidebarCwdFade1", {
+    fg = faded_hl("Directory", "Comment", 0.55),
+    italic = false,
+  })
+  vim.api.nvim_set_hl(0, "TabtermSidebarCwdFade2", {
+    fg = faded_hl("Directory", "NonText", 0.28),
+    italic = false,
   })
   vim.api.nvim_set_hl(0, "TabtermSidebarHover", {
     default = true,

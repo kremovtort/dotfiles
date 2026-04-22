@@ -8,6 +8,10 @@ local M = {
   refresh_scheduled = {},
   suspend_autoclose_by_tab = {},
   pending_shell_dispose = {},
+  spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" },
+  spinner_frame_index = 1,
+  spinner_interval = 100,
+  spinner_timer = nil,
 }
 
 function M.current_tabpage()
@@ -62,6 +66,23 @@ end
 
 function M.is_autoclose_suspended(tabpage)
   return M.suspend_autoclose_by_tab[M.tab_key(tabpage)] == true
+end
+
+function M.current_spinner_frame()
+  return M.spinner_frames[M.spinner_frame_index] or M.spinner_frames[1] or "…"
+end
+
+function M.advance_spinner_frame()
+  local count = #M.spinner_frames
+  if count == 0 then
+    return M.current_spinner_frame()
+  end
+  M.spinner_frame_index = (M.spinner_frame_index % count) + 1
+  return M.current_spinner_frame()
+end
+
+function M.reset_spinner_frame()
+  M.spinner_frame_index = 1
 end
 
 return M

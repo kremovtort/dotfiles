@@ -50,12 +50,25 @@ local function drop_terminal(workspace, terminal_id)
     return
   end
 
+  local removed_index = nil
+  for index, id in ipairs(workspace.terminal_order) do
+    if id == terminal_id then
+      removed_index = index
+      break
+    end
+  end
+
   delete_terminal_buffer(terminal)
   workspace.terminals_by_id[terminal_id] = nil
   remove_from_order(workspace.terminal_order, terminal_id)
 
   if workspace.active_terminal_id == terminal_id then
-    workspace.active_terminal_id = workspace.terminal_order[1]
+    if #workspace.terminal_order == 0 then
+      workspace.active_terminal_id = nil
+    else
+      local next_index = math.min(removed_index or 1, #workspace.terminal_order)
+      workspace.active_terminal_id = workspace.terminal_order[next_index]
+    end
   end
 end
 

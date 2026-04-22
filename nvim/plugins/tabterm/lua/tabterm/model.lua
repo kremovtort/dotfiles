@@ -402,9 +402,10 @@ function M.sidebar_badge(terminal)
   end
 
   if M.is_waiting(terminal) then
+    local spinner = require("tabterm.state").current_spinner_frame()
     return {
-      text = "…",
-      hl = "TabtermSidebarUnknown",
+      text = spinner,
+      hl = "TabtermSidebarLoader",
     }
   end
 
@@ -450,8 +451,10 @@ function M.detail_line(terminal)
   return M.context_line(terminal)
 end
 
-local function fade_decorations(text, line_idx, start_col, end_col, fallback_start_col)
+local function fade_decorations(text, line_idx, start_col, end_col, fallback_start_col, fade1_hl, fade2_hl)
   local deco = {}
+  fade1_hl = fade1_hl or "TabtermSidebarCommandFade1"
+  fade2_hl = fade2_hl or "TabtermSidebarCommandFade2"
   local chars = vim.fn.strchars(text)
   if chars < 1 then
     return deco
@@ -461,7 +464,7 @@ local function fade_decorations(text, line_idx, start_col, end_col, fallback_sta
       line = line_idx,
       start_col = fallback_start_col or start_col,
       end_col = end_col,
-      hl = "TabtermSidebarFade2",
+      hl = fade2_hl,
     })
     return deco
   end
@@ -471,15 +474,30 @@ local function fade_decorations(text, line_idx, start_col, end_col, fallback_sta
     line = line_idx,
     start_col = start_col + vim.str_byteindex(text, fade1_char),
     end_col = start_col + vim.str_byteindex(text, fade1_char + 1),
-    hl = "TabtermSidebarFade1",
+    hl = fade1_hl,
   })
   table.insert(deco, {
     line = line_idx,
     start_col = start_col + vim.str_byteindex(text, fade2_char),
     end_col = end_col,
-    hl = "TabtermSidebarFade2",
+    hl = fade2_hl,
   })
   return deco
+end
+
+local function fade_before_badge_decorations(text, line_idx, badge_start_col, fade1_hl, fade2_hl)
+  if not text or text == "" or not badge_start_col or badge_start_col <= 0 then
+    return {}
+  end
+
+  local prefix = text:sub(1, badge_start_col)
+  local adjacent = prefix:sub(-2)
+  if adjacent:match("%s") then
+    return {}
+  end
+
+  local adjacent_start = #prefix - #adjacent
+  return fade_decorations(adjacent, line_idx, adjacent_start, adjacent_start + #adjacent, adjacent_start, fade1_hl, fade2_hl)
 end
 
 local function build_command_line(workspace, terminal, index, width, line_idx)
@@ -519,14 +537,16 @@ local function build_command_line(workspace, terminal, index, width, line_idx)
   end
 
   if truncated then
-    vim.list_extend(deco, fade_decorations(command, line_idx, command_start, command_start + #command, #prefix))
+    vim.list_extend(deco, fade_decorations(command, line_idx, command_start, command_start + #command, #prefix, "TabtermSidebarCommandFade1", "TabtermSidebarCommandFade2"))
   end
 
   if badge then
     title = pad_display_right(title, math.max(0, width - badge_width)) .. badge.text
+    local badge_start = #title - #badge.text
+    vim.list_extend(deco, fade_before_badge_decorations(title, line_idx, badge_start, "TabtermSidebarCommandFade1", "TabtermSidebarCommandFade2"))
     table.insert(deco, {
       line = line_idx,
-      start_col = #title - #badge.text,
+      start_col = badge_start,
       end_col = #title,
       hl = badge.hl,
     })
@@ -560,7 +580,7 @@ local function build_cwd_line(workspace, terminal, width, line_idx)
   end
 
   if cwd_truncated then
-    vim.list_extend(deco, fade_decorations(cwd, line_idx, #cwd_prefix, #cwd_prefix + #cwd, #cwd_prefix))
+    vim.list_extend(deco, fade_decorations(cwd, line_idx, #cwd_prefix, #cwd_prefix + #cwd, #cwd_prefix, "TabtermSidebarCwdFade1", "TabtermSidebarCwdFade2"))
   end
 
   return cwd_line, deco
