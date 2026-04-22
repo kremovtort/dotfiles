@@ -1,5 +1,8 @@
 local M = {}
 
+local TERMINAL_ICON = " "
+local DIRECTORY_ICON = " "
+
 local function tail(path)
   path = tostring(path or "")
   if path == "" then
@@ -152,7 +155,6 @@ function M.new_terminal(id, spec)
       cmd = cmd,
       cwd = cwd,
       name_override = spec.name_override,
-      restore = "manual",
     },
     snapshot = {
       title = spec.title,
@@ -170,7 +172,7 @@ function M.new_terminal(id, spec)
       },
     },
     runtime = {
-      phase = "dormant",
+      phase = "stopped",
       bufnr = nil,
       winid = nil,
       channel_id = nil,
@@ -332,7 +334,7 @@ function M.result_label(terminal)
   if kind == "error" then
     return "error"
   end
-  if terminal and terminal.runtime.phase == "dormant" then
+  if terminal and terminal.runtime.phase == "stopped" then
     return "not started"
   end
   if terminal and terminal.runtime.phase == "exited" then
@@ -405,18 +407,41 @@ function M.sidebar_lines(workspace, width)
     local terminal = workspace.terminals_by_id[id]
     if terminal then
       local prefix = ("%d "):format(index)
+      local command_prefix = TERMINAL_ICON
+      table.insert(decorations, {
+        line = #lines,
+        start_col = 0,
+        end_col = #tostring(index),
+        hl = "TabtermSidebarNumber",
+      })
       local badge = M.sidebar_badge(terminal)
       local badge_width = badge and vim.fn.strdisplaywidth(badge.text) or 0
-      local command_max_width = math.max(1, width - vim.fn.strdisplaywidth(prefix) - badge_width)
+      local command_max_width = math.max(1, width - vim.fn.strdisplaywidth(prefix) - vim.fn.strdisplaywidth(command_prefix) - badge_width)
       local command, truncated = truncate_display(M.command_label(terminal), command_max_width)
-      local title = prefix .. command
+      local title = prefix .. command_prefix .. command
+      local command_start = #prefix + #command_prefix
+
+      table.insert(decorations, {
+        line = #lines,
+        start_col = #prefix,
+        end_col = #prefix + #command_prefix,
+        hl = "TabtermSidebarCommand",
+      })
+
+      if command ~= "" then
+        table.insert(decorations, {
+          line = #lines,
+          start_col = command_start,
+          end_col = command_start + #command,
+          hl = "TabtermSidebarCommand",
+        })
+      end
 
       if truncated then
         local chars = vim.fn.strchars(command)
         if chars >= 2 then
           local fade1_char = chars - 2
           local fade2_char = chars - 1
-          local command_start = #prefix
           table.insert(decorations, {
             line = #lines,
             start_col = command_start + vim.str_byteindex(command, fade1_char),
@@ -453,9 +478,23 @@ function M.sidebar_lines(workspace, width)
       table.insert(lines, title)
       table.insert(line_map, id)
 
-      local cwd_prefix = "  "
+      local cwd_prefix = "  " .. DIRECTORY_ICON
       local cwd, cwd_truncated = format_cwd_label(workspace, terminal, math.max(1, width - vim.fn.strdisplaywidth(cwd_prefix)))
       local cwd_line = pad_display_right(cwd_prefix .. cwd, width)
+      table.insert(decorations, {
+        line = #lines,
+        start_col = 2,
+        end_col = 2 + #DIRECTORY_ICON,
+        hl = "TabtermSidebarCwd",
+      })
+      if cwd ~= "" then
+        table.insert(decorations, {
+          line = #lines,
+          start_col = #cwd_prefix,
+          end_col = #cwd_prefix + #cwd,
+          hl = "TabtermSidebarCwd",
+        })
+      end
       table.insert(lines, cwd_line)
       table.insert(line_map, id)
 
@@ -513,9 +552,9 @@ function M.placeholder_model(workspace)
     }
   end
 
-  if terminal.runtime.phase == "dormant" then
+  if terminal.runtime.phase == "stopped" then
     return {
-      kind = "dormant",
+      kind = "stopped",
       title = M.display_name(terminal),
       context = M.context_line(terminal),
       status = "not started",

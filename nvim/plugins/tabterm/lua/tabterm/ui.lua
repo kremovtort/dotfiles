@@ -21,6 +21,13 @@ local function border()
 end
 
 function M.setup_highlights()
+  pcall(vim.api.nvim_set_hl, 0, "TabtermSidebarNumber", { default = true, link = "Number" })
+  pcall(vim.api.nvim_set_hl, 0, "TabtermSidebarCommand", { default = true, link = "String" })
+  pcall(vim.api.nvim_set_hl, 0, "TabtermSidebarCwd", { default = true, link = "Directory" })
+  pcall(vim.api.nvim_set_hl, 0, "TabtermPanelHeaderMuted", { default = true, link = "Comment" })
+  pcall(vim.api.nvim_set_hl, 0, "TabtermPanelHeaderSuccess", { default = true, link = "DiagnosticOk" })
+  pcall(vim.api.nvim_set_hl, 0, "TabtermPanelHeaderUnknown", { default = true, link = "DiagnosticInfo" })
+  pcall(vim.api.nvim_set_hl, 0, "TabtermPanelHeaderError", { default = true, link = "DiagnosticError" })
   vim.api.nvim_set_hl(0, "TabtermSidebarSuccess", {
     default = true,
     link = "DiagnosticOk",
@@ -135,7 +142,10 @@ local function sidebar_keymaps(bufnr)
     require("tabterm").move_sidebar_cursor(-1)
   end, opts)
   vim.keymap.set("n", "q", function()
-    require("tabterm").close()
+    require("tabterm").hide()
+  end, opts)
+  vim.keymap.set("n", "l", function()
+    require("tabterm").focus_panel()
   end, opts)
   vim.keymap.set("n", "j", function()
     require("tabterm").sidebar_step(1)
@@ -169,7 +179,7 @@ local function placeholder_keymaps(bufnr)
     require("tabterm").delete_active()
   end, opts)
   vim.keymap.set("n", "q", function()
-    require("tabterm").close()
+    require("tabterm").hide()
   end, opts)
   vim.keymap.set("n", "<C-h>", function()
     require("tabterm").focus_sidebar()
@@ -189,6 +199,60 @@ local function set_scratch_options(bufnr, filetype)
   vim.bo[bufnr].swapfile = false
   vim.bo[bufnr].modifiable = true
   vim.bo[bufnr].filetype = filetype
+end
+
+local function stl_escape(text)
+  text = tostring(text or "")
+  text = text:gsub("%%", "%%%%")
+  text = text:gsub("[\r\n]", " ")
+  text = text:gsub("[%z\1-\31]", "")
+  return text
+end
+
+local function panel_header_status_hl(terminal)
+  local kind = terminal and terminal.snapshot and terminal.snapshot.last_result and terminal.snapshot.last_result.kind or "unknown"
+  if kind == "success" then
+    return "TabtermPanelHeaderSuccess", "success"
+  end
+  if kind == "error" then
+    return "TabtermPanelHeaderError", "error"
+  end
+  return "TabtermPanelHeaderUnknown", "finished"
+end
+
+local function set_panel_winbar(workspace, terminal)
+  if not valid_win(workspace.runtime.panel.winid) then
+    return
+  end
+
+  if not terminal or terminal.spec.kind ~= "cmd" or terminal.runtime.phase ~= "exited" then
+    vim.wo[workspace.runtime.panel.winid].winbar = ""
+    return
+  end
+
+  local status_hl, status_text = panel_header_status_hl(terminal)
+  local command = stl_escape(model.command_label(terminal))
+  local cwd = stl_escape(model.cwd_label(terminal))
+  local parts = {
+    "%#" .. status_hl .. "# ",
+    status_text,
+    " %*",
+  }
+
+  if command ~= "" then
+    table.insert(parts, "%#TabtermSidebarCommand#")
+    table.insert(parts, command)
+    table.insert(parts, "%*")
+  end
+
+  if cwd ~= "" then
+    table.insert(parts, "%#TabtermPanelHeaderMuted# in %*")
+    table.insert(parts, "%#TabtermSidebarCwd#")
+    table.insert(parts, cwd)
+    table.insert(parts, "%*")
+  end
+
+  vim.wo[workspace.runtime.panel.winid].winbar = "%<" .. table.concat(parts)
 end
 
 function M.mount(workspace)
@@ -350,6 +414,8 @@ function M.render_placeholder(workspace)
     return
   end
 
+  set_panel_winbar(workspace, nil)
+
   local buf = workspace.runtime.panel.bufnr
   if not valid_buf(buf) or vim.bo[buf].buftype == "terminal" then
     buf = vim.api.nvim_create_buf(false, true)
@@ -391,6 +457,7 @@ function M.render_panel(workspace)
       workspace.runtime.panel.bufnr = terminal.runtime.bufnr
       vim.api.nvim_win_set_buf(workspace.runtime.panel.winid, terminal.runtime.bufnr)
       vim.bo[terminal.runtime.bufnr].bufhidden = "hide"
+      set_panel_winbar(workspace, terminal)
     end
     return
   end
@@ -417,6 +484,7 @@ function M.start_terminal(workspace, terminal)
   local bufnr = vim.api.nvim_create_buf(false, true)
   terminal.runtime.bufnr = bufnr
   workspace.runtime.panel.bufnr = bufnr
+  vim.bo[bufnr].bufhidden = "hide"
   terminal_keymaps(bufnr)
   vim.api.nvim_win_set_buf(workspace.runtime.panel.winid, bufnr)
 

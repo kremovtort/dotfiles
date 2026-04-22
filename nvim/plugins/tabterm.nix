@@ -8,7 +8,6 @@
     "lua/tabterm/reducer.lua".source = ./tabterm/lua/tabterm/reducer.lua;
     "lua/tabterm/reconcile.lua".source = ./tabterm/lua/tabterm/reconcile.lua;
     "lua/tabterm/ui.lua".source = ./tabterm/lua/tabterm/ui.lua;
-    "lua/tabterm/persistence.lua".source = ./tabterm/lua/tabterm/persistence.lua;
     "lua/tabterm/events.lua".source = ./tabterm/lua/tabterm/events.lua;
     "lua/tabterm/init.lua".source = ./tabterm/lua/tabterm/init.lua;
     "plugin/tabterm.lua".source = ./tabterm/plugin/tabterm.lua;

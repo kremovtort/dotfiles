@@ -31,6 +31,46 @@ local function next_id(workspace)
   return id
 end
 
+local function delete_terminal_buffer(terminal)
+  if not terminal or not terminal.runtime.bufnr then
+    return
+  end
+
+  state.clear_buffer_index(terminal.runtime.bufnr)
+  if vim.api.nvim_buf_is_valid(terminal.runtime.bufnr) then
+    pcall(vim.api.nvim_buf_delete, terminal.runtime.bufnr, { force = true })
+  end
+end
+
+local function drop_terminal(workspace, terminal_id)
+  local terminal = workspace and workspace.terminals_by_id[terminal_id] or nil
+  if not terminal then
+    return
+  end
+
+  delete_terminal_buffer(terminal)
+  workspace.terminals_by_id[terminal_id] = nil
+  remove_from_order(workspace.terminal_order, terminal_id)
+
+  if workspace.active_terminal_id == terminal_id then
+    workspace.active_terminal_id = workspace.terminal_order[1]
+  end
+end
+
+local function prune_hidden_exited_cmds(workspace, visible_terminal_id)
+  if not workspace then
+    return
+  end
+
+  local ids = vim.deepcopy(workspace.terminal_order)
+  for _, id in ipairs(ids) do
+    local terminal = workspace.terminals_by_id[id]
+    if terminal and terminal.spec.kind == "cmd" and terminal.runtime.phase == "exited" and id ~= visible_terminal_id then
+      drop_terminal(workspace, id)
+    end
+  end
+end
+
 local function create_terminal(workspace, spec)
   local id = next_id(workspace)
   local terminal = model.new_terminal(id, spec)
@@ -42,7 +82,7 @@ end
 
 function M.apply(event)
   local tabpage = event.tabpage or state.current_tabpage()
-  local create_workspace = event.type ~= types.SESSION_SNAPSHOT_RESTORED and event.type ~= types.TABPAGE_CLOSED
+  local create_workspace = event.type ~= types.TABPAGE_CLOSED
   local workspace = state.get_workspace(tabpage, create_workspace)
 
   if event.type == types.WORKSPACE_OPEN_REQUESTED then
@@ -59,6 +99,8 @@ function M.apply(event)
       for _, terminal in pairs(workspace.terminals_by_id) do
         terminal.runtime.winid = nil
       end
+
+      prune_hidden_exited_cmds(workspace, nil)
     end
     return workspace
   end
@@ -72,7 +114,8 @@ function M.apply(event)
   end
 
   if event.type == types.TERMINAL_CREATE_REQUESTED then
-    create_terminal(workspace, event.payload and event.payload.spec or {})
+    local created = create_terminal(workspace, event.payload and event.payload.spec or {})
+    prune_hidden_exited_cmds(workspace, created and created.id or workspace.active_terminal_id)
     return workspace
   end
 
@@ -81,21 +124,12 @@ function M.apply(event)
 
   if event.type == types.TERMINAL_DELETE_REQUESTED then
     if terminal then
-      if terminal.runtime.bufnr then
-        state.clear_buffer_index(terminal.runtime.bufnr)
-      end
-
-      workspace.terminals_by_id[terminal_id] = nil
-      remove_from_order(workspace.terminal_order, terminal_id)
-
-      if workspace.active_terminal_id == terminal_id then
-        workspace.active_terminal_id = workspace.terminal_order[1]
-      end
+      drop_terminal(workspace, terminal_id)
     end
     return workspace
   end
 
-  if not terminal and event.type ~= types.SESSION_SNAPSHOT_RESTORED and event.type ~= types.TABPAGE_CLOSED then
+  if not terminal and event.type ~= types.TABPAGE_CLOSED then
     return workspace
   end
 
@@ -107,6 +141,7 @@ function M.apply(event)
   if event.type == types.TERMINAL_SELECT_REQUESTED then
     workspace.active_terminal_id = terminal_id
     terminal.snapshot.notification.unread = false
+    prune_hidden_exited_cmds(workspace, terminal_id)
     return workspace
   end
 
@@ -127,6 +162,7 @@ function M.apply(event)
     local delta = event.type == types.TERMINAL_NEXT_REQUESTED and 1 or -1
     local next_index = ((current_index - 1 + delta) % #workspace.terminal_order) + 1
     workspace.active_terminal_id = workspace.terminal_order[next_index]
+    prune_hidden_exited_cmds(workspace, workspace.active_terminal_id)
     return workspace
   end
 
@@ -249,7 +285,7 @@ function M.apply(event)
     if terminal.runtime.bufnr then
       state.clear_buffer_index(terminal.runtime.bufnr)
     end
-    terminal.runtime.phase = "dormant"
+    terminal.runtime.phase = "stopped"
     terminal.runtime.bufnr = nil
     terminal.runtime.winid = nil
     terminal.runtime.channel_id = nil
@@ -258,47 +294,10 @@ function M.apply(event)
     return workspace
   end
 
-  if event.type == types.SESSION_SNAPSHOT_RESTORED then
-    state.reset_workspaces()
-
-    local snapshots = event.payload and event.payload.snapshot and event.payload.snapshot.workspaces or {}
-    local tabs = vim.api.nvim_list_tabpages()
-
-    for index, snapshot in ipairs(snapshots or {}) do
-      local current_tabpage = tabs[index]
-      if current_tabpage and snapshot then
-        local restored = model.new_workspace(current_tabpage)
-        restored.active_terminal_id = snapshot.active_terminal_id
-        restored.terminal_order = vim.deepcopy(snapshot.terminal_order or {})
-        restored.runtime.visible = false
-
-        local max_seq = 0
-        for id, terminal_snapshot in pairs(snapshot.terminals or {}) do
-          local terminal = model.new_terminal(id, terminal_snapshot.spec or {})
-          terminal.snapshot = vim.tbl_deep_extend("force", terminal.snapshot, terminal_snapshot.snapshot or {})
-          terminal.runtime.phase = "dormant"
-          restored.terminals_by_id[id] = terminal
-
-          local numeric = tonumber(id:match("^t(%d+)$")) or 0
-          if numeric > max_seq then
-            max_seq = numeric
-          end
-        end
-
-        restored.runtime.next_terminal_seq = max_seq + 1
-        state.set_workspace(current_tabpage, restored)
-      end
-    end
-
-    return nil
-  end
-
   if event.type == types.TABPAGE_CLOSED then
     if workspace then
       for _, terminal in pairs(workspace.terminals_by_id) do
-        if terminal.runtime.bufnr then
-          state.clear_buffer_index(terminal.runtime.bufnr)
-        end
+        delete_terminal_buffer(terminal)
       end
     end
     state.workspaces_by_tab[state.tab_key(tabpage)] = nil

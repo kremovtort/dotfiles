@@ -1,6 +1,6 @@
 local config = require("tabterm.config")
 local events = require("tabterm.events")
-local persistence = require("tabterm.persistence")
+local model = require("tabterm.model")
 local state = require("tabterm.state")
 local types = require("tabterm.types")
 local ui = require("tabterm.ui")
@@ -140,6 +140,10 @@ function M.close()
     return
   end
   dispatch({ type = types.WORKSPACE_CLOSE_REQUESTED, tabpage = workspace.runtime.tabpage })
+end
+
+function M.hide()
+  M.close()
 end
 
 function M.toggle()
@@ -300,6 +304,20 @@ function M.delete_sidebar_cursor()
   if not terminal_id then
     return
   end
+
+   local terminal = workspace.terminals_by_id[terminal_id]
+   if terminal and model.is_waiting(terminal) then
+     local label = model.command_label(terminal)
+     local choice = vim.fn.confirm(
+       ("Delete running terminal '%s'?"):format(label),
+       "&Delete\n&Cancel",
+       2
+     )
+     if choice ~= 1 then
+       return
+     end
+   end
+
   dispatch({
     type = types.TERMINAL_DELETE_REQUESTED,
     tabpage = workspace.runtime.tabpage,
@@ -383,27 +401,10 @@ function M.focus_panel()
   if vim.api.nvim_win_is_valid(workspace.runtime.panel.winid) then
     vim.api.nvim_set_current_win(workspace.runtime.panel.winid)
 
-    if workspace.runtime.panel.kind == "terminal" then
+    if workspace.runtime.panel.kind == "terminal" and terminal and terminal.runtime.phase == "live" then
       vim.cmd("startinsert")
     end
   end
-end
-
-function M.save_session_data()
-  M.ensure_setup()
-  return persistence.capture()
-end
-
-function M.restore_session_data(data)
-  M.ensure_setup()
-  local snapshot = persistence.restore(data)
-  if not snapshot then
-    return
-  end
-  dispatch({
-    type = types.SESSION_SNAPSHOT_RESTORED,
-    payload = { snapshot = snapshot },
-  })
 end
 
 return M

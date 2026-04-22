@@ -10,6 +10,18 @@ local function valid_win(winid)
   return winid and winid > 0 and vim.api.nvim_win_is_valid(winid)
 end
 
+local function can_mount_in_panel(terminal)
+  if not terminal or not valid_buf(terminal.runtime.bufnr) then
+    return false
+  end
+
+  if terminal.runtime.phase == "live" then
+    return true
+  end
+
+  return terminal.runtime.phase == "exited"
+end
+
 function M.workspace(workspace)
   if not workspace then
     return nil
@@ -40,7 +52,7 @@ function M.workspace(workspace)
 
   for _, terminal in pairs(workspace.terminals_by_id) do
     if (terminal.runtime.phase == "starting" or terminal.runtime.phase == "live") and not valid_buf(terminal.runtime.bufnr) then
-      terminal.runtime.phase = "dormant"
+      terminal.runtime.phase = "stopped"
       terminal.runtime.bufnr = nil
       terminal.runtime.channel_id = nil
       terminal.runtime.command.phase = "unknown"
@@ -80,14 +92,15 @@ function M.workspace(workspace)
   end
 
   for id, terminal in pairs(workspace.terminals_by_id) do
-    if id ~= workspace.active_terminal_id or terminal.runtime.phase ~= "live" then
+    if id ~= workspace.active_terminal_id or not can_mount_in_panel(terminal) then
       terminal.runtime.winid = nil
     end
   end
 
   local active = workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
-  if not active or active.runtime.phase ~= "live" or not valid_buf(active.runtime.bufnr) then
+  if not can_mount_in_panel(active) then
     workspace.runtime.panel.kind = "placeholder"
+    workspace.runtime.panel.bufnr = nil
     return workspace
   end
 

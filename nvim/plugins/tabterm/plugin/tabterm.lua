@@ -13,7 +13,7 @@ vim.api.nvim_create_user_command("TabtermOpen", function()
 end, {})
 
 vim.api.nvim_create_user_command("TabtermClose", function()
-  require("tabterm").close()
+  require("tabterm").hide()
 end, {})
 
 vim.api.nvim_create_user_command("TabtermNewShell", function()

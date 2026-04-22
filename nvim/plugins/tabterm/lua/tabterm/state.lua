@@ -48,10 +48,4 @@ function M.lookup_buffer(bufnr)
   return M.buf_index[bufnr]
 end
 
-function M.reset_workspaces()
-  M.workspaces_by_tab = {}
-  M.buf_index = {}
-  M.refresh_scheduled = {}
-end
-
 return M
