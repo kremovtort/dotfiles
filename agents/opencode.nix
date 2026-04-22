@@ -3,6 +3,7 @@
   agentsInputs,
   config,
   pkgs,
+  system,
   ...
 }:
 let
@@ -30,6 +31,7 @@ in {
 
   programs.opencode = {
     enable = true;
+    package = agentsInputs."llm-agents".packages.${system}.opencode;
     agents = ./opencode/agents;
     commands = ./commands;
     skills = {
@@ -39,7 +41,6 @@ in {
       ast-grep = agentsInputs.astGrepClaudeSkill + "/ast-grep/skills/ast-grep";
       skill-creator = agentsInputs.anthropicSkills + "/skills/skill-creator";
     };
-    # tools = ./opencode/tools;
 
     settings = let
       morph-plugin-version = "2.0.9";
@@ -52,7 +53,7 @@ in {
         "@mohak34/opencode-notifier@0.2.2"
         "cc-safety-net@0.8.2"
         "@plannotator/opencode@0.19.0"
-        "@cortexkit/opencode-magic-context@0.13.0"
+        "@cortexkit/opencode-magic-context@0.14.2"
         "@morphllm/opencode-morph-plugin@${morph-plugin-version}"
       ];
 
@@ -67,6 +68,8 @@ in {
         auto = false;
       };
 
+      permission.websearch = "allow";
+
       mcp = {
         context7 = {
           type = "local";
@@ -80,29 +83,10 @@ in {
           ];
         };
 
-        exa = {
-          type = "local";
-          enabled = false;
-          command = [
-            "${pkgs.nodejs}/bin/npx"
-            "-y"
-            "exa-mcp-server"
-          ];
-          environment = {
-            EXA_API_KEY = "{file:${config.sops.secrets.exa-api-key.path}}";
-          };
-        };
-
         grep_app = {
           type = "remote";
           enabled = true;
           url = "https://mcp.grep.app";
-        };
-
-        tavily = {
-          type = "remote";
-          enabled = true;
-          url = "https://mcp.tavily.com/mcp/?tavilyApiKey={file:${config.sops.secrets.tavily-api-key.path}}";
         };
 
         web_fetch_md = {

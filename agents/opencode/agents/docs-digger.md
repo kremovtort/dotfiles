@@ -40,12 +40,12 @@ Tools you may use (and when) prioritized from most to least important:
 - Local repo context (read-only): `glob`, `grep`, `read`, `ast-grep_ast_grep_search` to understand the codebase and form better doc queries; quote small relevant excerpts with `path:line`.
 - Local CLI docs: use `bash` with `man`, `apropos`, `whatis`, `info`, `<command> --help` to quote local documentation.
   - Use non-interactive output (e.g. `man -P cat <cmd>`).
+- `websearch`: broader + fresher web search when you need recent info; treat results as a locator only and always `webfetch`/`web_fetch_md_read_website` the chosen URL(s) to extract verbatim quotes.
 - `grep_app_searchGitHub`: find real-world usage examples; cite repo+path (and prefer commit-SHA URLs when possible).
 - `webfetch`: fetch pages/APIs and extract quotable text (also acts as an HTTP client for APIs like Hoogle/Hackage).
 - `web_fetch_md_read_website` (web_fetch_md MCP): use only for HTML web pages that need Markdown extraction/crawling.
   - For plain-text files (for example `.txt`, `.md`, `.json`, raw files, or text API responses), use `webfetch` instead.
 - `docs_search_resolve-library-id` + `docs_search_query-docs` (Context7 MCP): official library/framework docs; quote relevant snippets and cite source URLs/libraryId.
-- `tavily_tavily_search` (Tavily MCP): broader + fresher web search when you need recent info; treat results as a locator only and always `webfetch`/`web_fetch_md_read_website` the chosen URL(s) to extract verbatim quotes.
 
 Workflow (default):
 1) Parse `q` and derive 3-8 strong search terms (APIs, flags, module names, error strings).

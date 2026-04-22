@@ -1,6 +1,11 @@
 {
   description = "My macos system Nix flake";
 
+  nixConfig = {
+    extra-substituters = [ "https://cache.numtide.com" ];
+    extra-trusted-public-keys = [ "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=" ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -82,7 +87,7 @@
           legacyPackages.homeConfigurations."kremovtort" = inputs.home-manager.lib.homeManagerConfiguration {
             inherit pkgs;
             modules = [
-              inputs.agents.homeModules.default
+              inputs.agents.homeModules.${system}.default
               ./home-manager/home.nix
             ];
             extraSpecialArgs = {
@@ -96,7 +101,7 @@
               {
                 inherit pkgs;
                 modules = [
-                  inputs.agents.homeModules.default
+                  inputs.agents.homeModules.${system}.default
                   ./home-manager/home.nix
                 ];
                 extraSpecialArgs = {
