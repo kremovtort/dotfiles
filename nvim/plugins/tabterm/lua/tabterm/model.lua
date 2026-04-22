@@ -472,13 +472,13 @@ local function fade_decorations(text, line_idx, start_col, end_col, fallback_sta
   local fade2_char = chars - 1
   table.insert(deco, {
     line = line_idx,
-    start_col = start_col + vim.str_byteindex(text, fade1_char),
-    end_col = start_col + vim.str_byteindex(text, fade1_char + 1),
+    start_col = start_col + vim.str_byteindex(text, "utf-32", fade1_char, true),
+    end_col = start_col + vim.str_byteindex(text, "utf-32", fade1_char + 1, true),
     hl = fade1_hl,
   })
   table.insert(deco, {
     line = line_idx,
-    start_col = start_col + vim.str_byteindex(text, fade2_char),
+    start_col = start_col + vim.str_byteindex(text, "utf-32", fade2_char, true),
     end_col = end_col,
     hl = fade2_hl,
   })
@@ -491,8 +491,9 @@ local function fade_before_badge_decorations(text, line_idx, badge_start_col, fa
   end
 
   local prefix = text:sub(1, badge_start_col)
-  local adjacent = prefix:sub(-2)
-  if adjacent:match("%s") then
+  local prefix_chars = vim.fn.strchars(prefix)
+  local adjacent = vim.fn.strcharpart(prefix, math.max(0, prefix_chars - 2), 2)
+  if adjacent == "" or adjacent:match("%s") then
     return {}
   end
 
@@ -634,23 +635,23 @@ function M.placeholder_model(workspace)
     local start_failed = terminal.snapshot.last_result.kind == "error" and terminal.snapshot.last_output_line ~= nil
     return {
       kind = "stopped",
-        title = M.display_name(terminal),
-        context = M.context_line(terminal),
-        status = start_failed and "failed to start" or "not started",
-        detail = start_failed and terminal.snapshot.last_output_line or nil,
-        hint = "<CR> start   i/a/I/A shell   c[iaIA] cmd",
-      }
+      title = M.display_name(terminal),
+      context = M.context_line(terminal),
+      status = start_failed and "failed to start" or "not started",
+      detail = start_failed and terminal.snapshot.last_output_line or nil,
+      hint = "<CR> start   i/a/I/A shell   c[iaIA] cmd",
+    }
   end
 
   if terminal.runtime.phase == "exited" then
     return {
       kind = "exited",
-        title = M.display_name(terminal),
-        context = M.context_line(terminal),
-        status = M.result_label(terminal),
-        detail = M.detail_line(terminal),
-        hint = "<CR> start again   i/a/I/A shell   c[iaIA] cmd",
-      }
+      title = M.display_name(terminal),
+      context = M.context_line(terminal),
+      status = M.result_label(terminal),
+      detail = M.detail_line(terminal),
+      hint = "<CR> start again   i/a/I/A shell   c[iaIA] cmd",
+    }
   end
 
   return {

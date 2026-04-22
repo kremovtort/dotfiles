@@ -350,7 +350,7 @@ end
 local function parse_term_request(sequence)
   local code = sequence:match("^%z?\27%]133;([ABCD])") or sequence:match("^\27%]133;([ABCD])")
   local exit_code = tonumber(sequence:match("^\27%]133;D;(%d+)"))
-  local cwd = sequence:gsub("^\27%]7;file://[^/]*", "")
+  local cwd = sequence:gsub("^\27%]7;file://[^/]*", ""):gsub("\27\\", ""):gsub("\a", "")
   local cwd_changed = cwd ~= sequence
   return code, exit_code, cwd_changed and cwd or nil
 end
