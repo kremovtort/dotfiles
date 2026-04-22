@@ -2,8 +2,10 @@ local config = require("tabterm.config")
 local events = require("tabterm.events")
 local model = require("tabterm.model")
 local state = require("tabterm.state")
+local ui_state = require("tabterm.ui_state")
 local types = require("tabterm.types")
 local ui = require("tabterm.ui")
+local util = require("tabterm.util")
 
 local M = {}
 
@@ -124,7 +126,8 @@ local function move_focus_to_sidebar_before_delete(workspace)
     return
   end
 
-  local sidebar_win = workspace.runtime.sidebar.winid
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  local sidebar_win = ui.sidebar.winid
   if sidebar_win and vim.api.nvim_win_is_valid(sidebar_win) and vim.api.nvim_get_current_win() ~= sidebar_win then
     vim.api.nvim_set_current_win(sidebar_win)
   end
@@ -135,7 +138,8 @@ local function stabilize_panel_before_delete(workspace)
     return
   end
 
-  local panel_win = workspace.runtime.panel.winid
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  local panel_win = ui.panel.winid
   if not panel_win or not vim.api.nvim_win_is_valid(panel_win) then
     return
   end
@@ -204,12 +208,17 @@ local function delete_terminal(workspace, terminal_id)
 end
 
 sidebar_terminal_id = function(workspace)
-  if not workspace or not workspace.runtime.visible or not workspace.runtime.sidebar.winid then
+  if not workspace or not workspace.runtime.visible then
     return nil
   end
 
-  local row = vim.api.nvim_win_get_cursor(workspace.runtime.sidebar.winid)[1]
-  return workspace.runtime.sidebar.line_map[row] or nil
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  if not ui.sidebar.winid then
+    return nil
+  end
+
+  local row = vim.api.nvim_win_get_cursor(ui.sidebar.winid)[1]
+  return ui.sidebar.line_map[row] or nil
 end
 
 local function sidebar_row_for_terminal(workspace, terminal_id)
@@ -217,7 +226,8 @@ local function sidebar_row_for_terminal(workspace, terminal_id)
     return nil
   end
 
-  for row, id in ipairs(workspace.runtime.sidebar.line_map or {}) do
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  for row, id in ipairs(ui.sidebar.line_map or {}) do
     if id == terminal_id then
       return row
     end
@@ -227,12 +237,17 @@ local function sidebar_row_for_terminal(workspace, terminal_id)
 end
 
 local function sidebar_target_row(workspace, delta)
-  if not workspace or not workspace.runtime.visible or not workspace.runtime.sidebar.winid then
+  if not workspace or not workspace.runtime.visible then
     return nil
   end
 
-  local line_map = workspace.runtime.sidebar.line_map or {}
-  local row = vim.api.nvim_win_get_cursor(workspace.runtime.sidebar.winid)[1]
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  if not ui.sidebar.winid then
+    return nil
+  end
+
+  local line_map = ui.sidebar.line_map or {}
+  local row = vim.api.nvim_win_get_cursor(ui.sidebar.winid)[1]
   local current_id = line_map[row]
   if not current_id then
     return nil
@@ -300,14 +315,15 @@ function M.hide()
     return
   end
 
+  local ui = ui_state.get(workspace.runtime.tabpage)
   local restore_win = workspace.runtime.last_editor_winid
   M.close()
 
   if restore_win
     and vim.api.nvim_win_is_valid(restore_win)
-    and restore_win ~= workspace.runtime.sidebar.winid
-    and restore_win ~= workspace.runtime.panel.winid
-    and restore_win ~= workspace.runtime.backdrop.winid
+    and restore_win ~= ui.sidebar.winid
+    and restore_win ~= ui.panel.winid
+    and restore_win ~= ui.backdrop.winid
   then
     pcall(vim.api.nvim_set_current_win, restore_win)
   end
@@ -502,16 +518,18 @@ end
 function M.sidebar_step(delta)
   local workspace = current_workspace(false)
   local row = sidebar_target_row(workspace, delta)
-  if not workspace or not row or not vim.api.nvim_win_is_valid(workspace.runtime.sidebar.winid) then
+  local ui = ui_state.get(workspace and workspace.runtime and workspace.runtime.tabpage or nil)
+  if not workspace or not row or not vim.api.nvim_win_is_valid(ui.sidebar.winid) then
     return
   end
 
-  vim.api.nvim_win_set_cursor(workspace.runtime.sidebar.winid, { row, 0 })
+  vim.api.nvim_win_set_cursor(ui.sidebar.winid, { row, 0 })
 end
 
 function M.sidebar_goto(index)
   local workspace = current_workspace(false)
-  if not workspace or not workspace.runtime.visible or not vim.api.nvim_win_is_valid(workspace.runtime.sidebar.winid) then
+  local ui = ui_state.get(workspace and workspace.runtime and workspace.runtime.tabpage or nil)
+  if not workspace or not workspace.runtime.visible or not vim.api.nvim_win_is_valid(ui.sidebar.winid) then
     return
   end
 
@@ -526,7 +544,7 @@ function M.sidebar_goto(index)
     return
   end
 
-  vim.api.nvim_win_set_cursor(workspace.runtime.sidebar.winid, { row, 0 })
+  vim.api.nvim_win_set_cursor(ui.sidebar.winid, { row, 0 })
 
   if workspace.active_terminal_id ~= terminal_id then
     dispatch({
@@ -553,34 +571,45 @@ end
 
 function M.focus_sidebar()
   local workspace = current_workspace(false)
-  if not workspace or not workspace.runtime.visible or not workspace.runtime.sidebar.winid then
+  local ui = ui_state.get(workspace and workspace.runtime and workspace.runtime.tabpage or nil)
+  if not workspace or not workspace.runtime.visible or not ui.sidebar.winid then
     return
   end
 
-  if vim.api.nvim_win_is_valid(workspace.runtime.sidebar.winid) then
+  if vim.api.nvim_win_is_valid(ui.sidebar.winid) then
     local row = sidebar_row_for_terminal(workspace, workspace.active_terminal_id)
     if row then
-      vim.api.nvim_win_set_cursor(workspace.runtime.sidebar.winid, { row, 0 })
+      vim.api.nvim_win_set_cursor(ui.sidebar.winid, { row, 0 })
     end
-    vim.api.nvim_set_current_win(workspace.runtime.sidebar.winid)
+    vim.api.nvim_set_current_win(ui.sidebar.winid)
   end
 end
 
 function M.focus_panel()
   local workspace = current_workspace(false)
-  if not workspace or not workspace.runtime.visible or not workspace.runtime.panel.winid then
+  if not workspace or not workspace.runtime.visible then
+    return
+  end
+
+  local tabpage = workspace.runtime.tabpage
+  local ui = ui_state.get(tabpage)
+  if not util.valid_win(ui.panel.winid) then
     return
   end
 
   local terminal = workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
   if terminal then
-    terminal.snapshot.notification.unread = false
+    dispatch({
+      type = types.TERMINAL_READ_REQUESTED,
+      tabpage = tabpage,
+      terminal_id = terminal.id,
+    })
   end
 
-  if vim.api.nvim_win_is_valid(workspace.runtime.panel.winid) then
-    vim.api.nvim_set_current_win(workspace.runtime.panel.winid)
+  if vim.api.nvim_win_is_valid(ui.panel.winid) then
+    vim.api.nvim_set_current_win(ui.panel.winid)
 
-    if workspace.runtime.panel.kind == "terminal" and terminal and terminal.runtime.phase == "live" then
+    if ui.panel.kind == "terminal" and terminal and terminal.runtime.phase == "live" then
       vim.cmd("startinsert")
     end
   end

@@ -2,9 +2,6 @@ local M = {
   initialized = false,
   config = nil,
   workspaces_by_tab = {},
-  buf_index = {},
-  suppress_winclosed = {},
-  suppress_bufdelete = {},
   refresh_scheduled = {},
   suspend_autoclose_by_tab = {},
   pending_shell_dispose = {},
@@ -36,23 +33,6 @@ end
 
 function M.set_workspace(tabpage, workspace)
   M.workspaces_by_tab[M.tab_key(tabpage)] = workspace
-end
-
-function M.index_buffer(bufnr, tabpage, terminal_id)
-  if bufnr and bufnr > 0 then
-    M.buf_index[bufnr] = {
-      tabpage = M.tab_key(tabpage),
-      terminal_id = terminal_id,
-    }
-  end
-end
-
-function M.clear_buffer_index(bufnr)
-  M.buf_index[bufnr] = nil
-end
-
-function M.lookup_buffer(bufnr)
-  return M.buf_index[bufnr]
 end
 
 function M.set_autoclose_suspended(tabpage, suspended)

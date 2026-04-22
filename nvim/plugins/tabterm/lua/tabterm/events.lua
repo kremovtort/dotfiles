@@ -2,6 +2,7 @@ local reconcile = require("tabterm.reconcile")
 local reducer = require("tabterm.reducer")
 local model = require("tabterm.model")
 local state = require("tabterm.state")
+local ui_state = require("tabterm.ui_state")
 local types = require("tabterm.types")
 local ui = require("tabterm.ui")
 local util = require("tabterm.util")
@@ -10,19 +11,18 @@ local M = {
   types = types,
 }
 
-
-
 local function stabilize_panel_for_terminal_dispose(workspace)
   if not workspace or not workspace.runtime.visible then
     return false
   end
 
-  local sidebar_win = workspace.runtime.sidebar.winid
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  local sidebar_win = ui.sidebar.winid
   if #workspace.terminal_order > 1 and util.valid_win(sidebar_win) and vim.api.nvim_get_current_win() ~= sidebar_win then
     pcall(vim.api.nvim_set_current_win, sidebar_win)
   end
 
-  local panel_win = workspace.runtime.panel.winid
+  local panel_win = ui.panel.winid
   if not util.valid_win(panel_win) then
     return false
   end
@@ -41,8 +41,9 @@ local function prepare_shell_delete_transition(workspace, terminal_id)
     return false
   end
 
-  if util.valid_win(workspace.runtime.panel.winid) then
-    state.suppress_winclosed[workspace.runtime.panel.winid] = true
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  if util.valid_win(ui.panel.winid) then
+    ui_state.set_suppress_winclosed(ui.panel.winid)
   end
 
   stabilize_panel_for_terminal_dispose(workspace)
@@ -61,7 +62,8 @@ local function schedule_shell_dispose(workspace, terminal, ref)
     return false
   end
 
-  local panel_winid = workspace.runtime.panel.winid
+  local ui = ui_state.get(workspace.runtime.tabpage)
+  local panel_winid = ui.panel.winid
 
   local key = state.tab_key(ref.tabpage)
   local pending = state.pending_shell_dispose[key]
@@ -81,7 +83,7 @@ local function schedule_shell_dispose(workspace, terminal, ref)
     local latest_pending = state.pending_shell_dispose[key]
     if not latest_pending or latest_pending.terminal_id ~= ref.terminal_id then
       if panel_winid then
-        state.suppress_winclosed[panel_winid] = nil
+        ui_state.clear_suppress_winclosed(panel_winid)
       end
       set_suspend_autoclose_from_pending(key)
       return
@@ -103,12 +105,13 @@ local function schedule_shell_dispose(workspace, terminal, ref)
           tabterm.open()
           tabterm.focus_sidebar()
         else
-          latest.runtime.visible = true
-          ui.ensure_open(latest)
-          reconcile.workspace(latest)
-          ui.refresh(latest)
-          if util.valid_win(latest.runtime.sidebar.winid) then
-            pcall(vim.api.nvim_set_current_win, latest.runtime.sidebar.winid)
+          M.dispatch({
+            type = types.WORKSPACE_OPEN_REQUESTED,
+            tabpage = latest.runtime.tabpage,
+          })
+          local latest_ui = ui_state.get(latest.runtime.tabpage)
+          if util.valid_win(latest_ui.sidebar.winid) then
+            pcall(vim.api.nvim_set_current_win, latest_ui.sidebar.winid)
           end
         end
       else
@@ -120,7 +123,7 @@ local function schedule_shell_dispose(workspace, terminal, ref)
     end
 
     if latest_pending.panel_winid then
-      state.suppress_winclosed[latest_pending.panel_winid] = nil
+      ui_state.clear_suppress_winclosed(latest_pending.panel_winid)
     end
 
     vim.defer_fn(function()
@@ -132,8 +135,14 @@ local function schedule_shell_dispose(workspace, terminal, ref)
 end
 
 local function refresh_workspace_now(workspace)
-  reconcile.workspace(workspace)
-  ui.refresh(workspace)
+  if not workspace then
+    return
+  end
+  local tabpage = workspace.runtime and workspace.runtime.tabpage or state.current_tabpage()
+  local plan = reconcile.derive(tabpage, workspace)
+  for _, cmd in ipairs(plan) do
+    ui.execute(cmd)
+  end
 end
 
 local function refresh_workspace_later(workspace)
@@ -239,7 +248,7 @@ local function update_spinner_ticker()
 end
 
 local function tracked_terminal_from_buffer(bufnr)
-  local ref = state.lookup_buffer(bufnr)
+  local ref = ui_state.lookup_buffer(bufnr)
   if not ref then
     return nil, nil, nil
   end
@@ -274,11 +283,12 @@ local function last_meaningful_line(bufnr, firstline, lastline)
 end
 
 local function sync_title(workspace, terminal, opts)
-  if not terminal or not terminal.runtime.bufnr or not vim.api.nvim_buf_is_valid(terminal.runtime.bufnr) then
+  local bufnr = terminal and ui_state.get_terminal_bufnr(terminal.id)
+  if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
     return
   end
 
-  local title = vim.b[terminal.runtime.bufnr].term_title
+  local title = vim.b[bufnr].term_title
   if title and title ~= "" and title ~= terminal.snapshot.title then
     M.dispatch({
       type = types.TERMINAL_TITLE_UPDATED,
@@ -357,22 +367,28 @@ end
 
 function M.dispatch(event, opts)
   local workspace = reducer.apply(event)
+  local tabpage = event.tabpage or state.current_tabpage()
 
   if event.type == types.WORKSPACE_OPEN_REQUESTED then
-    ui.ensure_open(workspace)
+    ui.ensure_open(tabpage)
   elseif event.type == types.WORKSPACE_TOGGLE_REQUESTED then
     if workspace and workspace.runtime.visible then
-      ui.ensure_open(workspace)
+      ui.ensure_open(tabpage)
     else
-      ui.unmount(workspace)
+      ui.unmount(tabpage)
     end
   elseif event.type == types.WORKSPACE_CLOSE_REQUESTED or event.type == types.SIDEBAR_WINDOW_CLOSED_EXTERNALLY or event.type == types.PANEL_WINDOW_CLOSED_EXTERNALLY then
-    ui.unmount(workspace)
+    ui.unmount(tabpage)
   elseif event.type == types.TERMINAL_START_REQUESTED and workspace then
-    ui.ensure_open(workspace)
+    ui.ensure_open(tabpage)
     local terminal = workspace.terminals_by_id[event.terminal_id or workspace.active_terminal_id]
     if terminal then
-      local bufnr, channel_id, err, failed_bufnr = ui.start_terminal(workspace, terminal)
+      local old_bufnr = ui_state.get_terminal_bufnr(terminal.id)
+      if old_bufnr then
+        ui_state.clear_terminal_buffer(old_bufnr)
+      end
+
+      local bufnr, channel_id, err, failed_bufnr = ui.start_terminal(tabpage, terminal)
       if not bufnr or not channel_id then
         reducer.apply({
           type = types.TERMINAL_START_FAILED,
@@ -388,22 +404,21 @@ function M.dispatch(event, opts)
         end
         if failed_bufnr and vim.api.nvim_buf_is_valid(failed_bufnr) then
           vim.schedule(function()
-            state.suppress_bufdelete[failed_bufnr] = true
+            ui_state.set_suppress_bufdelete(failed_bufnr)
             pcall(vim.api.nvim_buf_delete, failed_bufnr, { force = true })
-            state.suppress_bufdelete[failed_bufnr] = nil
+            ui_state.clear_suppress_bufdelete(failed_bufnr)
           end)
         end
         return workspace
       end
 
-      state.index_buffer(bufnr, workspace.runtime.tabpage, terminal.id)
+      ui_state.set_terminal_buffer(workspace.runtime.tabpage, terminal.id, bufnr)
       attach_output_listener(bufnr, workspace.runtime.tabpage, terminal.id)
       reducer.apply({
         type = types.TERMINAL_PROCESS_OPENED,
         tabpage = workspace.runtime.tabpage,
         terminal_id = terminal.id,
         payload = {
-          bufnr = bufnr,
           channel_id = channel_id,
         },
       })
@@ -478,7 +493,7 @@ function M.setup_autocmds()
   vim.api.nvim_create_autocmd("TermRequest", {
     group = state.augroup,
     callback = function(ev)
-      local ref = state.lookup_buffer(ev.buf)
+      local ref = ui_state.lookup_buffer(ev.buf)
       if not ref then
         return
       end
@@ -551,19 +566,20 @@ function M.setup_autocmds()
     group = state.augroup,
     callback = function(ev)
       local winid = tonumber(ev.match)
-      if not winid or state.suppress_winclosed[winid] then
+      if not winid or ui_state.is_suppress_winclosed(winid) then
         return
       end
 
       for tabpage, workspace in pairs(state.workspaces_by_tab) do
-        if workspace.runtime.sidebar.winid == winid then
+        local ui = ui_state.get(tabpage)
+        if ui.sidebar.winid == winid then
           if state.is_autoclose_suspended(tabpage) then
             return
           end
           M.dispatch({ type = types.SIDEBAR_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
           return
         end
-        if workspace.runtime.panel.winid == winid then
+        if ui.panel.winid == winid then
           if state.is_autoclose_suspended(tabpage) then
             return
           end
@@ -573,7 +589,7 @@ function M.setup_autocmds()
             vim.schedule(function()
               local latest = state.get_workspace(tabpage, false)
               local terminal = latest and active_id and latest.terminals_by_id[active_id] or nil
-              local bufnr = terminal and terminal.runtime.bufnr or nil
+              local bufnr = terminal and ui_state.get_terminal_bufnr(active_id) or nil
               if terminal and (not bufnr or not vim.api.nvim_buf_is_valid(bufnr)) then
                 schedule_shell_dispose(latest, terminal, {
                   tabpage = tabpage,
@@ -596,10 +612,10 @@ function M.setup_autocmds()
   vim.api.nvim_create_autocmd({ "BufWipeout", "BufDelete" }, {
     group = state.augroup,
     callback = function(ev)
-      if state.suppress_bufdelete[ev.buf] then
+      if ui_state.is_suppress_bufdelete(ev.buf) then
         return
       end
-      local ref = state.lookup_buffer(ev.buf)
+      local ref = ui_state.lookup_buffer(ev.buf)
       if ref then
         local workspace = state.get_workspace(ref.tabpage, false)
         local terminal = workspace and workspace.terminals_by_id[ref.terminal_id] or nil
@@ -640,9 +656,12 @@ function M.setup_autocmds()
       vim.schedule(function()
         for _, workspace in pairs(state.workspaces_by_tab) do
           if workspace.runtime.visible then
-            ui.relayout(workspace)
-            reconcile.workspace(workspace)
-            ui.refresh(workspace)
+            local tp = workspace.runtime.tabpage
+            ui.relayout(tp)
+            local plan = reconcile.derive(tp, workspace)
+            for _, cmd in ipairs(plan) do
+              ui.execute(cmd)
+            end
           end
         end
       end)
@@ -661,7 +680,8 @@ function M.setup_autocmds()
 
         local workspace = state.get_workspace(current_tabpage, false)
         if workspace and workspace.runtime.visible then
-          local in_tabterm = current_win == workspace.runtime.sidebar.winid or current_win == workspace.runtime.panel.winid
+          local ui = ui_state.get(current_tabpage)
+          local in_tabterm = current_win == ui.sidebar.winid or current_win == ui.panel.winid
           if not in_tabterm then
             M.dispatch({ type = types.WORKSPACE_CLOSE_REQUESTED, tabpage = current_tabpage })
           end

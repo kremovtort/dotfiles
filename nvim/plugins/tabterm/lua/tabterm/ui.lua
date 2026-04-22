@@ -1,5 +1,6 @@
 local model = require("tabterm.model")
 local state = require("tabterm.state")
+local ui_state = require("tabterm.ui_state")
 local util = require("tabterm.util")
 
 local M = {}
@@ -7,29 +8,11 @@ local sidebar_ns = vim.api.nvim_create_namespace("tabterm.sidebar")
 
 
 
-local function mark_window(winid, workspace, role)
-  if not util.valid_win(winid) or not workspace then
-    return
-  end
-
-  pcall(vim.api.nvim_win_set_var, winid, "tabterm_workspace", state.tab_key(workspace.runtime and workspace.runtime.tabpage or nil))
-  pcall(vim.api.nvim_win_set_var, winid, "tabterm_role", role)
-end
-
-local function window_matches_workspace(winid, workspace)
-  if not util.valid_win(winid) or not workspace then
-    return false
-  end
-
-  local ok, key = pcall(vim.api.nvim_win_get_var, winid, "tabterm_workspace")
-  return ok and key == state.tab_key(workspace.runtime and workspace.runtime.tabpage or nil)
-end
-
 local function close_window(winid)
   if util.valid_win(winid) then
-    state.suppress_winclosed[winid] = true
+    ui_state.set_suppress_winclosed(winid)
     pcall(vim.api.nvim_win_close, winid, true)
-    state.suppress_winclosed[winid] = nil
+    ui_state.clear_suppress_winclosed(winid)
   end
 end
 
@@ -370,13 +353,13 @@ local function panel_header_status_hl(terminal)
   return "TabtermPanelHeaderUnknown", "finished"
 end
 
-local function set_panel_winbar(workspace, terminal)
-  if not util.valid_win(workspace.runtime.panel.winid) then
+local function set_panel_winbar(panel_winid, terminal)
+  if not util.valid_win(panel_winid) then
     return
   end
 
   if not terminal or terminal.spec.kind ~= "cmd" or terminal.runtime.phase ~= "exited" then
-    vim.wo[workspace.runtime.panel.winid].winbar = ""
+    vim.wo[panel_winid].winbar = ""
     return
   end
 
@@ -402,92 +385,83 @@ local function set_panel_winbar(workspace, terminal)
     table.insert(parts, "%*")
   end
 
-  vim.wo[workspace.runtime.panel.winid].winbar = "%<" .. table.concat(parts)
+  vim.wo[panel_winid].winbar = "%<" .. table.concat(parts)
 end
 
-function M.mount(workspace)
+function M.mount(tabpage)
   local layout = float_layout()
+  local ui = ui_state.get(tabpage)
 
-  if not util.valid_buf(workspace.runtime.backdrop.bufnr) then
-    workspace.runtime.backdrop.bufnr = vim.api.nvim_create_buf(false, true)
-    set_scratch_options(workspace.runtime.backdrop.bufnr, "tabterm-backdrop")
-    vim.bo[workspace.runtime.backdrop.bufnr].modifiable = false
+  if not util.valid_buf(ui.backdrop.bufnr) then
+    ui.backdrop.bufnr = vim.api.nvim_create_buf(false, true)
+    set_scratch_options(ui.backdrop.bufnr, "tabterm-backdrop")
+    vim.bo[ui.backdrop.bufnr].modifiable = false
   end
 
-  local backdrop_win = workspace.runtime.backdrop.winid
+  local backdrop_win = ui.backdrop.winid
   if util.valid_win(backdrop_win) then
-    state.suppress_winclosed[backdrop_win] = true
+    ui_state.set_suppress_winclosed(backdrop_win)
     pcall(vim.api.nvim_win_close, backdrop_win, true)
-    state.suppress_winclosed[backdrop_win] = nil
+    ui_state.clear_suppress_winclosed(backdrop_win)
   end
 
-  workspace.runtime.backdrop.winid = vim.api.nvim_open_win(workspace.runtime.backdrop.bufnr, false, backdrop_win_config())
-  mark_window(workspace.runtime.backdrop.winid, workspace, "backdrop")
-  vim.wo[workspace.runtime.backdrop.winid].winblend = 60
-  vim.wo[workspace.runtime.backdrop.winid].winhighlight = "Normal:TabtermBackdrop"
+  ui.backdrop.winid = vim.api.nvim_open_win(ui.backdrop.bufnr, false, backdrop_win_config())
+  vim.wo[ui.backdrop.winid].winblend = 60
+  vim.wo[ui.backdrop.winid].winhighlight = "Normal:TabtermBackdrop"
 
-  if not util.valid_buf(workspace.runtime.sidebar.bufnr) then
-    workspace.runtime.sidebar.bufnr = vim.api.nvim_create_buf(false, true)
-    set_scratch_options(workspace.runtime.sidebar.bufnr, "tabterm-sidebar")
-    sidebar_keymaps(workspace.runtime.sidebar.bufnr)
+  if not util.valid_buf(ui.sidebar.bufnr) then
+    ui.sidebar.bufnr = vim.api.nvim_create_buf(false, true)
+    set_scratch_options(ui.sidebar.bufnr, "tabterm-sidebar")
+    sidebar_keymaps(ui.sidebar.bufnr)
   end
 
-  local sidebar_win = workspace.runtime.sidebar.winid
+  local sidebar_win = ui.sidebar.winid
   if util.valid_win(sidebar_win) then
-    state.suppress_winclosed[sidebar_win] = true
+    ui_state.set_suppress_winclosed(sidebar_win)
     pcall(vim.api.nvim_win_close, sidebar_win, true)
-    state.suppress_winclosed[sidebar_win] = nil
+    ui_state.clear_suppress_winclosed(sidebar_win)
   end
 
-  workspace.runtime.sidebar.winid = vim.api.nvim_open_win(workspace.runtime.sidebar.bufnr, false, sidebar_win_config(layout))
-  mark_window(workspace.runtime.sidebar.winid, workspace, "sidebar")
+  ui.sidebar.winid = vim.api.nvim_open_win(ui.sidebar.bufnr, false, sidebar_win_config(layout))
 
-  local panel_buf = workspace.runtime.panel.bufnr
+  local panel_buf = ui.panel.bufnr
   if not util.valid_buf(panel_buf) then
     panel_buf = vim.api.nvim_create_buf(false, true)
     set_scratch_options(panel_buf, "tabterm-placeholder")
     placeholder_keymaps(panel_buf)
   end
-  workspace.runtime.panel.bufnr = panel_buf
+  ui.panel.bufnr = panel_buf
 
-  local panel_win = workspace.runtime.panel.winid
+  local panel_win = ui.panel.winid
   if util.valid_win(panel_win) then
-    state.suppress_winclosed[panel_win] = true
+    ui_state.set_suppress_winclosed(panel_win)
     pcall(vim.api.nvim_win_close, panel_win, true)
-    state.suppress_winclosed[panel_win] = nil
+    ui_state.clear_suppress_winclosed(panel_win)
   end
 
-  workspace.runtime.panel.winid = vim.api.nvim_open_win(panel_buf, false, panel_win_config(layout))
-  mark_window(workspace.runtime.panel.winid, workspace, "panel")
-
-  workspace.runtime.visible = true
+  ui.panel.winid = vim.api.nvim_open_win(panel_buf, false, panel_win_config(layout))
+  ui.panel.kind = "placeholder"
 end
 
-function M.relayout(workspace)
-  if not workspace or not workspace.runtime.visible then
-    return
-  end
-
-  if not util.valid_win(workspace.runtime.backdrop.winid) or not util.valid_win(workspace.runtime.sidebar.winid) or not util.valid_win(workspace.runtime.panel.winid) then
-    M.mount(workspace)
+function M.relayout(tabpage)
+  local ui = ui_state.get(tabpage)
+  if not util.valid_win(ui.backdrop.winid) or not util.valid_win(ui.sidebar.winid) or not util.valid_win(ui.panel.winid) then
+    M.mount(tabpage)
     return
   end
 
   local layout = float_layout()
-  vim.api.nvim_win_set_config(workspace.runtime.backdrop.winid, backdrop_win_config())
-  vim.api.nvim_win_set_config(workspace.runtime.sidebar.winid, sidebar_win_config(layout))
-  vim.api.nvim_win_set_config(workspace.runtime.panel.winid, panel_win_config(layout))
+  vim.api.nvim_win_set_config(ui.backdrop.winid, backdrop_win_config())
+  vim.api.nvim_win_set_config(ui.sidebar.winid, sidebar_win_config(layout))
+  vim.api.nvim_win_set_config(ui.panel.winid, panel_win_config(layout))
 end
 
-function M.unmount(workspace)
-  if not workspace then
-    return
-  end
-
+function M.unmount(tabpage)
+  local ui = ui_state.get(tabpage)
   local windows = {}
   local seen = {}
 
-  for _, winid in ipairs({ workspace.runtime.backdrop.winid, workspace.runtime.sidebar.winid, workspace.runtime.panel.winid }) do
+  for _, winid in ipairs({ ui.backdrop.winid, ui.sidebar.winid, ui.panel.winid }) do
     if util.valid_win(winid) and not seen[winid] then
       seen[winid] = true
       table.insert(windows, winid)
@@ -495,40 +469,49 @@ function M.unmount(workspace)
   end
 
   for _, winid in ipairs(vim.api.nvim_list_wins()) do
-    if not seen[winid] and window_matches_workspace(winid, workspace) then
-      seen[winid] = true
-      table.insert(windows, winid)
+    if not seen[winid] then
+      -- Legacy: if any other window still carries our buffer, close it.
+      -- After full migration this second pass can be removed.
+      local bufnr = vim.api.nvim_win_get_buf(winid)
+      if bufnr == ui.backdrop.bufnr or bufnr == ui.sidebar.bufnr or bufnr == ui.panel.bufnr then
+        seen[winid] = true
+        table.insert(windows, winid)
+      end
     end
   end
 
   for _, winid in ipairs(windows) do
     close_window(winid)
   end
+
+  ui_state.reset(tabpage)
 end
 
-function M.ensure_open(workspace)
-  if not workspace.runtime.visible or not util.valid_win(workspace.runtime.sidebar.winid) or not util.valid_win(workspace.runtime.panel.winid) then
-    M.mount(workspace)
+function M.ensure_open(tabpage)
+  local ui = ui_state.get(tabpage)
+  if not util.valid_win(ui.sidebar.winid) or not util.valid_win(ui.panel.winid) then
+    M.mount(tabpage)
   end
 end
 
-function M.render_sidebar(workspace)
-  if not util.valid_buf(workspace.runtime.sidebar.bufnr) then
+function M.render_sidebar(tabpage, workspace)
+  local ui = ui_state.get(tabpage)
+  if not util.valid_buf(ui.sidebar.bufnr) then
     return
   end
 
-  local width = util.valid_win(workspace.runtime.sidebar.winid) and vim.api.nvim_win_get_width(workspace.runtime.sidebar.winid) or config().sidebar_width
+  local width = util.valid_win(ui.sidebar.winid) and vim.api.nvim_win_get_width(ui.sidebar.winid) or config().sidebar_width
   local lines, line_map, decorations = model.sidebar_lines(workspace, width)
-  workspace.runtime.sidebar.line_map = line_map
+  ui.sidebar.line_map = line_map
 
-  vim.bo[workspace.runtime.sidebar.bufnr].modifiable = true
-  vim.api.nvim_buf_set_lines(workspace.runtime.sidebar.bufnr, 0, -1, false, lines)
-  vim.bo[workspace.runtime.sidebar.bufnr].modifiable = false
-  vim.api.nvim_buf_clear_namespace(workspace.runtime.sidebar.bufnr, sidebar_ns, 0, -1)
+  vim.bo[ui.sidebar.bufnr].modifiable = true
+  vim.api.nvim_buf_set_lines(ui.sidebar.bufnr, 0, -1, false, lines)
+  vim.bo[ui.sidebar.bufnr].modifiable = false
+  vim.api.nvim_buf_clear_namespace(ui.sidebar.bufnr, sidebar_ns, 0, -1)
 
   for _, decoration in ipairs(decorations) do
     vim.api.nvim_buf_add_highlight(
-      workspace.runtime.sidebar.bufnr,
+      ui.sidebar.bufnr,
       sidebar_ns,
       decoration.hl,
       decoration.line,
@@ -538,7 +521,7 @@ function M.render_sidebar(workspace)
   end
 
   local row = nil
-  if util.valid_win(workspace.runtime.sidebar.winid) then
+  if util.valid_win(ui.sidebar.winid) then
     local target_row = nil
     local active_terminal_id = workspace.active_terminal_id
     if active_terminal_id then
@@ -551,13 +534,13 @@ function M.render_sidebar(workspace)
     end
 
     if target_row then
-      local current_row = vim.api.nvim_win_get_cursor(workspace.runtime.sidebar.winid)[1]
+      local current_row = vim.api.nvim_win_get_cursor(ui.sidebar.winid)[1]
       if current_row ~= target_row then
-        vim.api.nvim_win_set_cursor(workspace.runtime.sidebar.winid, { target_row, 0 })
+        vim.api.nvim_win_set_cursor(ui.sidebar.winid, { target_row, 0 })
       end
       row = target_row
     else
-      row = vim.api.nvim_win_get_cursor(workspace.runtime.sidebar.winid)[1]
+      row = vim.api.nvim_win_get_cursor(ui.sidebar.winid)[1]
     end
   end
 
@@ -565,29 +548,30 @@ function M.render_sidebar(workspace)
   if terminal_id then
     for index, id in ipairs(line_map) do
       if id == terminal_id then
-        vim.api.nvim_buf_add_highlight(workspace.runtime.sidebar.bufnr, sidebar_ns, "TabtermSidebarHover", index - 1, 0, -1)
+        vim.api.nvim_buf_add_highlight(ui.sidebar.bufnr, sidebar_ns, "TabtermSidebarHover", index - 1, 0, -1)
       end
     end
   end
 
-  if util.valid_win(workspace.runtime.sidebar.winid) then
-    vim.wo[workspace.runtime.sidebar.winid].cursorline = false
+  if util.valid_win(ui.sidebar.winid) then
+    vim.wo[ui.sidebar.winid].cursorline = false
   end
 end
 
-function M.render_placeholder(workspace)
-  if not util.valid_win(workspace.runtime.panel.winid) then
+function M.render_placeholder(tabpage, workspace)
+  local ui = ui_state.get(tabpage)
+  if not util.valid_win(ui.panel.winid) then
     return
   end
 
-  set_panel_winbar(workspace, nil)
+  set_panel_winbar(ui.panel.winid, nil)
 
-  local buf = workspace.runtime.panel.bufnr
+  local buf = ui.panel.bufnr
   if not util.valid_buf(buf) or vim.bo[buf].buftype == "terminal" then
     buf = vim.api.nvim_create_buf(false, true)
     set_scratch_options(buf, "tabterm-placeholder")
     placeholder_keymaps(buf)
-    workspace.runtime.panel.bufnr = buf
+    ui.panel.bufnr = buf
   end
 
   local placeholder = model.placeholder_model(workspace)
@@ -609,54 +593,59 @@ function M.render_placeholder(workspace)
     table.insert(lines, placeholder.hint)
   end
 
-  vim.api.nvim_win_set_buf(workspace.runtime.panel.winid, buf)
+  vim.api.nvim_win_set_buf(ui.panel.winid, buf)
   vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
-  vim.api.nvim_win_set_cursor(workspace.runtime.panel.winid, { 1, 0 })
+  vim.api.nvim_win_set_cursor(ui.panel.winid, { 1, 0 })
 end
 
-function M.render_panel(workspace)
-  if workspace.runtime.panel.kind == "terminal" then
+function M.render_panel(tabpage, workspace)
+  local ui = ui_state.get(tabpage)
+  if ui.panel.kind == "terminal" then
     local terminal = workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
-    if terminal and util.valid_win(workspace.runtime.panel.winid) and util.valid_buf(terminal.runtime.bufnr) then
-      workspace.runtime.panel.bufnr = terminal.runtime.bufnr
-      vim.api.nvim_win_set_buf(workspace.runtime.panel.winid, terminal.runtime.bufnr)
-      vim.bo[terminal.runtime.bufnr].bufhidden = "hide"
-      set_panel_winbar(workspace, terminal)
+    local bufnr = terminal and ui_state.get_terminal_bufnr(terminal.id) or nil
+    if terminal and util.valid_win(ui.panel.winid) and util.valid_buf(bufnr) then
+      ui.panel.bufnr = bufnr
+      vim.api.nvim_win_set_buf(ui.panel.winid, bufnr)
+      vim.bo[bufnr].bufhidden = "hide"
+      set_panel_winbar(ui.panel.winid, terminal)
     end
     return
   end
 
-  M.render_placeholder(workspace)
+  M.render_placeholder(tabpage, workspace)
 end
 
-function M.refresh(workspace)
+function M.refresh(tabpage, workspace)
+  local ui = ui_state.get(tabpage)
   if not workspace or not workspace.runtime.visible then
     return
   end
 
-  M.render_sidebar(workspace)
-  M.render_panel(workspace)
+  M.render_sidebar(tabpage, workspace)
+  M.render_panel(tabpage, workspace)
 end
 
-function M.start_terminal(workspace, terminal)
-  M.ensure_open(workspace)
+function M.start_terminal(tabpage, terminal)
+  M.ensure_open(tabpage)
 
-  if not util.valid_win(workspace.runtime.panel.winid) then
+  local ui = ui_state.get(tabpage)
+  if not util.valid_win(ui.panel.winid) then
     local message = terminal.spec.kind == "shell" and "Terminal panel is unavailable" or "Command panel is unavailable"
     return nil, nil, message, nil
   end
 
-  if terminal.runtime.bufnr and util.valid_buf(terminal.runtime.bufnr) then
-    pcall(vim.api.nvim_buf_delete, terminal.runtime.bufnr, { force = true })
+  local old_bufnr = ui_state.get_terminal_bufnr(terminal.id)
+  if old_bufnr and util.valid_buf(old_bufnr) then
+    pcall(vim.api.nvim_buf_delete, old_bufnr, { force = true })
   end
 
   local bufnr = vim.api.nvim_create_buf(false, true)
-  workspace.runtime.panel.bufnr = bufnr
+  ui.panel.bufnr = bufnr
   vim.bo[bufnr].bufhidden = "hide"
   terminal_keymaps(bufnr)
-  vim.api.nvim_win_set_buf(workspace.runtime.panel.winid, bufnr)
+  vim.api.nvim_win_set_buf(ui.panel.winid, bufnr)
 
   local job_cmd
   if terminal.spec.kind == "shell" then
@@ -684,8 +673,32 @@ function M.start_terminal(workspace, terminal)
     return nil, nil, message, bufnr
   end
 
-  terminal.runtime.bufnr = bufnr
+  ui_state.set_terminal_buffer(tabpage, terminal.id, bufnr)
   return bufnr, channel_id, nil, nil
+end
+
+function M.execute(cmd)
+  local type, args = cmd[1], cmd[2]
+  if type == "MOUNT" then
+    M.mount(args.tabpage)
+  elseif type == "UNMOUNT" then
+    M.unmount(args.tabpage)
+  elseif type == "RELAYOUT" then
+    M.relayout(args.tabpage)
+  elseif type == "RENDER_SIDEBAR" then
+    M.render_sidebar(args.tabpage, args.workspace)
+  elseif type == "RENDER_PLACEHOLDER" then
+    M.render_placeholder(args.tabpage, args.workspace)
+  elseif type == "MOUNT_TERMINAL" then
+    local ui = ui_state.get(args.tabpage)
+    if util.valid_win(ui.panel.winid) and util.valid_buf(args.bufnr) then
+      ui.panel.bufnr = args.bufnr
+      ui.panel.kind = "terminal"
+      vim.api.nvim_win_set_buf(ui.panel.winid, args.bufnr)
+      vim.bo[args.bufnr].bufhidden = "hide"
+      set_panel_winbar(ui.panel.winid, args.terminal)
+    end
+  end
 end
 
 return M

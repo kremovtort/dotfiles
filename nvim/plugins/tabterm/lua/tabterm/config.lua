@@ -9,9 +9,6 @@ M.defaults = {
       height = 0.70,
     },
   },
-  naming = {
-    strategy = "cwd_title_cmd",
-  },
 }
 
 function M.normalize(config)
@@ -31,9 +28,6 @@ function M.normalize(config)
   normalized.ui.float = normalized.ui.float or {}
   normalized.ui.float.width = tonumber(normalized.ui.float.width) or M.defaults.ui.float.width
   normalized.ui.float.height = tonumber(normalized.ui.float.height) or M.defaults.ui.float.height
-
-  normalized.naming = normalized.naming or {}
-  normalized.naming.strategy = normalized.naming.strategy or M.defaults.naming.strategy
 
   return normalized
 end

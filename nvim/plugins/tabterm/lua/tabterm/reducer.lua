@@ -1,5 +1,6 @@
 local model = require("tabterm.model")
 local state = require("tabterm.state")
+local ui_state = require("tabterm.ui_state")
 local types = require("tabterm.types")
 
 local M = {}
@@ -8,7 +9,6 @@ local function terminal_is_visible(workspace, terminal_id)
   return workspace
     and workspace.runtime.visible
     and workspace.active_terminal_id == terminal_id
-    and workspace.runtime.panel.winid ~= nil
 end
 
 local function remove_from_order(order, id)
@@ -32,15 +32,20 @@ local function next_id(workspace)
 end
 
 local function delete_terminal_buffer(terminal)
-  if not terminal or not terminal.runtime.bufnr then
+  if not terminal then
     return
   end
 
-  state.clear_buffer_index(terminal.runtime.bufnr)
-  if vim.api.nvim_buf_is_valid(terminal.runtime.bufnr) then
-    state.suppress_bufdelete[terminal.runtime.bufnr] = true
-    pcall(vim.api.nvim_buf_delete, terminal.runtime.bufnr, { force = true })
-    state.suppress_bufdelete[terminal.runtime.bufnr] = nil
+  local bufnr = ui_state.get_terminal_bufnr(terminal.id)
+  if not bufnr then
+    return
+  end
+
+  ui_state.clear_terminal_buffer(bufnr)
+  if vim.api.nvim_buf_is_valid(bufnr) then
+    ui_state.set_suppress_bufdelete(bufnr)
+    pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
+    ui_state.clear_suppress_bufdelete(bufnr)
   end
 end
 
@@ -111,11 +116,6 @@ function M.apply(event)
   if event.type == types.WORKSPACE_CLOSE_REQUESTED or event.type == types.SIDEBAR_WINDOW_CLOSED_EXTERNALLY or event.type == types.PANEL_WINDOW_CLOSED_EXTERNALLY then
     if workspace then
       workspace.runtime.visible = false
-      workspace.runtime.panel.kind = "placeholder"
-
-      for _, terminal in pairs(workspace.terminals_by_id) do
-        terminal.runtime.winid = nil
-      end
 
       prune_hidden_exited_cmds(workspace, nil)
     end
@@ -163,6 +163,13 @@ function M.apply(event)
     return workspace
   end
 
+  if event.type == types.TERMINAL_READ_REQUESTED then
+    if terminal then
+      terminal.snapshot.notification.unread = false
+    end
+    return workspace
+  end
+
   if event.type == types.TERMINAL_NEXT_REQUESTED or event.type == types.TERMINAL_PREV_REQUESTED then
     if #workspace.terminal_order == 0 then
       workspace.active_terminal_id = nil
@@ -190,12 +197,7 @@ function M.apply(event)
   end
 
   if event.type == types.TERMINAL_START_REQUESTED then
-    if terminal.runtime.bufnr then
-      state.clear_buffer_index(terminal.runtime.bufnr)
-    end
     terminal.runtime.phase = "starting"
-    terminal.runtime.bufnr = nil
-    terminal.runtime.winid = nil
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = terminal.spec.kind == "cmd" and "running" or "unknown"
     return workspace
@@ -203,18 +205,12 @@ function M.apply(event)
 
   if event.type == types.TERMINAL_PROCESS_OPENED then
     terminal.runtime.phase = "live"
-    terminal.runtime.bufnr = event.payload.bufnr
     terminal.runtime.channel_id = event.payload.channel_id
     return workspace
   end
 
   if event.type == types.TERMINAL_START_FAILED then
-    if terminal.runtime.bufnr then
-      state.clear_buffer_index(terminal.runtime.bufnr)
-    end
     terminal.runtime.phase = "stopped"
-    terminal.runtime.bufnr = nil
-    terminal.runtime.winid = nil
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = "unknown"
     terminal.snapshot.last_result.kind = "error"
@@ -230,7 +226,6 @@ function M.apply(event)
   if event.type == types.TERMINAL_PROCESS_EXITED then
     terminal.runtime.phase = "exited"
     terminal.runtime.channel_id = nil
-    terminal.runtime.winid = nil
     terminal.runtime.command.phase = "unknown"
 
     local source = event.payload and event.payload.source
@@ -305,12 +300,7 @@ function M.apply(event)
   end
 
   if event.type == types.TERMINAL_BUFFER_WIPED_EXTERNALLY then
-    if terminal.runtime.bufnr then
-      state.clear_buffer_index(terminal.runtime.bufnr)
-    end
     terminal.runtime.phase = "stopped"
-    terminal.runtime.bufnr = nil
-    terminal.runtime.winid = nil
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = "unknown"
     return workspace

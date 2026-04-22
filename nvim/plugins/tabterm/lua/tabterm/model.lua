@@ -124,20 +124,6 @@ function M.new_workspace(tabpage)
       visible = false,
       last_editor_winid = nil,
       next_terminal_seq = 1,
-      sidebar = {
-        bufnr = nil,
-        winid = nil,
-        line_map = {},
-      },
-      backdrop = {
-        bufnr = nil,
-        winid = nil,
-      },
-      panel = {
-        kind = "placeholder",
-        bufnr = nil,
-        winid = nil,
-      },
     },
   }
 end
@@ -173,8 +159,6 @@ function M.new_terminal(id, spec)
     },
     runtime = {
       phase = "stopped",
-      bufnr = nil,
-      winid = nil,
       channel_id = nil,
       command = {
         integration = "none",
@@ -235,12 +219,6 @@ function M.ensure_terminal_shape(id, terminal)
   terminal.runtime = terminal.runtime or {}
   if terminal.runtime.phase == nil then
     terminal.runtime.phase = "stopped"
-  end
-  if terminal.runtime.bufnr == nil then
-    terminal.runtime.bufnr = nil
-  end
-  if terminal.runtime.winid == nil then
-    terminal.runtime.winid = nil
   end
   if terminal.runtime.channel_id == nil then
     terminal.runtime.channel_id = nil

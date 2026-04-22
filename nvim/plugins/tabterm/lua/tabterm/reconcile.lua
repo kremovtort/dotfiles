@@ -1,27 +1,26 @@
 local model = require("tabterm.model")
+local ui_state = require("tabterm.ui_state")
 local util = require("tabterm.util")
 
 local M = {}
 
-
-
 local function can_mount_in_panel(terminal)
-  if not terminal or not util.valid_buf(terminal.runtime.bufnr) then
+  if not terminal then
     return false
   end
-
+  local bufnr = ui_state.get_terminal_bufnr(terminal.id)
+  if not util.valid_buf(bufnr) then
+    return false
+  end
   if terminal.runtime.phase == "live" then
     return true
   end
-
   return terminal.runtime.phase == "exited"
 end
 
-function M.workspace(workspace)
-  if not workspace then
-    return nil
-  end
-
+-- Reconcile is allowed to repair structural invariants before rendering,
+-- but behavioral runtime transitions must still flow through the reducer.
+local function sanitize_workspace(workspace)
   local ordered = {}
   local seen = {}
   for _, id in ipairs(workspace.terminal_order) do
@@ -44,65 +43,54 @@ function M.workspace(workspace)
   elseif not workspace.active_terminal_id or not workspace.terminals_by_id[workspace.active_terminal_id] then
     workspace.active_terminal_id = workspace.terminal_order[1]
   end
+end
 
-  for _, terminal in pairs(workspace.terminals_by_id) do
-    if (terminal.runtime.phase == "starting" or terminal.runtime.phase == "live") and not util.valid_buf(terminal.runtime.bufnr) then
-      terminal.runtime.phase = "stopped"
-      terminal.runtime.bufnr = nil
-      terminal.runtime.channel_id = nil
-      terminal.runtime.command.phase = "unknown"
-    end
+function M.derive(tabpage, workspace)
+  if not workspace then
+    return {}
   end
+
+  sanitize_workspace(workspace)
+
+  local ui = ui_state.get(tabpage)
+  local has_windows = util.valid_win(ui.backdrop.winid)
+    and util.valid_win(ui.sidebar.winid)
+    and util.valid_win(ui.panel.winid)
+
+  local commands = {}
 
   if not workspace.runtime.visible then
-    workspace.runtime.backdrop.bufnr = nil
-    workspace.runtime.backdrop.winid = nil
-    workspace.runtime.sidebar.bufnr = nil
-    workspace.runtime.sidebar.winid = nil
-    workspace.runtime.sidebar.line_map = {}
-    workspace.runtime.panel.bufnr = nil
-    workspace.runtime.panel.winid = nil
-    workspace.runtime.panel.kind = "placeholder"
-    for _, terminal in pairs(workspace.terminals_by_id) do
-      terminal.runtime.winid = nil
+    if has_windows then
+      table.insert(commands, { "UNMOUNT", { tabpage = tabpage } })
     end
-    return workspace
+    return commands
   end
 
-  if not util.valid_win(workspace.runtime.backdrop.winid) or not util.valid_win(workspace.runtime.sidebar.winid) or not util.valid_win(workspace.runtime.panel.winid) then
-    workspace.runtime.visible = false
-    workspace.runtime.backdrop.bufnr = nil
-    workspace.runtime.backdrop.winid = nil
-    workspace.runtime.sidebar.bufnr = nil
-    workspace.runtime.sidebar.winid = nil
-    workspace.runtime.sidebar.line_map = {}
-    workspace.runtime.panel.bufnr = nil
-    workspace.runtime.panel.winid = nil
-    workspace.runtime.panel.kind = "placeholder"
-    for _, terminal in pairs(workspace.terminals_by_id) do
-      terminal.runtime.winid = nil
-    end
-    return workspace
+  if not has_windows then
+    table.insert(commands, { "MOUNT", { tabpage = tabpage } })
+  else
+    table.insert(commands, { "RELAYOUT", { tabpage = tabpage } })
   end
 
-  for id, terminal in pairs(workspace.terminals_by_id) do
-    if id ~= workspace.active_terminal_id or not can_mount_in_panel(terminal) then
-      terminal.runtime.winid = nil
-    end
-  end
+  table.insert(commands, { "RENDER_SIDEBAR", { tabpage = tabpage, workspace = workspace } })
 
   local active = workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
   if not can_mount_in_panel(active) then
-    workspace.runtime.panel.kind = "placeholder"
-    workspace.runtime.panel.bufnr = nil
-    return workspace
+    table.insert(commands, { "RENDER_PLACEHOLDER", { tabpage = tabpage, workspace = workspace } })
+  else
+    local bufnr = ui_state.get_terminal_bufnr(active.id)
+    table.insert(commands, {
+      "MOUNT_TERMINAL",
+      {
+        tabpage = tabpage,
+        terminal_id = active.id,
+        terminal = active,
+        bufnr = bufnr,
+      },
+    })
   end
 
-  workspace.runtime.panel.kind = "terminal"
-  workspace.runtime.panel.bufnr = active.runtime.bufnr
-  active.runtime.winid = workspace.runtime.panel.winid
-
-  return workspace
+  return commands
 end
 
 return M
