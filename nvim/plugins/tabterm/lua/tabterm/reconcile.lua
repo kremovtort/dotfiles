@@ -1,17 +1,12 @@
 local model = require("tabterm.model")
+local util = require("tabterm.util")
 
 local M = {}
 
-local function valid_buf(bufnr)
-  return bufnr and bufnr > 0 and vim.api.nvim_buf_is_valid(bufnr)
-end
 
-local function valid_win(winid)
-  return winid and winid > 0 and vim.api.nvim_win_is_valid(winid)
-end
 
 local function can_mount_in_panel(terminal)
-  if not terminal or not valid_buf(terminal.runtime.bufnr) then
+  if not terminal or not util.valid_buf(terminal.runtime.bufnr) then
     return false
   end
 
@@ -51,12 +46,11 @@ function M.workspace(workspace)
   end
 
   for _, terminal in pairs(workspace.terminals_by_id) do
-    if (terminal.runtime.phase == "starting" or terminal.runtime.phase == "live") and not valid_buf(terminal.runtime.bufnr) then
+    if (terminal.runtime.phase == "starting" or terminal.runtime.phase == "live") and not util.valid_buf(terminal.runtime.bufnr) then
       terminal.runtime.phase = "stopped"
       terminal.runtime.bufnr = nil
       terminal.runtime.channel_id = nil
       terminal.runtime.command.phase = "unknown"
-      terminal.runtime.command.output_tail = nil
     end
   end
 
@@ -75,7 +69,7 @@ function M.workspace(workspace)
     return workspace
   end
 
-  if not valid_win(workspace.runtime.backdrop.winid) or not valid_win(workspace.runtime.sidebar.winid) or not valid_win(workspace.runtime.panel.winid) then
+  if not util.valid_win(workspace.runtime.backdrop.winid) or not util.valid_win(workspace.runtime.sidebar.winid) or not util.valid_win(workspace.runtime.panel.winid) then
     workspace.runtime.visible = false
     workspace.runtime.backdrop.bufnr = nil
     workspace.runtime.backdrop.winid = nil

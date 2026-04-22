@@ -103,7 +103,7 @@ end
 
 local function preserve_tabterm_focus_after_delete(workspace)
   if not workspace or not workspace.runtime.visible or #workspace.terminal_order == 0 then
-    state.suspend_autoclose = false
+    state.set_autoclose_suspended(workspace and workspace.runtime and workspace.runtime.tabpage or nil, false)
     return
   end
 
@@ -115,7 +115,7 @@ local function preserve_tabterm_focus_after_delete(workspace)
       end
       M.focus_sidebar()
     end
-    state.suspend_autoclose = false
+    state.set_autoclose_suspended(workspace.runtime.tabpage, false)
   end, 20)
 end
 
@@ -146,6 +146,61 @@ local function stabilize_panel_before_delete(workspace)
   vim.bo[scratch].swapfile = false
   vim.bo[scratch].modifiable = false
   pcall(vim.api.nvim_win_set_buf, panel_win, scratch)
+end
+
+local function confirm_delete_terminal(terminal)
+  if not terminal or not model.is_waiting(terminal) then
+    return true
+  end
+
+  local label = model.command_label(terminal)
+  local choice = vim.fn.confirm(
+    ("Delete running terminal '%s'?"):format(label),
+    "&Delete\n&Cancel",
+    2
+  )
+
+  return choice == 1
+end
+
+local function delete_terminal(workspace, terminal_id)
+  if not workspace or not terminal_id then
+    return
+  end
+
+  local terminal = workspace.terminals_by_id[terminal_id]
+  if not terminal or not confirm_delete_terminal(terminal) then
+    return
+  end
+
+  local should_preserve_focus = workspace.runtime.visible
+    and terminal_id == workspace.active_terminal_id
+    and #workspace.terminal_order > 1
+
+  if should_preserve_focus then
+    state.set_autoclose_suspended(workspace.runtime.tabpage, true)
+    move_focus_to_sidebar_before_delete(workspace)
+    stabilize_panel_before_delete(workspace)
+  end
+
+  dispatch({
+    type = types.TERMINAL_DELETE_REQUESTED,
+    tabpage = workspace.runtime.tabpage,
+    terminal_id = terminal_id,
+  })
+
+  local latest = state.get_workspace(workspace.runtime.tabpage, false)
+  if latest and #latest.terminal_order == 0 and latest.runtime.visible then
+    dispatch({
+      type = types.WORKSPACE_CLOSE_REQUESTED,
+      tabpage = latest.runtime.tabpage,
+    })
+    return
+  end
+
+  if should_preserve_focus then
+    preserve_tabterm_focus_after_delete(workspace)
+  end
 end
 
 sidebar_terminal_id = function(workspace)
@@ -240,7 +295,22 @@ function M.close()
 end
 
 function M.hide()
+  local workspace = current_workspace(false)
+  if not workspace then
+    return
+  end
+
+  local restore_win = workspace.runtime.last_editor_winid
   M.close()
+
+  if restore_win
+    and vim.api.nvim_win_is_valid(restore_win)
+    and restore_win ~= workspace.runtime.sidebar.winid
+    and restore_win ~= workspace.runtime.panel.winid
+    and restore_win ~= workspace.runtime.backdrop.winid
+  then
+    pcall(vim.api.nvim_set_current_win, restore_win)
+  end
 end
 
 function M.toggle()
@@ -347,22 +417,7 @@ function M.delete_active()
     return
   end
 
-  local should_preserve_focus = workspace.runtime.visible and #workspace.terminal_order > 1
-  if should_preserve_focus then
-    state.suspend_autoclose = true
-    move_focus_to_sidebar_before_delete(workspace)
-    stabilize_panel_before_delete(workspace)
-  end
-
-  dispatch({
-    type = types.TERMINAL_DELETE_REQUESTED,
-    tabpage = workspace.runtime.tabpage,
-    terminal_id = workspace.active_terminal_id,
-  })
-
-  if should_preserve_focus then
-    preserve_tabterm_focus_after_delete(workspace)
-  end
+  delete_terminal(workspace, workspace.active_terminal_id)
 end
 
 function M.next_terminal()
@@ -418,35 +473,7 @@ function M.delete_sidebar_cursor()
     return
   end
 
-   local terminal = workspace.terminals_by_id[terminal_id]
-   if terminal and model.is_waiting(terminal) then
-     local label = model.command_label(terminal)
-     local choice = vim.fn.confirm(
-       ("Delete running terminal '%s'?"):format(label),
-       "&Delete\n&Cancel",
-       2
-     )
-     if choice ~= 1 then
-       return
-     end
-   end
-
-   local should_preserve_focus = workspace.runtime.visible and terminal_id == workspace.active_terminal_id and #workspace.terminal_order > 1
-   if should_preserve_focus then
-     state.suspend_autoclose = true
-     move_focus_to_sidebar_before_delete(workspace)
-     stabilize_panel_before_delete(workspace)
-   end
-
-   dispatch({
-     type = types.TERMINAL_DELETE_REQUESTED,
-     tabpage = workspace.runtime.tabpage,
-     terminal_id = terminal_id,
-   })
-
-   if should_preserve_focus then
-     preserve_tabterm_focus_after_delete(workspace)
-   end
+  delete_terminal(workspace, terminal_id)
 end
 
 function M.move_sidebar_cursor(delta)

@@ -179,10 +179,17 @@ function M.new_terminal(id, spec)
       command = {
         integration = "none",
         phase = "unknown",
-        output_tail = nil,
       },
     },
   }
+end
+
+local function default_shell_cmd()
+  return vim.env.SHELL or vim.o.shell or "sh"
+end
+
+local function default_cwd()
+  return (vim.uv or vim.loop).cwd() or vim.fn.getcwd()
 end
 
 function M.ensure_terminal_shape(id, terminal)
@@ -191,13 +198,59 @@ function M.ensure_terminal_shape(id, terminal)
   end
 
   terminal.id = id
-  terminal.spec = vim.tbl_deep_extend("force", M.new_terminal(id, {}).spec, terminal.spec or {})
-  terminal.snapshot = vim.tbl_deep_extend("force", M.new_terminal(id, { cwd = terminal.spec.cwd }).snapshot, terminal.snapshot or {})
-  terminal.runtime = vim.tbl_deep_extend("force", M.new_terminal(id, {}).runtime, terminal.runtime or {})
-  terminal.runtime.command = vim.tbl_deep_extend("force", M.new_terminal(id, {}).runtime.command, terminal.runtime.command or {})
 
-  if not terminal.snapshot.cwd or terminal.snapshot.cwd == "" then
-    terminal.snapshot.cwd = terminal.spec.cwd
+  terminal.spec = terminal.spec or {}
+  terminal.spec.kind = terminal.spec.kind == "cmd" and "cmd" or "shell"
+  if terminal.spec.cmd == nil then
+    terminal.spec.cmd = terminal.spec.kind == "shell" and default_shell_cmd() or ""
+  end
+  if not terminal.spec.cwd or terminal.spec.cwd == "" then
+    terminal.spec.cwd = default_cwd()
+  end
+
+  terminal.snapshot = terminal.snapshot or {}
+  terminal.snapshot.last_output_line = terminal.snapshot.last_output_line or nil
+  terminal.snapshot.cwd = terminal.snapshot.cwd and terminal.snapshot.cwd ~= "" and terminal.snapshot.cwd or terminal.spec.cwd
+  terminal.snapshot.last_result = terminal.snapshot.last_result or {}
+  if terminal.snapshot.last_result.kind == nil then
+    terminal.snapshot.last_result.kind = "unknown"
+  end
+  if terminal.snapshot.last_result.code == nil then
+    terminal.snapshot.last_result.code = nil
+  end
+  if terminal.snapshot.last_result.source == nil then
+    terminal.snapshot.last_result.source = "unknown"
+  end
+  terminal.snapshot.notification = terminal.snapshot.notification or {}
+  if terminal.snapshot.notification.unread == nil then
+    terminal.snapshot.notification.unread = false
+  end
+  if terminal.snapshot.notification.kind == nil then
+    terminal.snapshot.notification.kind = "unknown"
+  end
+  if terminal.snapshot.notification.line == nil then
+    terminal.snapshot.notification.line = nil
+  end
+
+  terminal.runtime = terminal.runtime or {}
+  if terminal.runtime.phase == nil then
+    terminal.runtime.phase = "stopped"
+  end
+  if terminal.runtime.bufnr == nil then
+    terminal.runtime.bufnr = nil
+  end
+  if terminal.runtime.winid == nil then
+    terminal.runtime.winid = nil
+  end
+  if terminal.runtime.channel_id == nil then
+    terminal.runtime.channel_id = nil
+  end
+  terminal.runtime.command = terminal.runtime.command or {}
+  if terminal.runtime.command.integration == nil then
+    terminal.runtime.command.integration = "none"
+  end
+  if terminal.runtime.command.phase == nil then
+    terminal.runtime.command.phase = "unknown"
   end
 
   return terminal
@@ -397,6 +450,122 @@ function M.detail_line(terminal)
   return M.context_line(terminal)
 end
 
+local function fade_decorations(text, line_idx, start_col, end_col, fallback_start_col)
+  local deco = {}
+  local chars = vim.fn.strchars(text)
+  if chars < 1 then
+    return deco
+  end
+  if chars == 1 then
+    table.insert(deco, {
+      line = line_idx,
+      start_col = fallback_start_col or start_col,
+      end_col = end_col,
+      hl = "TabtermSidebarFade2",
+    })
+    return deco
+  end
+  local fade1_char = chars - 2
+  local fade2_char = chars - 1
+  table.insert(deco, {
+    line = line_idx,
+    start_col = start_col + vim.str_byteindex(text, fade1_char),
+    end_col = start_col + vim.str_byteindex(text, fade1_char + 1),
+    hl = "TabtermSidebarFade1",
+  })
+  table.insert(deco, {
+    line = line_idx,
+    start_col = start_col + vim.str_byteindex(text, fade2_char),
+    end_col = end_col,
+    hl = "TabtermSidebarFade2",
+  })
+  return deco
+end
+
+local function build_command_line(workspace, terminal, index, width, line_idx)
+  local is_active = terminal.id == workspace.active_terminal_id
+  local prefix = ("%d "):format(index)
+  local command_prefix = TERMINAL_ICON
+  local command_max_width = width - vim.fn.strdisplaywidth(prefix) - vim.fn.strdisplaywidth(command_prefix)
+  local badge = M.sidebar_badge(terminal)
+  local badge_width = badge and vim.fn.strdisplaywidth(badge.text) or 0
+  command_max_width = math.max(1, command_max_width - badge_width)
+
+  local command, truncated = truncate_display(M.command_label(terminal), command_max_width)
+  local title = prefix .. command_prefix .. command
+  local command_start = #prefix + #command_prefix
+  local deco = {}
+
+  table.insert(deco, {
+    line = line_idx,
+    start_col = 0,
+    end_col = #tostring(index),
+    hl = is_active and "TabtermSidebarNumberActive" or "TabtermSidebarNumberInactive",
+  })
+  table.insert(deco, {
+    line = line_idx,
+    start_col = #prefix,
+    end_col = #prefix + #command_prefix,
+    hl = "TabtermSidebarCommand",
+  })
+
+  if command ~= "" then
+    table.insert(deco, {
+      line = line_idx,
+      start_col = command_start,
+      end_col = command_start + #command,
+      hl = "TabtermSidebarCommand",
+    })
+  end
+
+  if truncated then
+    vim.list_extend(deco, fade_decorations(command, line_idx, command_start, command_start + #command, #prefix))
+  end
+
+  if badge then
+    title = pad_display_right(title, math.max(0, width - badge_width)) .. badge.text
+    table.insert(deco, {
+      line = line_idx,
+      start_col = #title - #badge.text,
+      end_col = #title,
+      hl = badge.hl,
+    })
+  else
+    title = pad_display_right(title, width)
+  end
+
+  return title, deco
+end
+
+local function build_cwd_line(workspace, terminal, width, line_idx)
+  local cwd_prefix = "  " .. DIRECTORY_ICON
+  local cwd, cwd_truncated = format_cwd_label(workspace, terminal, math.max(1, width - vim.fn.strdisplaywidth(cwd_prefix)))
+  local cwd_line = pad_display_right(cwd_prefix .. cwd, width)
+  local deco = {}
+
+  table.insert(deco, {
+    line = line_idx,
+    start_col = 2,
+    end_col = 2 + #DIRECTORY_ICON,
+    hl = "TabtermSidebarCwd",
+  })
+
+  if cwd ~= "" then
+    table.insert(deco, {
+      line = line_idx,
+      start_col = #cwd_prefix,
+      end_col = #cwd_prefix + #cwd,
+      hl = "TabtermSidebarCwd",
+    })
+  end
+
+  if cwd_truncated then
+    vim.list_extend(deco, fade_decorations(cwd, line_idx, #cwd_prefix, #cwd_prefix + #cwd, #cwd_prefix))
+  end
+
+  return cwd_line, deco
+end
+
 function M.sidebar_lines(workspace, width)
   local lines = {}
   local line_map = {}
@@ -406,126 +575,15 @@ function M.sidebar_lines(workspace, width)
   for index, id in ipairs(workspace.terminal_order) do
     local terminal = workspace.terminals_by_id[id]
     if terminal then
-      local prefix = ("%d "):format(index)
-      local command_prefix = TERMINAL_ICON
-      table.insert(decorations, {
-        line = #lines,
-        start_col = 0,
-        end_col = #tostring(index),
-        hl = "TabtermSidebarNumber",
-      })
-      local badge = M.sidebar_badge(terminal)
-      local badge_width = badge and vim.fn.strdisplaywidth(badge.text) or 0
-      local command_max_width = math.max(1, width - vim.fn.strdisplaywidth(prefix) - vim.fn.strdisplaywidth(command_prefix) - badge_width)
-      local command, truncated = truncate_display(M.command_label(terminal), command_max_width)
-      local title = prefix .. command_prefix .. command
-      local command_start = #prefix + #command_prefix
-
-      table.insert(decorations, {
-        line = #lines,
-        start_col = #prefix,
-        end_col = #prefix + #command_prefix,
-        hl = "TabtermSidebarCommand",
-      })
-
-      if command ~= "" then
-        table.insert(decorations, {
-          line = #lines,
-          start_col = command_start,
-          end_col = command_start + #command,
-          hl = "TabtermSidebarCommand",
-        })
-      end
-
-      if truncated then
-        local chars = vim.fn.strchars(command)
-        if chars >= 2 then
-          local fade1_char = chars - 2
-          local fade2_char = chars - 1
-          table.insert(decorations, {
-            line = #lines,
-            start_col = command_start + vim.str_byteindex(command, fade1_char),
-            end_col = command_start + vim.str_byteindex(command, fade1_char + 1),
-            hl = "TabtermSidebarFade1",
-          })
-          table.insert(decorations, {
-            line = #lines,
-            start_col = command_start + vim.str_byteindex(command, fade2_char),
-            end_col = command_start + #command,
-            hl = "TabtermSidebarFade2",
-          })
-        elseif chars == 1 then
-          table.insert(decorations, {
-            line = #lines,
-            start_col = #prefix,
-            end_col = #prefix + #command,
-            hl = "TabtermSidebarFade2",
-          })
-        end
-      end
-
-      if badge then
-        title = pad_display_right(title, math.max(0, width - badge_width)) .. badge.text
-        table.insert(decorations, {
-          line = #lines,
-          start_col = #title - #badge.text,
-          end_col = #title,
-          hl = badge.hl,
-        })
-      else
-        title = pad_display_right(title, width)
-      end
-      table.insert(lines, title)
+      local cmd_line, cmd_deco = build_command_line(workspace, terminal, index, width, #lines)
+      vim.list_extend(decorations, cmd_deco)
+      table.insert(lines, cmd_line)
       table.insert(line_map, id)
 
-      local cwd_prefix = "  " .. DIRECTORY_ICON
-      local cwd, cwd_truncated = format_cwd_label(workspace, terminal, math.max(1, width - vim.fn.strdisplaywidth(cwd_prefix)))
-      local cwd_line = pad_display_right(cwd_prefix .. cwd, width)
-      table.insert(decorations, {
-        line = #lines,
-        start_col = 2,
-        end_col = 2 + #DIRECTORY_ICON,
-        hl = "TabtermSidebarCwd",
-      })
-      if cwd ~= "" then
-        table.insert(decorations, {
-          line = #lines,
-          start_col = #cwd_prefix,
-          end_col = #cwd_prefix + #cwd,
-          hl = "TabtermSidebarCwd",
-        })
-      end
+      local cwd_line, cwd_deco = build_cwd_line(workspace, terminal, width, #lines)
+      vim.list_extend(decorations, cwd_deco)
       table.insert(lines, cwd_line)
       table.insert(line_map, id)
-
-      if cwd_truncated then
-        local chars = vim.fn.strchars(cwd)
-        if chars >= 2 then
-          local fade1_char = chars - 2
-          local fade2_char = chars - 1
-          local line = #lines - 1
-          local start = #cwd_prefix
-          table.insert(decorations, {
-            line = line,
-            start_col = start + vim.str_byteindex(cwd, fade1_char),
-            end_col = start + vim.str_byteindex(cwd, fade1_char + 1),
-            hl = "TabtermSidebarFade1",
-          })
-          table.insert(decorations, {
-            line = line,
-            start_col = start + vim.str_byteindex(cwd, fade2_char),
-            end_col = start + #cwd,
-            hl = "TabtermSidebarFade2",
-          })
-        elseif chars == 1 then
-          table.insert(decorations, {
-            line = #lines - 1,
-            start_col = #cwd_prefix,
-            end_col = #cwd_line,
-            hl = "TabtermSidebarFade2",
-          })
-        end
-      end
     end
   end
 
@@ -553,12 +611,13 @@ function M.placeholder_model(workspace)
   end
 
   if terminal.runtime.phase == "stopped" then
+    local start_failed = terminal.snapshot.last_result.kind == "error" and terminal.snapshot.last_output_line ~= nil
     return {
       kind = "stopped",
         title = M.display_name(terminal),
         context = M.context_line(terminal),
-        status = "not started",
-        detail = nil,
+        status = start_failed and "failed to start" or "not started",
+        detail = start_failed and terminal.snapshot.last_output_line or nil,
         hint = "<CR> start   i/a/I/A shell   c[iaIA] cmd",
       }
   end

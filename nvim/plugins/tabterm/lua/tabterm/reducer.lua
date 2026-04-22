@@ -184,7 +184,6 @@ function M.apply(event)
     terminal.runtime.bufnr = nil
     terminal.runtime.winid = nil
     terminal.runtime.channel_id = nil
-    terminal.runtime.command.output_tail = nil
     terminal.runtime.command.phase = terminal.spec.kind == "cmd" and "running" or "unknown"
     return workspace
   end
@@ -193,6 +192,25 @@ function M.apply(event)
     terminal.runtime.phase = "live"
     terminal.runtime.bufnr = event.payload.bufnr
     terminal.runtime.channel_id = event.payload.channel_id
+    return workspace
+  end
+
+  if event.type == types.TERMINAL_START_FAILED then
+    if terminal.runtime.bufnr then
+      state.clear_buffer_index(terminal.runtime.bufnr)
+    end
+    terminal.runtime.phase = "stopped"
+    terminal.runtime.bufnr = nil
+    terminal.runtime.winid = nil
+    terminal.runtime.channel_id = nil
+    terminal.runtime.command.phase = "unknown"
+    terminal.snapshot.last_result.kind = "error"
+    terminal.snapshot.last_result.code = nil
+    terminal.snapshot.last_result.source = "process"
+    terminal.snapshot.last_output_line = event.payload and event.payload.message or "Failed to start terminal"
+    terminal.snapshot.notification.unread = false
+    terminal.snapshot.notification.kind = "error"
+    terminal.snapshot.notification.line = nil
     return workspace
   end
 
@@ -212,9 +230,6 @@ function M.apply(event)
     terminal.snapshot.last_result.source = source
     terminal.snapshot.notification.unread = not terminal_is_visible(workspace, terminal_id)
     terminal.snapshot.notification.kind = terminal.snapshot.last_result.kind
-    if terminal.runtime.command.output_tail and terminal.runtime.command.output_tail ~= "" then
-      terminal.snapshot.last_output_line = terminal.runtime.command.output_tail
-    end
     return workspace
   end
 
@@ -235,7 +250,6 @@ function M.apply(event)
 
   if event.type == types.SHELL_COMMAND_EXECUTED then
     terminal.runtime.command.phase = "running"
-    terminal.runtime.command.output_tail = nil
     return workspace
   end
 
@@ -246,16 +260,12 @@ function M.apply(event)
     terminal.snapshot.last_result.source = "shell"
     terminal.snapshot.notification.unread = not terminal_is_visible(workspace, terminal_id)
     terminal.snapshot.notification.kind = terminal.snapshot.last_result.kind
-    terminal.snapshot.notification.line = terminal.runtime.command.output_tail or terminal.snapshot.last_output_line
-    if terminal.runtime.command.output_tail and terminal.runtime.command.output_tail ~= "" then
-      terminal.snapshot.last_output_line = terminal.runtime.command.output_tail
-    end
+    terminal.snapshot.notification.line = nil
     return workspace
   end
 
   if event.type == types.SHELL_COMMAND_ABORTED then
     terminal.runtime.command.phase = "prompt"
-    terminal.runtime.command.output_tail = nil
     return workspace
   end
 
@@ -266,11 +276,6 @@ function M.apply(event)
 
   if event.type == types.TERMINAL_TITLE_UPDATED then
     terminal.snapshot.title = event.payload.title
-    return workspace
-  end
-
-  if event.type == types.TERMINAL_OUTPUT_UPDATED then
-    terminal.runtime.command.output_tail = event.payload.last_meaningful_line
     return workspace
   end
 
@@ -295,7 +300,6 @@ function M.apply(event)
     terminal.runtime.winid = nil
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = "unknown"
-    terminal.runtime.command.output_tail = nil
     return workspace
   end
 

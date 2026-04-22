@@ -3,6 +3,7 @@
   extraFiles = {
     "lua/tabterm/config.lua".source = ./tabterm/lua/tabterm/config.lua;
     "lua/tabterm/types.lua".source = ./tabterm/lua/tabterm/types.lua;
+    "lua/tabterm/util.lua".source = ./tabterm/lua/tabterm/util.lua;
     "lua/tabterm/model.lua".source = ./tabterm/lua/tabterm/model.lua;
     "lua/tabterm/state.lua".source = ./tabterm/lua/tabterm/state.lua;
     "lua/tabterm/reducer.lua".source = ./tabterm/lua/tabterm/reducer.lua;

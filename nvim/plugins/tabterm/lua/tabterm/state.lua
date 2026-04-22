@@ -6,7 +6,7 @@ local M = {
   suppress_winclosed = {},
   suppress_bufdelete = {},
   refresh_scheduled = {},
-  suspend_autoclose = false,
+  suspend_autoclose_by_tab = {},
   pending_shell_dispose = {},
 }
 
@@ -49,6 +49,19 @@ end
 
 function M.lookup_buffer(bufnr)
   return M.buf_index[bufnr]
+end
+
+function M.set_autoclose_suspended(tabpage, suspended)
+  local key = M.tab_key(tabpage)
+  if suspended then
+    M.suspend_autoclose_by_tab[key] = true
+  else
+    M.suspend_autoclose_by_tab[key] = nil
+  end
+end
+
+function M.is_autoclose_suspended(tabpage)
+  return M.suspend_autoclose_by_tab[M.tab_key(tabpage)] == true
 end
 
 return M
