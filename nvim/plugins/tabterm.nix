@@ -20,8 +20,8 @@
         border = "rounded",
         sidebar_width = 30,
         float = {
-          width = 0.70,
-          height = 0.70,
+          width = 0.90,
+          height = 0.90,
         },
       },
     })
@@ -33,45 +33,9 @@
         "n"
         "t"
       ];
-      key = "<D-j>";
+      key = "<C-/>";
       action.__raw = ''function() require("tabterm").toggle() end'';
       options.desc = "Toggle tab terminals";
-    }
-    {
-      mode = "n";
-      key = "<leader>tt";
-      action.__raw = ''function() require("tabterm").toggle() end'';
-      options.desc = "Toggle tab terminals";
-    }
-    {
-      mode = "n";
-      key = "<leader>tn";
-      action.__raw = ''function() require("tabterm").new_shell() end'';
-      options.desc = "New tab shell";
-    }
-    {
-      mode = "n";
-      key = "<leader>tc";
-      action.__raw = ''function() require("tabterm").new_command() end'';
-      options.desc = "New tab command";
-    }
-    {
-      mode = [
-        "n"
-        "t"
-      ];
-      key = "]t";
-      action.__raw = ''function() require("tabterm").next_terminal() end'';
-      options.desc = "Next tab terminal";
-    }
-    {
-      mode = [
-        "n"
-        "t"
-      ];
-      key = "[t";
-      action.__raw = ''function() require("tabterm").prev_terminal() end'';
-      options.desc = "Previous tab terminal";
     }
   ];
 }

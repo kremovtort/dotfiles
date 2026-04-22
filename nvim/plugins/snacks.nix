@@ -147,15 +147,6 @@
         "n"
         "t"
       ];
-      key = "<C-/>";
-      action.__raw = "function() require('snacks').terminal.focus() end";
-      options.desc = "Toggle terminal";
-    }
-    {
-      mode = [
-        "n"
-        "t"
-      ];
       key = "<D-j>";
       action.__raw = ''
         function()
