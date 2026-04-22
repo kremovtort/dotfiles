@@ -207,6 +207,10 @@ local function delete_terminal(workspace, terminal_id)
   end
 end
 
+local function active_terminal(workspace)
+  return workspace and workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
+end
+
 sidebar_terminal_id = function(workspace)
   if not workspace or not workspace.runtime.visible then
     return nil
@@ -397,6 +401,28 @@ function M.start_active()
     terminal_id = workspace.active_terminal_id,
   })
   M.focus_panel()
+end
+
+function M.confirm_active_terminal()
+  local workspace = current_workspace(false)
+  local terminal = active_terminal(workspace)
+  if not workspace or not terminal then
+    return
+  end
+
+  if terminal.spec.kind == "cmd" and terminal.runtime.phase == "exited" then
+    delete_terminal(workspace, terminal.id)
+    return
+  end
+
+  if terminal.runtime.phase == "live" then
+    vim.cmd("startinsert")
+    return
+  end
+
+  if terminal.runtime.phase == "stopped" or terminal.runtime.phase == "exited" then
+    M.start_active()
+  end
 end
 
 function M.rename_active(name_override)
@@ -611,6 +637,8 @@ function M.focus_panel()
 
     if ui.panel.kind == "terminal" and terminal and terminal.runtime.phase == "live" then
       vim.cmd("startinsert")
+    elseif ui.panel.kind == "terminal" and terminal and terminal.spec.kind == "cmd" and terminal.runtime.phase == "exited" then
+      vim.cmd("stopinsert")
     end
   end
 end

@@ -36,7 +36,7 @@ local function stabilize_panel_for_terminal_dispose(workspace)
   return true
 end
 
-local function prepare_shell_delete_transition(workspace, terminal_id)
+local function prepare_terminal_delete_transition(workspace, terminal_id)
   if not workspace or not workspace.runtime.visible or workspace.active_terminal_id ~= terminal_id then
     return false
   end
@@ -54,11 +54,11 @@ end
 
 local function set_suspend_autoclose_from_pending(tabpage)
   local key = state.tab_key(tabpage)
-  state.set_autoclose_suspended(key, state.pending_shell_dispose[key] ~= nil)
+  state.set_autoclose_suspended(key, state.pending_terminal_dispose[key] ~= nil)
 end
 
-local function schedule_shell_dispose(workspace, terminal, ref)
-  if not workspace or not terminal or not ref or terminal.spec.kind ~= "shell" then
+local function schedule_terminal_dispose(workspace, terminal, ref)
+  if not workspace or not terminal or not ref then
     return false
   end
 
@@ -66,13 +66,13 @@ local function schedule_shell_dispose(workspace, terminal, ref)
   local panel_winid = ui.panel.winid
 
   local key = state.tab_key(ref.tabpage)
-  local pending = state.pending_shell_dispose[key]
+  local pending = state.pending_terminal_dispose[key]
   if pending and pending.terminal_id == ref.terminal_id then
     return true
   end
 
-  local keep_open = prepare_shell_delete_transition(workspace, ref.terminal_id)
-  state.pending_shell_dispose[key] = {
+  local keep_open = prepare_terminal_delete_transition(workspace, ref.terminal_id)
+  state.pending_terminal_dispose[key] = {
     terminal_id = ref.terminal_id,
     keep_open = keep_open,
     panel_winid = panel_winid,
@@ -80,7 +80,7 @@ local function schedule_shell_dispose(workspace, terminal, ref)
   set_suspend_autoclose_from_pending(key)
 
   vim.schedule(function()
-    local latest_pending = state.pending_shell_dispose[key]
+    local latest_pending = state.pending_terminal_dispose[key]
     if not latest_pending or latest_pending.terminal_id ~= ref.terminal_id then
       if panel_winid then
         ui_state.clear_suppress_winclosed(panel_winid)
@@ -89,7 +89,7 @@ local function schedule_shell_dispose(workspace, terminal, ref)
       return
     end
 
-    state.pending_shell_dispose[key] = nil
+    state.pending_terminal_dispose[key] = nil
 
     M.dispatch({
       type = types.TERMINAL_DELETE_REQUESTED,
@@ -132,6 +132,10 @@ local function schedule_shell_dispose(workspace, terminal, ref)
   end)
 
   return true
+end
+
+local function should_schedule_terminal_dispose(terminal)
+  return terminal and (terminal.spec.kind == "shell" or (terminal.spec.kind == "cmd" and terminal.runtime.phase == "exited"))
 end
 
 local function refresh_workspace_now(workspace)
@@ -474,11 +478,6 @@ function M.setup_autocmds()
         return
       end
 
-      if terminal and terminal.spec.kind == "shell" then
-        schedule_shell_dispose(workspace, terminal, ref)
-        return
-      end
-
       M.dispatch({
         type = types.TERMINAL_PROCESS_EXITED,
         tabpage = ref.tabpage,
@@ -487,6 +486,26 @@ function M.setup_autocmds()
           code = type(vim.v.event) == "table" and vim.v.event.status or 0,
         },
       }, { defer_refresh = true })
+
+      local latest = state.get_workspace(ref.tabpage, false)
+      local latest_terminal = latest and latest.terminals_by_id[ref.terminal_id] or nil
+      if latest_terminal and latest_terminal.spec.kind == "cmd" and latest.active_terminal_id == latest_terminal.id then
+        vim.schedule(function()
+          local current = state.get_workspace(ref.tabpage, false)
+          local current_ui = current and ui_state.get(ref.tabpage) or nil
+          if not current or not current_ui or not util.valid_win(current_ui.panel.winid) then
+            return
+          end
+
+          local current_terminal = current.terminals_by_id[ref.terminal_id]
+          if not current_terminal or current_terminal.runtime.phase ~= "exited" or current_terminal.spec.kind ~= "cmd" then
+            return
+          end
+
+          pcall(vim.api.nvim_set_current_win, current_ui.panel.winid)
+          pcall(vim.cmd, "stopinsert")
+        end)
+      end
     end,
   })
 
@@ -585,13 +604,13 @@ function M.setup_autocmds()
           end
           local active_id = workspace.active_terminal_id
           local active = active_id and workspace.terminals_by_id[active_id] or nil
-          if active and active.spec.kind == "shell" then
+          if should_schedule_terminal_dispose(active) then
             vim.schedule(function()
               local latest = state.get_workspace(tabpage, false)
               local terminal = latest and active_id and latest.terminals_by_id[active_id] or nil
               local bufnr = terminal and ui_state.get_terminal_bufnr(active_id) or nil
-              if terminal and (not bufnr or not vim.api.nvim_buf_is_valid(bufnr)) then
-                schedule_shell_dispose(latest, terminal, {
+              if should_schedule_terminal_dispose(terminal) and (not bufnr or not vim.api.nvim_buf_is_valid(bufnr)) then
+                schedule_terminal_dispose(latest, terminal, {
                   tabpage = tabpage,
                   terminal_id = active_id,
                 })
@@ -619,8 +638,8 @@ function M.setup_autocmds()
       if ref then
         local workspace = state.get_workspace(ref.tabpage, false)
         local terminal = workspace and workspace.terminals_by_id[ref.terminal_id] or nil
-        if terminal and terminal.spec.kind == "shell" then
-          schedule_shell_dispose(workspace, terminal, ref)
+        if should_schedule_terminal_dispose(terminal) then
+          schedule_terminal_dispose(workspace, terminal, ref)
           return
         end
         M.dispatch({

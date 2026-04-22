@@ -321,6 +321,9 @@ end
 
 local function terminal_keymaps(bufnr)
   local opts = { buffer = bufnr, silent = true, nowait = true }
+  vim.keymap.set("n", "<CR>", function()
+    require("tabterm").confirm_active_terminal()
+  end, opts)
   vim.keymap.set({ "n", "t" }, "<C-h>", function()
     require("tabterm").focus_sidebar()
   end, opts)
@@ -384,6 +387,8 @@ local function set_panel_winbar(panel_winid, terminal)
     table.insert(parts, cwd)
     table.insert(parts, "%*")
   end
+
+  table.insert(parts, "%#TabtermPanelHeaderMuted#   <CR> close%*")
 
   vim.wo[panel_winid].winbar = "%<" .. table.concat(parts)
 end
@@ -657,6 +662,7 @@ function M.start_terminal(tabpage, terminal)
   local ok, channel_id = pcall(vim.api.nvim_buf_call, bufnr, function()
     return vim.fn.jobstart(job_cmd, {
       term = true,
+      term_finish = terminal.spec.kind == "cmd" and "open" or nil,
       cwd = terminal.spec.cwd,
     })
   end)
