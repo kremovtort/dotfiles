@@ -1,4 +1,5 @@
 local model = require("tabterm.model")
+local shell_integration = require("tabterm.shell_integration")
 local state = require("tabterm.state")
 local types = require("tabterm.types")
 local ui_state = require("tabterm.ui_state")
@@ -758,8 +759,9 @@ function M.start_terminal(tabpage, terminal)
 	vim.api.nvim_win_set_buf(ui.panel.winid, bufnr)
 
 	local job_cmd
+	local job_env
 	if terminal.spec.kind == "shell" then
-		job_cmd = { terminal.spec.cmd }
+		job_cmd, job_env = shell_integration.job(terminal)
 	else
 		job_cmd = { vim.o.shell, "-c", terminal.spec.cmd }
 	end
@@ -769,6 +771,7 @@ function M.start_terminal(tabpage, terminal)
 			term = true,
 			term_finish = terminal.spec.kind == "cmd" and "open" or nil,
 			cwd = terminal.spec.cwd,
+			env = job_env,
 		})
 	end)
 

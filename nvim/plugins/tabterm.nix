@@ -6,6 +6,7 @@
     "lua/tabterm/util.lua".source = ./tabterm/lua/tabterm/util.lua;
     "lua/tabterm/model.lua".source = ./tabterm/lua/tabterm/model.lua;
     "lua/tabterm/state.lua".source = ./tabterm/lua/tabterm/state.lua;
+    "lua/tabterm/shell_integration.lua".source = ./tabterm/lua/tabterm/shell_integration.lua;
     "lua/tabterm/ui_state.lua".source = ./tabterm/lua/tabterm/ui_state.lua;
     "lua/tabterm/reducer.lua".source = ./tabterm/lua/tabterm/reducer.lua;
     "lua/tabterm/reconcile.lua".source = ./tabterm/lua/tabterm/reconcile.lua;
@@ -13,6 +14,8 @@
     "lua/tabterm/events.lua".source = ./tabterm/lua/tabterm/events.lua;
     "lua/tabterm/init.lua".source = ./tabterm/lua/tabterm/init.lua;
     "plugin/tabterm.lua".source = ./tabterm/plugin/tabterm.lua;
+    "shell/bash.bash".source = ./tabterm/shell/bash.bash;
+    "shell/zsh.zsh".source = ./tabterm/shell/zsh.zsh;
   };
 
   extraConfigLua = lib.mkAfter ''
