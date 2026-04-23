@@ -31,11 +31,11 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 ├── home-manager/             # User environment configuration
 │   ├── home.nix              # Main home-manager config
 │   ├── karabiner.nix         # Keyboard remapping
-│   ├── paneru.nix            # Paneru service
 │   ├── sops.nix              # Secrets (age/sops)
 │   ├── starship.nix          # Starship prompt config
-│   ├── tmux.nix              # Tmux configuration
-│   ├── zellij.nix            # Zellij terminal multiplexer
+│   ├── wezterm.nix           # WezTerm terminal config
+│   ├── wezterm/              # WezTerm Lua modules
+│   │   └── init.lua
 │   └── zsh.nix               # Zsh shell configuration
 ├── nvim/                     # Neovim configuration (NixVim-based, separate flake)
 │   ├── flake.nix             # Neovim flake entry point
@@ -49,13 +49,71 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 │   │   └── clipboard.nix     # Clipboard/OSC52 handling
 │   ├── plugins.nix           # Plugin module aggregator (imports `nvim/plugins/*`)
 │   ├── plugins/              # Per-plugin modules (+ plugin-specific keymaps)
-│   │   └── opencode/         # OpenCode providers and shared config
+│   │   ├── auto-save.nix
+│   │   ├── auto-session.nix
+│   │   ├── blink-cmp.nix
+│   │   ├── dropbar.nix
+│   │   ├── floaterm.nix
+│   │   ├── grug-far.nix
+│   │   ├── haskell.nix
+│   │   ├── hunk.nix
+│   │   ├── icons.nix
+│   │   ├── langmapper.nix
+│   │   ├── leap.nix
+│   │   ├── lsp.nix
+│   │   ├── lualine.nix
+│   │   ├── mini-ai.nix
+│   │   ├── mini-diff.nix
+│   │   ├── mini-pairs.nix
+│   │   ├── mini-surround.nix
+│   │   ├── noice.nix
+│   │   ├── notify.nix
+│   │   ├── opencode/         # OpenCode providers and shared config
+│   │   ├── origami.nix
+│   │   ├── overseer.nix
+│   │   ├── quickfix.nix
+│   │   ├── render-markdown.nix
+│   │   ├── repeat.nix
+│   │   ├── scrollbar.nix
+│   │   ├── seeker.nix
+│   │   ├── snacks.nix
+│   │   ├── supermaven.nix
+│   │   ├── tabby.nix
+│   │   ├── tabterm.nix
+│   │   ├── treesitter.nix
+│   │   ├── trouble.nix
+│   │   ├── vcsigns.nix
+│   │   ├── which-key.nix
+│   │   └── yanky.nix
 │   ├── vscode.nix            # VSCode-focused nvim build
 │   └── README.md             # Neovim flake docs
-├── agents/                   # AI agent configs (OpenCode/Cursor, skills, tools)
+├── agents/                   # AI agent configs (OpenCode, skills, tools)
 │   ├── flake.nix             # Agents flake entry point
-│   ├── opencode.nix          # OpenCode home-manager module (installs rules/agents)
-│   └── cursor.nix            # Cursor module/rules
+│   ├── flake.lock            # Agents flake lock
+│   ├── opencode.nix          # OpenCode home-manager module
+│   ├── opencode/
+│   │   ├── agents/           # Subagent definitions
+│   │   │   ├── codemodder.md
+│   │   │   ├── docs-digger.md
+│   │   │   ├── runner.md
+│   │   │   └── scout.md
+│   │   └── instructions/     # Agent instructions
+│   │       ├── base.md
+│   │       └── subagent-json-format.md
+│   ├── skills/               # Custom OpenCode skills
+│   │   ├── add-nixvim-plugin/
+│   │   ├── jujutsu/
+│   │   └── vcs-detect/
+│   └── commands/             # Custom OpenCode commands
+│       ├── plannotator-annotate.md
+│       ├── plannotator-last.md
+│       ├── plannotator-review.md
+│       ├── rmslop.md
+│       └── spellcheck.md
+├── openspec/                 # OpenSpec workflow (experimental)
+│   ├── config.yaml
+│   ├── changes/              # Active and archived changes
+│   └── specs/                # Main specs
 ├── secrets/                  # Encrypted secrets (sops-nix)
 │   └── secrets.yaml          # Encrypted API keys
 ├── catppuccin/               # Theme assets (Ghostty/OpenCode)
@@ -63,7 +121,7 @@ This is a **Nix-based dotfiles** repository for macOS (aarch64-darwin) and Linux
 ├── clickhouse-client/        # ClickHouse client config
 ├── ov.yaml                   # OpenCode configuration
 ├── starship.toml             # Starship prompt config (legacy / direct)
-└── wezterm.lua               # WezTerm terminal config
+└── wezterm.lua               # WezTerm terminal config (legacy)
 ```
 
 ## Key Commands
@@ -163,6 +221,8 @@ extraPlugins = [
 ];
 ```
 
+Some plugins are fetched as external flake inputs in `nvim/flake.nix` (e.g., `plugins-opencode-nvim`, `plugins-vcsigns-nvim`, `plugins-seeker-nvim`, etc.).
+
 ### Secrets Management
 
 Secrets are encrypted with **sops-nix** using age keys derived from SSH:
@@ -191,15 +251,17 @@ Provides:
 - `statix` (Nix linter)
 - `shellcheck`
 - `stylua`
+- `just`
 
 ## Important Notes
 
-1. **Do not edit** `flake.lock` / `nvim/flake.lock` manually — use `nix flake update`
+1. **Do not edit** `flake.lock` / `nvim/flake.lock` / `agents/flake.lock` manually — use `nix flake update`
 2. **Neovim config** is built via NixVim in `nvim/` (not symlinked)
 3. **Starship config** is at `starship.toml` (symlinked to `~/.config/`)
 4. **Catppuccin** is the primary theme family (Mocha in most tools; Espresso is used in some terminal/OpenCode assets)
 5. This repo is typically used with **Jujutsu (`jj`) on top of Git**; detect VCS before running VCS commands
 6. **Touch ID for sudo** is enabled via PAM configuration
+7. **OpenSpec** workflow lives in `openspec/` and is used for structured feature development
 
 ## External Dependencies
 
@@ -224,7 +286,5 @@ Provides:
 | `sops-nix` | Secrets management |
 | `karabinix` | Karabiner-Elements Nix module |
 | `jj-starship` | Starship integration for Jujutsu |
-| `paneru` | Custom service |
 | `nvim` | Neovim configuration (separate local flake) |
 | `agents` | AI agent tooling (local flake) |
-| `openspec` | OpenSpec tool |
