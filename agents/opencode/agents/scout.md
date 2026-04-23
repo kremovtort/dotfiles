@@ -1,7 +1,7 @@
 ---
 description: Fast read-only codebase discovery and call-path tracing subagent.
 mode: subagent
-model: opencode-go/minimax-m2.7
+model: openai/gpt-5.4-mini
 temperature: 0.1
 maxSteps: 30
 permission:

@@ -52,6 +52,7 @@ in {
       plugin = [
         "@mohak34/opencode-notifier@0.2.2"
         "cc-safety-net@0.8.2"
+        "opencode-direnv@1.1.1"
         "@plannotator/opencode@0.19.0"
         "@cortexkit/opencode-magic-context@0.14.2"
         "@morphllm/opencode-morph-plugin@${morph-plugin-version}"
@@ -59,8 +60,7 @@ in {
 
       instructions = [ 
         "~/.cache/opencode/packages/@morphllm/opencode-morph-plugin@${morph-plugin-version}/node_modules/@morphllm/opencode-morph-plugin/instructions/morph-tools.md"
-        "instructions/base.md"
-        "instructions/subagent-json-format.md"
+        "~/.config/opencode/instructions/*"
       ];
 
       compaction = {
@@ -103,21 +103,21 @@ in {
       agent = {
         plan = {
           mode = "primary";
-          model = "openai/gpt-5.4";
+          model = "openai/gpt-5.5";
           reasoningEffort = "high";
           step = 128;
         };
 
         build = {
           mode = "primary";
-          model = "openai/gpt-5.4";
+          model = "openai/gpt-5.5";
           reasoningEffort = "high";
           step = 128;
         };
 
         ask = {
           mode = "primary";
-          model = "openai/gpt-5.4";
+          model = "openai/gpt-5.5";
           reasoningEffort = "high";
           description = "Answer questions and analyze without editing code";
           permission = {

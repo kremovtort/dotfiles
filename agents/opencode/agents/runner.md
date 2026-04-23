@@ -1,7 +1,7 @@
 ---
 description: Build/test/lint execution and log-triage subagent.
 mode: subagent
-model: opencode-go/minimax-m2.7
+model: opencode-go/deepseek-v4-flash
 temperature: 0.0
 maxSteps: 20
 permission:
