@@ -11,6 +11,8 @@ local M = {
   types = types,
 }
 
+local execute_command
+
 local function stabilize_panel_for_terminal_dispose(workspace)
   if not workspace or not workspace.runtime.visible then
     return false
@@ -92,7 +94,7 @@ local function schedule_terminal_dispose(workspace, terminal, ref)
     state.pending_terminal_dispose[key] = nil
 
     M.dispatch({
-      type = types.TERMINAL_DELETE_REQUESTED,
+      type = types.events.TERMINAL_DELETE_REQUESTED,
       tabpage = ref.tabpage,
       terminal_id = ref.terminal_id,
     }, { defer_refresh = true })
@@ -106,7 +108,7 @@ local function schedule_terminal_dispose(workspace, terminal, ref)
           tabterm.focus_sidebar()
         else
           M.dispatch({
-            type = types.WORKSPACE_OPEN_REQUESTED,
+            type = types.events.WORKSPACE_OPEN_REQUESTED,
             tabpage = latest.runtime.tabpage,
           })
           local latest_ui = ui_state.get(latest.runtime.tabpage)
@@ -116,7 +118,7 @@ local function schedule_terminal_dispose(workspace, terminal, ref)
         end
       else
         M.dispatch({
-          type = types.WORKSPACE_CLOSE_REQUESTED,
+          type = types.events.WORKSPACE_CLOSE_REQUESTED,
           tabpage = ref.tabpage,
         }, { defer_refresh = true })
       end
@@ -135,7 +137,8 @@ local function schedule_terminal_dispose(workspace, terminal, ref)
 end
 
 local function should_schedule_terminal_dispose(terminal)
-  return terminal and (terminal.spec.kind == "shell" or (terminal.spec.kind == "cmd" and terminal.runtime.phase == "exited"))
+  return terminal and
+      (terminal.spec.kind == "shell" or (terminal.spec.kind == "cmd" and terminal.runtime.phase == "exited"))
 end
 
 local function refresh_workspace_now(workspace)
@@ -145,7 +148,7 @@ local function refresh_workspace_now(workspace)
   local tabpage = workspace.runtime and workspace.runtime.tabpage or state.current_tabpage()
   local plan = reconcile.derive(tabpage, workspace)
   for _, cmd in ipairs(plan) do
-    ui.execute(cmd)
+    execute_command(cmd)
   end
 end
 
@@ -295,7 +298,7 @@ local function sync_title(workspace, terminal, opts)
   local title = vim.b[bufnr].term_title
   if title and title ~= "" and title ~= terminal.snapshot.title then
     M.dispatch({
-      type = types.TERMINAL_TITLE_UPDATED,
+      type = types.events.TERMINAL_TITLE_UPDATED,
       tabpage = workspace.runtime.tabpage,
       terminal_id = terminal.id,
       payload = { title = title },
@@ -342,7 +345,7 @@ local function attach_output_listener(bufnr, tabpage, terminal_id)
           local kind = parse_background_job_line(detail)
           if kind and terminal.snapshot.notification.line ~= detail then
             M.dispatch({
-              type = types.SHELL_BACKGROUND_JOB_NOTIFIED,
+              type = types.events.SHELL_BACKGROUND_JOB_NOTIFIED,
               tabpage = tabpage,
               terminal_id = terminal_id,
               payload = {
@@ -361,6 +364,55 @@ local function attach_output_listener(bufnr, tabpage, terminal_id)
   })
 end
 
+local function execute_start_terminal(args)
+  local workspace = state.get_workspace(args.tabpage, false)
+  local terminal = workspace and workspace.terminals_by_id[args.terminal_id]
+  if not workspace or not terminal or terminal.runtime.phase ~= "starting" then
+    return
+  end
+
+  local bufnr, channel_id, err, failed_bufnr = ui.start_terminal(args.tabpage, terminal)
+  if not bufnr or not channel_id then
+    reducer.apply({
+      type = types.events.TERMINAL_START_FAILED,
+      tabpage = workspace.runtime.tabpage,
+      terminal_id = terminal.id,
+      payload = { message = err },
+    })
+    sync_title(workspace, terminal)
+    refresh_workspace_now(workspace)
+    if failed_bufnr and vim.api.nvim_buf_is_valid(failed_bufnr) then
+      vim.schedule(function()
+        ui_state.set_suppress_bufdelete(failed_bufnr)
+        pcall(vim.api.nvim_buf_delete, failed_bufnr, { force = true })
+        ui_state.clear_suppress_bufdelete(failed_bufnr)
+      end)
+    end
+    return
+  end
+
+  attach_output_listener(bufnr, workspace.runtime.tabpage, terminal.id)
+  reducer.apply({
+    type = types.events.TERMINAL_PROCESS_OPENED,
+    tabpage = workspace.runtime.tabpage,
+    terminal_id = terminal.id,
+    payload = {
+      channel_id = channel_id,
+    },
+  })
+  sync_title(workspace, terminal)
+  refresh_workspace_now(workspace)
+end
+
+execute_command = function(cmd)
+  local type, args = cmd[1], cmd[2]
+  if type == types.ui_commands.START_TERMINAL then
+    execute_start_terminal(args)
+  else
+    ui.execute(cmd)
+  end
+end
+
 local function parse_term_request(sequence)
   local code = sequence:match("^%z?\27%]133;([ABCD])") or sequence:match("^\27%]133;([ABCD])")
   local exit_code = tonumber(sequence:match("^\27%]133;D;(%d+)"))
@@ -370,64 +422,16 @@ local function parse_term_request(sequence)
 end
 
 function M.dispatch(event, opts)
+  local terminal_refs = event.type == types.events.TABPAGE_CLOSED and ui_state.terminal_refs_for_tabpage(event.tabpage) or nil
   local workspace = reducer.apply(event)
   local tabpage = event.tabpage or state.current_tabpage()
 
-  if event.type == types.WORKSPACE_OPEN_REQUESTED then
-    ui.ensure_open(tabpage)
-  elseif event.type == types.WORKSPACE_TOGGLE_REQUESTED then
-    if workspace and workspace.runtime.visible then
-      ui.ensure_open(tabpage)
-    else
-      ui.unmount(tabpage)
-    end
-  elseif event.type == types.WORKSPACE_CLOSE_REQUESTED or event.type == types.SIDEBAR_WINDOW_CLOSED_EXTERNALLY or event.type == types.PANEL_WINDOW_CLOSED_EXTERNALLY then
-    ui.unmount(tabpage)
-  elseif event.type == types.TERMINAL_START_REQUESTED and workspace then
-    ui.ensure_open(tabpage)
-    local terminal = workspace.terminals_by_id[event.terminal_id or workspace.active_terminal_id]
-    if terminal then
-      local old_bufnr = ui_state.get_terminal_bufnr(terminal.id)
-      if old_bufnr then
-        ui_state.clear_terminal_buffer(old_bufnr)
-      end
-
-      local bufnr, channel_id, err, failed_bufnr = ui.start_terminal(tabpage, terminal)
-      if not bufnr or not channel_id then
-        reducer.apply({
-          type = types.TERMINAL_START_FAILED,
-          tabpage = workspace.runtime.tabpage,
-          terminal_id = terminal.id,
-          payload = { message = err },
-        })
-        sync_title(workspace, terminal)
-        if opts and opts.defer_refresh then
-          refresh_workspace_later(workspace)
-        else
-          refresh_workspace_now(workspace)
-        end
-        if failed_bufnr and vim.api.nvim_buf_is_valid(failed_bufnr) then
-          vim.schedule(function()
-            ui_state.set_suppress_bufdelete(failed_bufnr)
-            pcall(vim.api.nvim_buf_delete, failed_bufnr, { force = true })
-            ui_state.clear_suppress_bufdelete(failed_bufnr)
-          end)
-        end
-        return workspace
-      end
-
-      ui_state.set_terminal_buffer(workspace.runtime.tabpage, terminal.id, bufnr)
-      attach_output_listener(bufnr, workspace.runtime.tabpage, terminal.id)
-      reducer.apply({
-        type = types.TERMINAL_PROCESS_OPENED,
-        tabpage = workspace.runtime.tabpage,
-        terminal_id = terminal.id,
-        payload = {
-          channel_id = channel_id,
-        },
-      })
-      sync_title(workspace, terminal)
-    end
+  if event.type == types.events.TABPAGE_CLOSED then
+    execute_command({ types.ui_commands.UNMOUNT, { tabpage = tabpage } })
+    execute_command({
+      types.ui_commands.DISPOSE_TERMINAL_BUFFERS,
+      { terminal_refs = terminal_refs },
+    })
   end
 
   if workspace then
@@ -479,7 +483,7 @@ function M.setup_autocmds()
       end
 
       M.dispatch({
-        type = types.TERMINAL_PROCESS_EXITED,
+        type = types.events.TERMINAL_PROCESS_EXITED,
         tabpage = ref.tabpage,
         terminal_id = ref.terminal_id,
         payload = {
@@ -521,7 +525,7 @@ function M.setup_autocmds()
       local code, exit_code, cwd = parse_term_request(sequence)
       if cwd then
         M.dispatch({
-          type = types.TERMINAL_CWD_REPORTED,
+          type = types.events.TERMINAL_CWD_REPORTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
           payload = { cwd = cwd },
@@ -530,50 +534,50 @@ function M.setup_autocmds()
 
       if code == "A" then
         M.dispatch({
-          type = types.SHELL_INTEGRATION_DETECTED,
+          type = types.events.SHELL_INTEGRATION_DETECTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
           payload = { integration = "prompt_only" },
         }, { defer_refresh = true })
         M.dispatch({
-          type = types.SHELL_PROMPT_STARTED,
+          type = types.events.SHELL_PROMPT_STARTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
         }, { defer_refresh = true })
       elseif code == "B" then
         M.dispatch({
-          type = types.SHELL_COMMAND_INPUT_STARTED,
+          type = types.events.SHELL_COMMAND_INPUT_STARTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
         }, { defer_refresh = true })
       elseif code == "C" then
         M.dispatch({
-          type = types.SHELL_INTEGRATION_DETECTED,
+          type = types.events.SHELL_INTEGRATION_DETECTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
           payload = { integration = "rich" },
         }, { defer_refresh = true })
         M.dispatch({
-          type = types.SHELL_COMMAND_EXECUTED,
+          type = types.events.SHELL_COMMAND_EXECUTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
         }, { defer_refresh = true })
       elseif code == "D" and exit_code ~= nil then
         M.dispatch({
-          type = types.SHELL_INTEGRATION_DETECTED,
+          type = types.events.SHELL_INTEGRATION_DETECTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
           payload = { integration = "rich" },
         }, { defer_refresh = true })
         M.dispatch({
-          type = types.SHELL_COMMAND_FINISHED,
+          type = types.events.SHELL_COMMAND_FINISHED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
           payload = { code = exit_code },
         }, { defer_refresh = true })
       elseif code == "D" then
         M.dispatch({
-          type = types.SHELL_COMMAND_ABORTED,
+          type = types.events.SHELL_COMMAND_ABORTED,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
         }, { defer_refresh = true })
@@ -595,7 +599,7 @@ function M.setup_autocmds()
           if state.is_autoclose_suspended(tabpage) then
             return
           end
-          M.dispatch({ type = types.SIDEBAR_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
+          M.dispatch({ type = types.events.SIDEBAR_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
           return
         end
         if ui.panel.winid == winid then
@@ -617,10 +621,10 @@ function M.setup_autocmds()
                 return
               end
 
-              M.dispatch({ type = types.PANEL_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
+              M.dispatch({ type = types.events.PANEL_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
             end)
           else
-            M.dispatch({ type = types.PANEL_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
+            M.dispatch({ type = types.events.PANEL_WINDOW_CLOSED_EXTERNALLY, tabpage = tabpage })
           end
           return
         end
@@ -643,7 +647,7 @@ function M.setup_autocmds()
           return
         end
         M.dispatch({
-          type = types.TERMINAL_BUFFER_WIPED_EXTERNALLY,
+          type = types.events.TERMINAL_BUFFER_WIPED_EXTERNALLY,
           tabpage = ref.tabpage,
           terminal_id = ref.terminal_id,
         })
@@ -656,7 +660,7 @@ function M.setup_autocmds()
     callback = function()
       for tabpage in pairs(state.workspaces_by_tab) do
         if not vim.api.nvim_tabpage_is_valid(tabpage) then
-          M.dispatch({ type = types.TABPAGE_CLOSED, tabpage = tabpage })
+          M.dispatch({ type = types.events.TABPAGE_CLOSED, tabpage = tabpage })
         end
       end
     end,
@@ -675,12 +679,7 @@ function M.setup_autocmds()
       vim.schedule(function()
         for _, workspace in pairs(state.workspaces_by_tab) do
           if workspace.runtime.visible then
-            local tp = workspace.runtime.tabpage
-            ui.relayout(tp)
-            local plan = reconcile.derive(tp, workspace)
-            for _, cmd in ipairs(plan) do
-              ui.execute(cmd)
-            end
+            refresh_workspace_now(workspace)
           end
         end
       end)
@@ -690,19 +689,27 @@ function M.setup_autocmds()
   vim.api.nvim_create_autocmd("WinEnter", {
     group = state.augroup,
     callback = function()
-      local current_win = vim.api.nvim_get_current_win()
-      local current_tabpage = state.current_tabpage()
+      local event_win = vim.api.nvim_get_current_win()
+      local event_tabpage = state.current_tabpage()
       vim.schedule(function()
-        if state.is_autoclose_suspended(current_tabpage) then
+        if not util.valid_win(event_win) or not vim.api.nvim_tabpage_is_valid(event_tabpage) then
           return
         end
 
-        local workspace = state.get_workspace(current_tabpage, false)
+        if vim.api.nvim_get_current_win() ~= event_win or state.current_tabpage() ~= event_tabpage then
+          return
+        end
+
+        if state.is_autoclose_suspended(event_tabpage) then
+          return
+        end
+
+        local workspace = state.get_workspace(event_tabpage, false)
         if workspace and workspace.runtime.visible then
-          local ui = ui_state.get(current_tabpage)
-          local in_tabterm = current_win == ui.sidebar.winid or current_win == ui.panel.winid
+          local ui = ui_state.get(event_tabpage)
+          local in_tabterm = event_win == ui.sidebar.winid or event_win == ui.panel.winid
           if not in_tabterm then
-            M.dispatch({ type = types.WORKSPACE_CLOSE_REQUESTED, tabpage = current_tabpage })
+            M.dispatch({ type = types.events.WORKSPACE_CLOSE_REQUESTED, tabpage = event_tabpage })
           end
         end
       end)

@@ -69,6 +69,30 @@ function M.lookup_buffer(bufnr)
   return M.terminal_bufnr[bufnr]
 end
 
+function M.terminal_refs_for_tabpage(tabpage)
+  local refs = {}
+  local key = M.tab_key(tabpage)
+
+  for bufnr, ref in pairs(M.terminal_bufnr) do
+    if ref.tabpage == key then
+      table.insert(refs, {
+        bufnr = bufnr,
+        tabpage = ref.tabpage,
+        terminal_id = ref.terminal_id,
+      })
+    end
+  end
+
+  table.sort(refs, function(left, right)
+    if left.terminal_id == right.terminal_id then
+      return left.bufnr < right.bufnr
+    end
+    return left.terminal_id < right.terminal_id
+  end)
+
+  return refs
+end
+
 function M.set_terminal_winid(terminal_id, winid)
   if winid and winid > 0 then
     M.terminal_winid[terminal_id] = winid

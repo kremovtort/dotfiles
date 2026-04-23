@@ -1,6 +1,5 @@
 local model = require("tabterm.model")
 local state = require("tabterm.state")
-local ui_state = require("tabterm.ui_state")
 local types = require("tabterm.types")
 
 local M = {}
@@ -31,24 +30,6 @@ local function next_id(workspace)
   return id
 end
 
-local function delete_terminal_buffer(terminal)
-  if not terminal then
-    return
-  end
-
-  local bufnr = ui_state.get_terminal_bufnr(terminal.id)
-  if not bufnr then
-    return
-  end
-
-  ui_state.clear_terminal_buffer(bufnr)
-  if vim.api.nvim_buf_is_valid(bufnr) then
-    ui_state.set_suppress_bufdelete(bufnr)
-    pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
-    ui_state.clear_suppress_bufdelete(bufnr)
-  end
-end
-
 local function drop_terminal(workspace, terminal_id)
   local terminal = workspace and workspace.terminals_by_id[terminal_id] or nil
   if not terminal then
@@ -63,7 +44,6 @@ local function drop_terminal(workspace, terminal_id)
     end
   end
 
-  delete_terminal_buffer(terminal)
   workspace.terminals_by_id[terminal_id] = nil
   remove_from_order(workspace.terminal_order, terminal_id)
 
@@ -102,18 +82,50 @@ local function create_terminal(workspace, spec, to_index)
   return terminal
 end
 
-function M.apply(event)
+local function sanitize_workspace(workspace)
+  if not workspace then
+    return nil
+  end
+
+  local ordered = {}
+  local seen = {}
+  for _, id in ipairs(workspace.terminal_order) do
+    if workspace.terminals_by_id[id] and not seen[id] then
+      table.insert(ordered, id)
+      seen[id] = true
+    end
+  end
+
+  for id, terminal in pairs(workspace.terminals_by_id) do
+    workspace.terminals_by_id[id] = model.ensure_terminal_shape(id, terminal)
+    if not seen[id] then
+      table.insert(ordered, id)
+      seen[id] = true
+    end
+  end
+  workspace.terminal_order = ordered
+
+  if #workspace.terminal_order == 0 then
+    workspace.active_terminal_id = nil
+  elseif not workspace.active_terminal_id or not workspace.terminals_by_id[workspace.active_terminal_id] then
+    workspace.active_terminal_id = workspace.terminal_order[1]
+  end
+
+  return workspace
+end
+
+local function apply_unsanitized(event)
   local tabpage = event.tabpage or state.current_tabpage()
-  local create_workspace = event.type ~= types.TABPAGE_CLOSED
+  local create_workspace = event.type ~= types.events.TABPAGE_CLOSED
   local workspace = state.get_workspace(tabpage, create_workspace)
 
-  if event.type == types.WORKSPACE_OPEN_REQUESTED then
+  if event.type == types.events.WORKSPACE_OPEN_REQUESTED then
     workspace.runtime.visible = true
     workspace.runtime.last_editor_winid = event.payload and event.payload.winid or vim.api.nvim_get_current_win()
     return workspace
   end
 
-  if event.type == types.WORKSPACE_CLOSE_REQUESTED or event.type == types.SIDEBAR_WINDOW_CLOSED_EXTERNALLY or event.type == types.PANEL_WINDOW_CLOSED_EXTERNALLY then
+  if event.type == types.events.WORKSPACE_CLOSE_REQUESTED or event.type == types.events.SIDEBAR_WINDOW_CLOSED_EXTERNALLY or event.type == types.events.PANEL_WINDOW_CLOSED_EXTERNALLY then
     if workspace then
       workspace.runtime.visible = false
 
@@ -122,7 +134,7 @@ function M.apply(event)
     return workspace
   end
 
-  if event.type == types.WORKSPACE_TOGGLE_REQUESTED then
+  if event.type == types.events.WORKSPACE_TOGGLE_REQUESTED then
     workspace.runtime.visible = not workspace.runtime.visible
     if workspace.runtime.visible then
       workspace.runtime.last_editor_winid = event.payload and event.payload.winid or vim.api.nvim_get_current_win()
@@ -130,7 +142,7 @@ function M.apply(event)
     return workspace
   end
 
-  if event.type == types.TERMINAL_CREATE_REQUESTED then
+  if event.type == types.events.TERMINAL_CREATE_REQUESTED then
     local payload = event.payload or {}
     local created = create_terminal(workspace, payload.spec or {}, payload.to_index)
     prune_hidden_exited_cmds(workspace, created and created.id or workspace.active_terminal_id)
@@ -140,37 +152,37 @@ function M.apply(event)
   local terminal_id = event.terminal_id or workspace and workspace.active_terminal_id
   local terminal = workspace and terminal_id and workspace.terminals_by_id[terminal_id] or nil
 
-  if event.type == types.TERMINAL_DELETE_REQUESTED then
+  if event.type == types.events.TERMINAL_DELETE_REQUESTED then
     if terminal then
       drop_terminal(workspace, terminal_id)
     end
     return workspace
   end
 
-  if not terminal and event.type ~= types.TABPAGE_CLOSED then
+  if not terminal and event.type ~= types.events.TABPAGE_CLOSED then
     return workspace
   end
 
-  if event.type == types.TERMINAL_RENAME_REQUESTED then
+  if event.type == types.events.TERMINAL_RENAME_REQUESTED then
     terminal.spec.name_override = event.payload and event.payload.name_override or nil
     return workspace
   end
 
-  if event.type == types.TERMINAL_SELECT_REQUESTED then
+  if event.type == types.events.TERMINAL_SELECT_REQUESTED then
     workspace.active_terminal_id = terminal_id
     terminal.snapshot.notification.unread = false
     prune_hidden_exited_cmds(workspace, terminal_id)
     return workspace
   end
 
-  if event.type == types.TERMINAL_READ_REQUESTED then
+  if event.type == types.events.TERMINAL_READ_REQUESTED then
     if terminal then
       terminal.snapshot.notification.unread = false
     end
     return workspace
   end
 
-  if event.type == types.TERMINAL_NEXT_REQUESTED or event.type == types.TERMINAL_PREV_REQUESTED then
+  if event.type == types.events.TERMINAL_NEXT_REQUESTED or event.type == types.events.TERMINAL_PREV_REQUESTED then
     if #workspace.terminal_order == 0 then
       workspace.active_terminal_id = nil
       return workspace
@@ -184,32 +196,32 @@ function M.apply(event)
       end
     end
 
-    local delta = event.type == types.TERMINAL_NEXT_REQUESTED and 1 or -1
+    local delta = event.type == types.events.TERMINAL_NEXT_REQUESTED and 1 or -1
     local next_index = ((current_index - 1 + delta) % #workspace.terminal_order) + 1
     workspace.active_terminal_id = workspace.terminal_order[next_index]
     prune_hidden_exited_cmds(workspace, workspace.active_terminal_id)
     return workspace
   end
 
-  if event.type == types.TERMINAL_MOVE_REQUESTED then
+  if event.type == types.events.TERMINAL_MOVE_REQUESTED then
     move_in_order(workspace.terminal_order, terminal_id, event.payload and event.payload.to_index or 1)
     return workspace
   end
 
-  if event.type == types.TERMINAL_START_REQUESTED then
+  if event.type == types.events.TERMINAL_START_REQUESTED then
     terminal.runtime.phase = "starting"
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = terminal.spec.kind == "cmd" and "running" or "unknown"
     return workspace
   end
 
-  if event.type == types.TERMINAL_PROCESS_OPENED then
+  if event.type == types.events.TERMINAL_PROCESS_OPENED then
     terminal.runtime.phase = "live"
     terminal.runtime.channel_id = event.payload.channel_id
     return workspace
   end
 
-  if event.type == types.TERMINAL_START_FAILED then
+  if event.type == types.events.TERMINAL_START_FAILED then
     terminal.runtime.phase = "stopped"
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = "unknown"
@@ -223,7 +235,7 @@ function M.apply(event)
     return workspace
   end
 
-  if event.type == types.TERMINAL_PROCESS_EXITED then
+  if event.type == types.events.TERMINAL_PROCESS_EXITED then
     terminal.runtime.phase = "exited"
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = "unknown"
@@ -241,27 +253,27 @@ function M.apply(event)
     return workspace
   end
 
-  if event.type == types.SHELL_INTEGRATION_DETECTED then
+  if event.type == types.events.SHELL_INTEGRATION_DETECTED then
     terminal.runtime.command.integration = event.payload.integration
     return workspace
   end
 
-  if event.type == types.SHELL_PROMPT_STARTED then
+  if event.type == types.events.SHELL_PROMPT_STARTED then
     terminal.runtime.command.phase = "prompt"
     return workspace
   end
 
-  if event.type == types.SHELL_COMMAND_INPUT_STARTED then
+  if event.type == types.events.SHELL_COMMAND_INPUT_STARTED then
     terminal.runtime.command.phase = "editing"
     return workspace
   end
 
-  if event.type == types.SHELL_COMMAND_EXECUTED then
+  if event.type == types.events.SHELL_COMMAND_EXECUTED then
     terminal.runtime.command.phase = "running"
     return workspace
   end
 
-  if event.type == types.SHELL_COMMAND_FINISHED then
+  if event.type == types.events.SHELL_COMMAND_FINISHED then
     terminal.runtime.command.phase = "prompt"
     terminal.snapshot.last_result.kind = (event.payload.code or 0) == 0 and "success" or "error"
     terminal.snapshot.last_result.code = event.payload.code or 0
@@ -272,22 +284,22 @@ function M.apply(event)
     return workspace
   end
 
-  if event.type == types.SHELL_COMMAND_ABORTED then
+  if event.type == types.events.SHELL_COMMAND_ABORTED then
     terminal.runtime.command.phase = "prompt"
     return workspace
   end
 
-  if event.type == types.TERMINAL_CWD_REPORTED then
+  if event.type == types.events.TERMINAL_CWD_REPORTED then
     terminal.snapshot.cwd = event.payload.cwd
     return workspace
   end
 
-  if event.type == types.TERMINAL_TITLE_UPDATED then
+  if event.type == types.events.TERMINAL_TITLE_UPDATED then
     terminal.snapshot.title = event.payload.title
     return workspace
   end
 
-  if event.type == types.SHELL_BACKGROUND_JOB_NOTIFIED then
+  if event.type == types.events.SHELL_BACKGROUND_JOB_NOTIFIED then
     local kind = event.payload and event.payload.kind or "unknown"
     local line = event.payload and event.payload.line or nil
     terminal.snapshot.notification.unread = true
@@ -299,24 +311,23 @@ function M.apply(event)
     return workspace
   end
 
-  if event.type == types.TERMINAL_BUFFER_WIPED_EXTERNALLY then
+  if event.type == types.events.TERMINAL_BUFFER_WIPED_EXTERNALLY then
     terminal.runtime.phase = "stopped"
     terminal.runtime.channel_id = nil
     terminal.runtime.command.phase = "unknown"
     return workspace
   end
 
-  if event.type == types.TABPAGE_CLOSED then
-    if workspace then
-      for _, terminal in pairs(workspace.terminals_by_id) do
-        delete_terminal_buffer(terminal)
-      end
-    end
+  if event.type == types.events.TABPAGE_CLOSED then
     state.workspaces_by_tab[state.tab_key(tabpage)] = nil
     return nil
   end
 
   return workspace
+end
+
+function M.apply(event)
+  return sanitize_workspace(apply_unsanitized(event))
 end
 
 return M

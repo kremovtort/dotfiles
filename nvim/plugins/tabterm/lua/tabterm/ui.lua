@@ -1,5 +1,6 @@
 local model = require("tabterm.model")
 local state = require("tabterm.state")
+local types = require("tabterm.types")
 local ui_state = require("tabterm.ui_state")
 local util = require("tabterm.util")
 
@@ -13,6 +14,22 @@ local function close_window(winid)
     ui_state.set_suppress_winclosed(winid)
     pcall(vim.api.nvim_win_close, winid, true)
     ui_state.clear_suppress_winclosed(winid)
+  end
+end
+
+local function dispose_terminal_buffer(ref)
+  local bufnr = ref and ref.bufnr or nil
+  if bufnr then
+    ui_state.clear_terminal_buffer(bufnr)
+  end
+  if ref and ref.terminal_id then
+    ui_state.set_terminal_winid(ref.terminal_id, nil)
+  end
+
+  if util.valid_buf(bufnr) then
+    ui_state.set_suppress_bufdelete(bufnr)
+    pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
+    ui_state.clear_suppress_bufdelete(bufnr)
   end
 end
 
@@ -643,7 +660,7 @@ function M.start_terminal(tabpage, terminal)
 
   local old_bufnr = ui_state.get_terminal_bufnr(terminal.id)
   if old_bufnr and util.valid_buf(old_bufnr) then
-    pcall(vim.api.nvim_buf_delete, old_bufnr, { force = true })
+    dispose_terminal_buffer({ terminal_id = terminal.id, bufnr = old_bufnr })
   end
 
   local bufnr = vim.api.nvim_create_buf(false, true)
@@ -683,19 +700,25 @@ function M.start_terminal(tabpage, terminal)
   return bufnr, channel_id, nil, nil
 end
 
+function M.dispose_terminal_buffers(terminal_refs)
+  for _, ref in ipairs(terminal_refs or {}) do
+    dispose_terminal_buffer(ref)
+  end
+end
+
 function M.execute(cmd)
   local type, args = cmd[1], cmd[2]
-  if type == "MOUNT" then
+  if type == types.ui_commands.MOUNT then
     M.mount(args.tabpage)
-  elseif type == "UNMOUNT" then
+  elseif type == types.ui_commands.UNMOUNT then
     M.unmount(args.tabpage)
-  elseif type == "RELAYOUT" then
+  elseif type == types.ui_commands.RELAYOUT then
     M.relayout(args.tabpage)
-  elseif type == "RENDER_SIDEBAR" then
+  elseif type == types.ui_commands.RENDER_SIDEBAR then
     M.render_sidebar(args.tabpage, args.workspace)
-  elseif type == "RENDER_PLACEHOLDER" then
+  elseif type == types.ui_commands.RENDER_PLACEHOLDER then
     M.render_placeholder(args.tabpage, args.workspace)
-  elseif type == "MOUNT_TERMINAL" then
+  elseif type == types.ui_commands.MOUNT_TERMINAL then
     local ui = ui_state.get(args.tabpage)
     if util.valid_win(ui.panel.winid) and util.valid_buf(args.bufnr) then
       ui.panel.bufnr = args.bufnr
@@ -704,6 +727,8 @@ function M.execute(cmd)
       vim.bo[args.bufnr].bufhidden = "hide"
       set_panel_winbar(ui.panel.winid, args.terminal)
     end
+  elseif type == types.ui_commands.DISPOSE_TERMINAL_BUFFERS then
+    M.dispose_terminal_buffers(args.terminal_refs)
   end
 end
 

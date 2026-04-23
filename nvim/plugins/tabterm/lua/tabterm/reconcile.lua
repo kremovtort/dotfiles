@@ -1,8 +1,21 @@
-local model = require("tabterm.model")
+local types = require("tabterm.types")
 local ui_state = require("tabterm.ui_state")
 local util = require("tabterm.util")
 
 local M = {}
+
+local function append_dispose_commands(commands, stale_terminal_refs)
+  if #stale_terminal_refs == 0 then
+    return
+  end
+
+  table.insert(commands, {
+    types.ui_commands.DISPOSE_TERMINAL_BUFFERS,
+    {
+      terminal_refs = stale_terminal_refs,
+    },
+  })
+end
 
 local function can_mount_in_panel(terminal)
   if not terminal then
@@ -18,30 +31,32 @@ local function can_mount_in_panel(terminal)
   return terminal.runtime.phase == "exited"
 end
 
--- Reconcile is allowed to repair structural invariants before rendering,
--- but behavioral runtime transitions must still flow through the reducer.
-local function sanitize_workspace(workspace)
-  local ordered = {}
-  local seen = {}
-  for _, id in ipairs(workspace.terminal_order) do
-    if workspace.terminals_by_id[id] and not seen[id] then
-      table.insert(ordered, id)
-      seen[id] = true
-    end
-  end
-  for id, terminal in pairs(workspace.terminals_by_id) do
-    workspace.terminals_by_id[id] = model.ensure_terminal_shape(id, terminal)
-    if not seen[id] then
-      table.insert(ordered, id)
-      seen[id] = true
-    end
-  end
-  workspace.terminal_order = ordered
+local function stale_terminal_refs(tabpage, workspace)
+  local refs = {}
+  local live_terminals = workspace and workspace.terminals_by_id or {}
 
-  if #workspace.terminal_order == 0 then
-    workspace.active_terminal_id = nil
-  elseif not workspace.active_terminal_id or not workspace.terminals_by_id[workspace.active_terminal_id] then
-    workspace.active_terminal_id = workspace.terminal_order[1]
+  for _, ref in ipairs(ui_state.terminal_refs_for_tabpage(tabpage)) do
+    if not live_terminals[ref.terminal_id] then
+      table.insert(refs, ref)
+    end
+  end
+
+  return refs
+end
+
+local function append_start_terminal_commands(commands, tabpage, workspace)
+  for _, terminal_id in ipairs(workspace.terminal_order) do
+    local terminal = workspace.terminals_by_id[terminal_id]
+    if terminal and terminal.runtime.phase == "starting" then
+      table.insert(commands, {
+        types.ui_commands.START_TERMINAL,
+        {
+          tabpage = tabpage,
+          terminal_id = terminal.id,
+          terminal = terminal,
+        },
+      })
+    end
   end
 end
 
@@ -50,7 +65,7 @@ function M.derive(tabpage, workspace)
     return {}
   end
 
-  sanitize_workspace(workspace)
+  local stale_refs = stale_terminal_refs(tabpage, workspace)
 
   local ui = ui_state.get(tabpage)
   local has_windows = util.valid_win(ui.backdrop.winid)
@@ -61,26 +76,27 @@ function M.derive(tabpage, workspace)
 
   if not workspace.runtime.visible then
     if has_windows then
-      table.insert(commands, { "UNMOUNT", { tabpage = tabpage } })
+      table.insert(commands, { types.ui_commands.UNMOUNT, { tabpage = tabpage } })
     end
+    append_dispose_commands(commands, stale_refs)
     return commands
   end
 
   if not has_windows then
-    table.insert(commands, { "MOUNT", { tabpage = tabpage } })
+    table.insert(commands, { types.ui_commands.MOUNT, { tabpage = tabpage } })
   else
-    table.insert(commands, { "RELAYOUT", { tabpage = tabpage } })
+    table.insert(commands, { types.ui_commands.RELAYOUT, { tabpage = tabpage } })
   end
 
-  table.insert(commands, { "RENDER_SIDEBAR", { tabpage = tabpage, workspace = workspace } })
+  table.insert(commands, { types.ui_commands.RENDER_SIDEBAR, { tabpage = tabpage, workspace = workspace } })
 
   local active = workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
   if not can_mount_in_panel(active) then
-    table.insert(commands, { "RENDER_PLACEHOLDER", { tabpage = tabpage, workspace = workspace } })
+    table.insert(commands, { types.ui_commands.RENDER_PLACEHOLDER, { tabpage = tabpage, workspace = workspace } })
   else
     local bufnr = ui_state.get_terminal_bufnr(active.id)
     table.insert(commands, {
-      "MOUNT_TERMINAL",
+      types.ui_commands.MOUNT_TERMINAL,
       {
         tabpage = tabpage,
         terminal_id = active.id,
@@ -89,6 +105,9 @@ function M.derive(tabpage, workspace)
       },
     })
   end
+
+  append_dispose_commands(commands, stale_refs)
+  append_start_terminal_commands(commands, tabpage, workspace)
 
   return commands
 end

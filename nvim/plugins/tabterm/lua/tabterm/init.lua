@@ -28,7 +28,7 @@ end
 
 local function open_workspace_ui(workspace)
   dispatch({
-    type = types.WORKSPACE_OPEN_REQUESTED,
+    type = types.events.WORKSPACE_OPEN_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     payload = { winid = vim.api.nvim_get_current_win() },
   })
@@ -36,7 +36,7 @@ end
 
 local function create_and_start(tabpage, spec, opts)
   dispatch({
-    type = types.TERMINAL_CREATE_REQUESTED,
+    type = types.events.TERMINAL_CREATE_REQUESTED,
     tabpage = tabpage,
     payload = {
       spec = spec,
@@ -47,7 +47,7 @@ local function create_and_start(tabpage, spec, opts)
   local workspace = state.get_workspace(tabpage, true)
   if workspace and workspace.active_terminal_id then
     dispatch({
-      type = types.TERMINAL_START_REQUESTED,
+      type = types.events.TERMINAL_START_REQUESTED,
       tabpage = tabpage,
       terminal_id = workspace.active_terminal_id,
     })
@@ -188,7 +188,7 @@ local function delete_terminal(workspace, terminal_id)
   end
 
   dispatch({
-    type = types.TERMINAL_DELETE_REQUESTED,
+    type = types.events.TERMINAL_DELETE_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     terminal_id = terminal_id,
   })
@@ -196,7 +196,7 @@ local function delete_terminal(workspace, terminal_id)
   local latest = state.get_workspace(workspace.runtime.tabpage, false)
   if latest and #latest.terminal_order == 0 and latest.runtime.visible then
     dispatch({
-      type = types.WORKSPACE_CLOSE_REQUESTED,
+      type = types.events.WORKSPACE_CLOSE_REQUESTED,
       tabpage = latest.runtime.tabpage,
     })
     return
@@ -310,7 +310,7 @@ function M.close()
   if not workspace then
     return
   end
-  dispatch({ type = types.WORKSPACE_CLOSE_REQUESTED, tabpage = workspace.runtime.tabpage })
+  dispatch({ type = types.events.WORKSPACE_CLOSE_REQUESTED, tabpage = workspace.runtime.tabpage })
 end
 
 function M.hide()
@@ -337,7 +337,7 @@ function M.toggle()
   local workspace = current_workspace(true)
   local was_visible = workspace.runtime.visible
   dispatch({
-    type = types.WORKSPACE_TOGGLE_REQUESTED,
+    type = types.events.WORKSPACE_TOGGLE_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     payload = { winid = vim.api.nvim_get_current_win() },
   })
@@ -396,7 +396,7 @@ function M.start_active()
 
   open_workspace_ui(workspace)
   dispatch({
-    type = types.TERMINAL_START_REQUESTED,
+    type = types.events.TERMINAL_START_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     terminal_id = workspace.active_terminal_id,
   })
@@ -433,7 +433,7 @@ function M.rename_active(name_override)
 
   local apply_name = function(value)
     dispatch({
-      type = types.TERMINAL_RENAME_REQUESTED,
+      type = types.events.TERMINAL_RENAME_REQUESTED,
       tabpage = workspace.runtime.tabpage,
       terminal_id = workspace.active_terminal_id,
       payload = { name_override = value ~= "" and value or nil },
@@ -468,7 +468,7 @@ function M.next_terminal()
     return
   end
   M.open()
-  dispatch({ type = types.TERMINAL_NEXT_REQUESTED, tabpage = workspace.runtime.tabpage })
+  dispatch({ type = types.events.TERMINAL_NEXT_REQUESTED, tabpage = workspace.runtime.tabpage })
 end
 
 function M.prev_terminal()
@@ -477,7 +477,7 @@ function M.prev_terminal()
     return
   end
   M.open()
-  dispatch({ type = types.TERMINAL_PREV_REQUESTED, tabpage = workspace.runtime.tabpage })
+  dispatch({ type = types.events.TERMINAL_PREV_REQUESTED, tabpage = workspace.runtime.tabpage })
 end
 
 function M.select_sidebar_cursor()
@@ -488,7 +488,7 @@ function M.select_sidebar_cursor()
   end
 
   dispatch({
-    type = types.TERMINAL_SELECT_REQUESTED,
+    type = types.events.TERMINAL_SELECT_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     terminal_id = terminal_id,
   })
@@ -501,7 +501,7 @@ function M.rename_sidebar_cursor()
     return
   end
   dispatch({
-    type = types.TERMINAL_SELECT_REQUESTED,
+    type = types.events.TERMINAL_SELECT_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     terminal_id = terminal_id,
   })
@@ -534,7 +534,7 @@ function M.move_sidebar_cursor(delta)
   end
 
   dispatch({
-    type = types.TERMINAL_MOVE_REQUESTED,
+    type = types.events.TERMINAL_MOVE_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     terminal_id = terminal_id,
     payload = { to_index = current_index + delta },
@@ -573,8 +573,8 @@ function M.sidebar_goto(index)
   vim.api.nvim_win_set_cursor(ui.sidebar.winid, { row, 0 })
 
   if workspace.active_terminal_id ~= terminal_id then
-    dispatch({
-      type = types.TERMINAL_SELECT_REQUESTED,
+  dispatch({
+    type = types.events.TERMINAL_SELECT_REQUESTED,
       tabpage = workspace.runtime.tabpage,
       terminal_id = terminal_id,
     })
@@ -589,7 +589,7 @@ function M.sync_sidebar_cursor()
   end
 
   dispatch({
-    type = types.TERMINAL_SELECT_REQUESTED,
+    type = types.events.TERMINAL_SELECT_REQUESTED,
     tabpage = workspace.runtime.tabpage,
     terminal_id = terminal_id,
   })
@@ -626,7 +626,7 @@ function M.focus_panel()
   local terminal = workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
   if terminal then
     dispatch({
-      type = types.TERMINAL_READ_REQUESTED,
+      type = types.events.TERMINAL_READ_REQUESTED,
       tabpage = tabpage,
       terminal_id = terminal.id,
     })
