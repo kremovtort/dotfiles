@@ -110,6 +110,7 @@ in
     LC_ALL = "en_US.UTF-8";
     PAGER = "ov";
     MANPAGER = "ov";
+    OPENCODE_API_KEY = "\$(cat ${config.sops.secrets.opencode-api-key.path})";
   };
 
   programs.atuin = {

@@ -75,6 +75,7 @@
             packages = [
               pkgs.bash-language-server
               pkgs.just
+              pkgs.lua
               pkgs.lua-language-server
               pkgs.nixd
               pkgs.nixfmt

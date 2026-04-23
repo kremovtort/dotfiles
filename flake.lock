@@ -495,13 +495,12 @@
         ],
         "nixvim": "nixvim",
         "plugins-async-nvim": "plugins-async-nvim",
-        "plugins-floaterm": "plugins-floaterm",
+        "plugins-direnv-nvim": "plugins-direnv-nvim",
         "plugins-opencode-nvim": "plugins-opencode-nvim",
         "plugins-seeker-nvim": "plugins-seeker-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
         "plugins-vcsigns-nvim": "plugins-vcsigns-nvim",
-        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim",
-        "plugins-volt": "plugins-volt"
+        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim"
       },
       "locked": {
         "path": "./nvim",
@@ -529,19 +528,19 @@
         "type": "github"
       }
     },
-    "plugins-floaterm": {
+    "plugins-direnv-nvim": {
       "flake": false,
       "locked": {
-        "lastModified": 1763984922,
-        "narHash": "sha256-kTjE44pp02ZEJUp42p459l4WQA8oQ9SU8AuCxXFYm/k=",
-        "owner": "nvzone",
-        "repo": "floaterm",
-        "rev": "fc2efaf25eeefcb33177d5807c0c745e125cf293",
+        "lastModified": 1774672676,
+        "narHash": "sha256-JbnGoZMApLtq4lSdGolcpKdsneolSOrzIi+O5yR2NDQ=",
+        "owner": "NotAShelf",
+        "repo": "direnv.nvim",
+        "rev": "564146278b3d5fe4ffa389cd103bab20f9b515d6",
         "type": "github"
       },
       "original": {
-        "owner": "nvzone",
-        "repo": "floaterm",
+        "owner": "NotAShelf",
+        "repo": "direnv.nvim",
         "type": "github"
       }
     },
@@ -622,22 +621,6 @@
       "original": {
         "owner": "jubnzv",
         "repo": "virtual-types.nvim",
-        "type": "github"
-      }
-    },
-    "plugins-volt": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1757754135,
-        "narHash": "sha256-5Xao1+QXZOvqwCXL6zWpckJPO1LDb8I7wtikMRFQ3Jk=",
-        "owner": "nvzone",
-        "repo": "volt",
-        "rev": "620de1321f275ec9d80028c68d1b88b409c0c8b1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nvzone",
-        "repo": "volt",
         "type": "github"
       }
     },
