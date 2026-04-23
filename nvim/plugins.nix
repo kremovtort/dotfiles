@@ -37,9 +37,11 @@
     ./plugins/auto-session.nix
     ./plugins/yanky.nix
 
+    ./plugins/direnv.nix
     ./plugins/langmapper.nix
     ./plugins/lualine.nix
     ./plugins/tabby.nix
+    ./plugins/zoxide.nix
 
     ./plugins/quickfix.nix
 

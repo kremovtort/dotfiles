@@ -23,11 +23,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1776329215,
-        "narHash": "sha256-a8BYi3mzoJ/AcJP8UldOx8emoPRLeWqALZWu4ZvjPXw=",
+        "lastModified": 1776949667,
+        "narHash": "sha256-GMSVw35Q+294GlrTUKlx087E31z7KurReQ1YHSKp5iw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b86751bc4085f48661017fa226dee99fab6c651b",
+        "rev": "01fbdeef22b76df85ea168fbfe1bfd9e63681b30",
         "type": "github"
       },
       "original": {
@@ -46,11 +46,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1776452249,
-        "narHash": "sha256-tpCsY9kIEfcitiV3JwUqYTmxwewwZKQlZSNUBqb9kF0=",
+        "lastModified": 1777051818,
+        "narHash": "sha256-2tuHuYmcg8HQSYamI1FoLLVFFOSYK2Alqr/cGiVIfG4=",
         "owner": "nix-community",
         "repo": "nixvim",
-        "rev": "698d17490e19e2e360a6ce49b1af9134d1c6eacd",
+        "rev": "b684241888d9271ab5196383e24098ad4400a372",
         "type": "github"
       },
       "original": {
@@ -75,30 +75,30 @@
         "type": "github"
       }
     },
-    "plugins-floaterm": {
+    "plugins-direnv-nvim": {
       "flake": false,
       "locked": {
-        "lastModified": 1763984922,
-        "narHash": "sha256-kTjE44pp02ZEJUp42p459l4WQA8oQ9SU8AuCxXFYm/k=",
-        "owner": "nvzone",
-        "repo": "floaterm",
-        "rev": "fc2efaf25eeefcb33177d5807c0c745e125cf293",
+        "lastModified": 1774672676,
+        "narHash": "sha256-JbnGoZMApLtq4lSdGolcpKdsneolSOrzIi+O5yR2NDQ=",
+        "owner": "NotAShelf",
+        "repo": "direnv.nvim",
+        "rev": "564146278b3d5fe4ffa389cd103bab20f9b515d6",
         "type": "github"
       },
       "original": {
-        "owner": "nvzone",
-        "repo": "floaterm",
+        "owner": "NotAShelf",
+        "repo": "direnv.nvim",
         "type": "github"
       }
     },
     "plugins-opencode-nvim": {
       "flake": false,
       "locked": {
-        "lastModified": 1776607513,
-        "narHash": "sha256-EO4n1tFxY2iHj5RhB+M8YSHbNkeAVfM+E11OYI9p4vU=",
+        "lastModified": 1777043261,
+        "narHash": "sha256-S3qJE5nzaJaItQ9GhnMAnyQClwdvsUa3syygKNqzaHk=",
         "owner": "sudo-tee",
         "repo": "opencode.nvim",
-        "rev": "8edc19ac64e3075d4d68e49ef6846dec562ed316",
+        "rev": "1db841b8e9d4dd75f9899b97efb98fc18fb730cd",
         "type": "github"
       },
       "original": {
@@ -171,34 +171,17 @@
         "type": "github"
       }
     },
-    "plugins-volt": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1757754135,
-        "narHash": "sha256-5Xao1+QXZOvqwCXL6zWpckJPO1LDb8I7wtikMRFQ3Jk=",
-        "owner": "nvzone",
-        "repo": "volt",
-        "rev": "620de1321f275ec9d80028c68d1b88b409c0c8b1",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nvzone",
-        "repo": "volt",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "nixpkgs": "nixpkgs",
         "nixvim": "nixvim",
         "plugins-async-nvim": "plugins-async-nvim",
-        "plugins-floaterm": "plugins-floaterm",
+        "plugins-direnv-nvim": "plugins-direnv-nvim",
         "plugins-opencode-nvim": "plugins-opencode-nvim",
         "plugins-seeker-nvim": "plugins-seeker-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
         "plugins-vcsigns-nvim": "plugins-vcsigns-nvim",
-        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim",
-        "plugins-volt": "plugins-volt"
+        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim"
       }
     },
     "systems": {

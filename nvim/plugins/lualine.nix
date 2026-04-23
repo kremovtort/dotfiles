@@ -64,6 +64,21 @@
           end,
         })
 
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "DirenvLoaded",
+          callback = function()
+            pcall(require("lualine").refresh)
+          end,
+        })
+
+        vim.api.nvim_create_autocmd("DirChanged", {
+          callback = function()
+            vim.defer_fn(function()
+              pcall(require("lualine").refresh)
+            end, 100)
+          end,
+        })
+
         vim.api.nvim_create_autocmd("ColorScheme", {
           callback = function()
             set_lualine_term_hl()
@@ -280,6 +295,17 @@
             };
             ignore_lsp = { };
             show_name = true;
+            separator = "%#LualineCSeparator#%*";
+          }
+          {
+            __unkeyed-1.__raw = ''
+              function()
+                local ok, direnv = pcall(require, "direnv")
+                if not ok or not direnv.statusline then return "" end
+                return direnv.statusline()
+              end
+            '';
+            separator = "%#LualineCSeparator#%*";
           }
         ];
 

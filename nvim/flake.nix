@@ -40,15 +40,11 @@
       flake = false;
     };
 
-    plugins-floaterm = {
-      url = "github:nvzone/floaterm";
+    plugins-direnv-nvim = {
+      url = "github:NotAShelf/direnv.nvim";
       flake = false;
     };
 
-    plugins-volt = {
-      url = "github:nvzone/volt";
-      flake = false;
-    };
   };
 
   outputs =
