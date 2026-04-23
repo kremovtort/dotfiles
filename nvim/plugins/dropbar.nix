@@ -17,6 +17,9 @@
           or vim.fn.win_gettype(win) ~= ""
           or vim.wo[win].winbar ~= ""
           or vim.bo[buf].buftype == "terminal"
+          or vim.bo[buf].buftype == "quickfix"
+          or vim.bo[buf].ft:match("^opencode") ~= nil
+          or vim.bo[buf].ft == "qf"
           or vim.bo[buf].ft == 'help'
         then
           return false
@@ -42,17 +45,17 @@
 
   keymaps = [
     {
-      mode = ["n"];
+      mode = [ "n" ];
       key = "<leader>;";
       action.__raw = ''require("dropbar.api").pick'';
     }
     {
-      mode = ["n"];
+      mode = [ "n" ];
       key = "];";
       action.__raw = ''require("dropbar.api").goto_context_start'';
     }
     {
-      mode = ["n"];
+      mode = [ "n" ];
       key = "];";
       action.__raw = ''require("dropbar.api").select_next_context'';
     }
