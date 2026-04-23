@@ -81,6 +81,9 @@ function M.derive(tabpage, workspace)
 	local stale_refs = stale_terminal_refs(tabpage, workspace)
 
 	local ui = ui_state.get(tabpage)
+	local has_any_window = util.valid_win(ui.backdrop.winid)
+		or util.valid_win(ui.sidebar.winid)
+		or util.valid_win(ui.panel.winid)
 	local has_windows = util.valid_win(ui.backdrop.winid)
 		and util.valid_win(ui.sidebar.winid)
 		and util.valid_win(ui.panel.winid)
@@ -89,7 +92,7 @@ function M.derive(tabpage, workspace)
 	local commands = {}
 
 	if not workspace.runtime.visible then
-		if has_windows then
+		if has_any_window then
 			table.insert(commands, { types.ui_commands.UNMOUNT, { tabpage = tabpage } })
 		end
 		append_dispose_commands(commands, stale_refs)

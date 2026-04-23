@@ -196,6 +196,9 @@ local function apply_unsanitized(event)
 	if event.type == types.events.TERMINAL_DELETE_REQUESTED then
 		if terminal then
 			drop_terminal(workspace, terminal_id)
+			if #workspace.terminal_order == 0 then
+				workspace.runtime.visible = false
+			end
 		end
 		return workspace
 	end
