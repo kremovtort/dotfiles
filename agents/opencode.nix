@@ -8,12 +8,11 @@
 }:
 let
   configDir = ".config/opencode";
-in {
+in
+{
   home.sessionVariables = {
-    MORPH_COMPACT = "false";
-    MORPH_WARPGREP = "false";
-    MORPH_WARPGREP_GITHUB = "false";
     MORPH_API_KEY = "\$(cat ${config.sops.secrets.morphllm-key.path} 2> /dev/null || true)";
+    OPENCODE_ENABLE_EXA = 1;
   };
 
   home.file."${configDir}/magic-context.jsonc".text = builtins.toJSON {
@@ -25,7 +24,8 @@ in {
   };
 
   home.file."${configDir}/instructions/base.md".source = ./opencode/instructions/base.md;
-  home.file."${configDir}/instructions/subagent-json-format.md".source = ./opencode/instructions/subagent-json-format.md;
+  home.file."${configDir}/instructions/subagent-json-format.md".source =
+    ./opencode/instructions/subagent-json-format.md;
 
   programs.bun.enable = true; # need for plannotator
 
@@ -42,25 +42,23 @@ in {
       skill-creator = agentsInputs.anthropicSkills + "/skills/skill-creator";
     };
 
-    settings = let
-      morph-plugin-version = "2.0.9";
-    in {
+    settings = {
       "$schema" = "https://opencode.ai/config.json";
 
       autoupdate = false;
 
       plugin = [
-        "@mohak34/opencode-notifier@0.2.2"
+        "@mohak34/opencode-notifier@0.2.3"
         "cc-safety-net@0.8.2"
         "opencode-direnv@1.1.1"
-        "@plannotator/opencode@0.19.0"
-        "@cortexkit/opencode-magic-context@0.14.2"
-        "@morphllm/opencode-morph-plugin@${morph-plugin-version}"
+        "@plannotator/opencode@0.19.1"
+        "@cortexkit/opencode-magic-context@0.15.3"
+        "opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply"
       ];
 
-      instructions = [ 
-        "~/.cache/opencode/packages/@morphllm/opencode-morph-plugin@${morph-plugin-version}/node_modules/@morphllm/opencode-morph-plugin/instructions/morph-tools.md"
+      instructions = [
         "~/.config/opencode/instructions/*"
+        "~/.cache/opencode/packages/opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply/node_modules/opencode-morph-fast-apply/instructions/morph-tools.md"
       ];
 
       compaction = {
@@ -105,14 +103,13 @@ in {
           mode = "primary";
           model = "openai/gpt-5.5";
           reasoningEffort = "high";
-          step = 128;
         };
 
         build = {
           mode = "primary";
           model = "openai/gpt-5.5";
           reasoningEffort = "high";
-          step = 128;
+          tools.morph_edit = true;
         };
 
         ask = {
@@ -124,7 +121,6 @@ in {
             edit = "deny";
             bash = "allow";
           };
-          step = 128;
         };
 
         general.disable = true;
