@@ -1,5 +1,7 @@
 { pkgs, ... }:
 {
+  imports = [ ./paneru.nix ];
+
   system.primaryUser = "kremovtort";
 
   environment.systemPackages = [ ];

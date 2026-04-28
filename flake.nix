@@ -12,6 +12,11 @@
     karabinix.url = "github:pepegar/karabinix";
     jj-starship.url = "github:dmmulroy/jj-starship";
 
+    paneru = {
+      url = "github:karinushka/paneru";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-darwin = {
       url = "github:LnL7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -112,10 +117,12 @@
               };
 
           legacyPackages.darwinConfigurations."kremovtort-OSX" = inputs.nix-darwin.lib.darwinSystem {
+            specialArgs = { inherit inputs self; };
             modules = [ ./darwin/configuration.nix ];
           };
         };
-    } // { 
+    }
+    // {
       lib.mkNvim = inputs.nvim.lib.mkNvim;
     };
 }
