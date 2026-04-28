@@ -1,7 +1,7 @@
 ---
 description: Deterministic mechanical-edit subagent for large repetitive refactors.
 mode: subagent
-model: openai/gpt-5.4-mini
+model: opencode-go/minimax-m2.7
 temperature: 0.0
 maxSteps: 60
 permission:

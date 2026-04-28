@@ -8,6 +8,7 @@
 }:
 let
   configDir = ".config/opencode";
+  magicContextVersion = "0.15.7";
 in
 {
   home.sessionVariables = {
@@ -20,7 +21,26 @@ in
       "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
     enabled = true;
 
-    historian.model = "opencode-go/kimi-k2.6";
+    cache_ttl = {
+      default = "5m";
+      "openai/gpt-5.5" = "30m";
+    };
+
+    protected_tags = 30;
+
+    historian.model = "openai/gpt-5.5";
+
+    nudge_interval_tokens = 25000;
+
+    dreamer = {
+      enabled = true;
+      model = "openai/gpt-5.5";
+    };
+
+    sidekick = {
+      enabled = true;
+      model = "opencode-go/minimax-m2.7";
+    };
   };
 
   home.file."${configDir}/instructions/base.md".source = ./opencode/instructions/base.md;
@@ -31,7 +51,7 @@ in
 
   programs.opencode = {
     enable = true;
-    package = agentsInputs."llm-agents".packages.${system}.opencode;
+    package = agentsInputs.llm-agents.packages.${system}.opencode;
     agents = ./opencode/agents;
     commands = ./commands;
     skills = {
@@ -48,11 +68,11 @@ in
       autoupdate = false;
 
       plugin = [
-        "@mohak34/opencode-notifier@0.2.3"
+        "@mohak34/opencode-notifier@0.2.4"
         "cc-safety-net@0.8.2"
         "opencode-direnv@1.1.1"
-        "@plannotator/opencode@0.19.1"
-        "@cortexkit/opencode-magic-context@0.15.3"
+        "@plannotator/opencode@0.19.6"
+        "@cortexkit/opencode-magic-context@${magicContextVersion}"
         "opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply"
       ];
 
@@ -141,6 +161,10 @@ in
     };
 
     tui = {
+      plugin = [
+        "@cortexkit/opencode-magic-context@${magicContextVersion}"
+      ];
+
       keybinds = {
         leader = "ctrl+x,ctrl+ч";
         app_exit = "ctrl+d,ctrl+в,<leader>q,<leader>й";
