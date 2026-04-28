@@ -11,7 +11,7 @@
 
     # Plugins not in nixpkgs
     plugins-opencode-nvim = {
-      url = "github:sudo-tee/opencode.nvim";
+      url = "github:nickjvandyke/opencode.nvim";
       flake = false;
     };
 

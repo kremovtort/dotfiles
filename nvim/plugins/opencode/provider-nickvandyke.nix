@@ -1,4 +1,16 @@
-{ lib, ... }:
+{
+  lib,
+  pkgs,
+  nvimInputs,
+  ...
+}:
+let
+  opencodeNvim = pkgs.vimUtils.buildVimPlugin {
+    name = "opencode-nvim";
+    src = nvimInputs.plugins-opencode-nvim;
+    dependencies = with pkgs.vimPlugins; [ plenary-nvim ];
+  };
+in
 {
   dependencies.opencode.enable = lib.mkForce false;
 
@@ -6,58 +18,45 @@
 
   plugins.opencode = {
     enable = true;
-    autoLoad = true;
-    settings.server = {
-      start.__raw = ''
-        function()
-          local opencode_cmd = vim.g.opencode_cmd .. " --port"
-          require("snacks.terminal").open(opencode_cmd, {
+    package = opencodeNvim;
+    settings.server =
+      let
+        opencodeTerminalOpts = ''
+          {
             win = {
               position = "right",
-              width = 0.5,
+              width = 121,
               enter = false,
               on_win = function(win)
                 require("opencode.terminal").setup(win.win)
               end,
             },
-          })
-        end
-      '';
-      stop.__raw = ''
-        function()
-          local opencode_cmd = vim.g.opencode_cmd .. " --port"
-          local term = require("snacks.terminal").get(opencode_cmd, {
-            create = false,
-            win = {
-              position = "right",
-              width = 0.5,
-              enter = false,
-              on_win = function(win)
-                require("opencode.terminal").setup(win.win)
-              end,
-            },
-          })
-          if term then
-            term:close()
+          }
+        '';
+      in
+      {
+        start.__raw = ''
+          function()
+            local opencode_cmd = vim.g.opencode_cmd .. " --port"
+            require("snacks.terminal").open(opencode_cmd, ${opencodeTerminalOpts})
           end
-        end
-      '';
-      toggle.__raw = ''
-        function()
-          local opencode_cmd = vim.g.opencode_cmd .. " --port"
-          require("snacks.terminal").toggle(opencode_cmd, {
-            win = {
-              position = "right",
-              width = 0.5,
-              enter = false,
-              on_win = function(win)
-                require("opencode.terminal").setup(win.win)
-              end,
-            },
-          })
-        end
-      '';
-    };
+        '';
+        stop.__raw = ''
+          function()
+            local opencode_cmd = vim.g.opencode_cmd .. " --port"
+            local term = require("snacks.terminal").get(opencode_cmd, ${opencodeTerminalOpts})
+            if term then
+              term:close()
+            end
+          end
+        '';
+        toggle.__raw = ''
+          function()
+            local opencode_cmd = vim.g.opencode_cmd .. " --port"
+            require("snacks.terminal").toggle(opencode_cmd, ${opencodeTerminalOpts})
+          end
+        '';
+      };
   };
 
   autoCmd = [
