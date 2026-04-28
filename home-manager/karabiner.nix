@@ -168,12 +168,18 @@ let
     }
   ];
 
+  builtInKeyboardCondition = mkCondition {
+    type = "device_if";
+    identifiers = [ { is_built_in_keyboard = true; } ];
+  };
+
   # Преобразование конфига в манипуляторы karabinix
   createManipulators =
     modifier:
     map (
       m:
       mkManipulator {
+        conditions = [ builtInKeyboardCondition ];
         from = mkFromEvent {
           key_code = keyCodes.${m.from};
           modifiers = mkModifiers {
