@@ -10,8 +10,8 @@ let
   bundleId = "com.github.karinushka.paneru";
   certName = "Paneru Local Code Signing";
   stableAppPath = "/Applications/${appName}.app";
-  stableConfigPath = "${stableAppPath}/Contents/Resources/paneru.toml";
   userHome = config.users.users.${config.system.primaryUser}.home;
+  stableConfigPath = "${userHome}/.paneru.toml";
   paneruVersion = paneruPackage.version or "unstable";
   bundleVersion = lib.head (lib.splitString "+" paneruVersion);
 
@@ -59,9 +59,10 @@ let
         0.5
         0.66
         0.75
-        1
       ];
       animation_speed = 50;
+      # horizontal_mouse_warp = -1; # currently too bad
+      sliver_width = 1;
     };
     bindings = {
       window_focus_west = "cmd + ctrl - h";
@@ -74,9 +75,11 @@ let
       window_swap_last = "alt + shift - l";
       window_center = "alt - c";
       window_resize = "alt - r";
+      window_shrink = "alt + shift - r";
+      window_fullwidth = "cmd + alt - f";
       window_manage = "cmd + alt - t";
       window_stack = "alt + ctrl - ]";
-      window_unstack = "alt + ctrl + shift - ]";
+      window_unstack = "alt + ctrl - [";
       quit = "ctrl + alt - q";
     };
     windows.all = {
@@ -85,7 +88,7 @@ let
       vertical_padding = 2;
     };
     swipe = {
-      sensitivity = 0.5;
+      sensitivity = 1;
       deceleration = 3;
       gesture.fingers_count = 3;
     };
@@ -106,11 +109,9 @@ let
 
       app="$out/Applications/${appName}.app"
       mkdir -p "$app/Contents/MacOS"
-      mkdir -p "$app/Contents/Resources"
 
       install -m 0755 ${lib.getExe paneruPackage} "$app/Contents/MacOS/paneru"
       install -m 0644 ${infoPlist} "$app/Contents/Info.plist"
-      install -m 0644 ${paneruConfig} "$app/Contents/Resources/paneru.toml"
 
       runHook postInstall
     '';
@@ -193,8 +194,8 @@ in
     /bin/cp -R "$app_source" "$app_target"
     /usr/sbin/chown -R root:wheel "$app_target"
     /bin/chmod -R u+w "$app_target"
-    /usr/bin/install -m 0644 "$app_target/Contents/Resources/paneru.toml" "${userHome}/.paneru.toml"
-    /usr/sbin/chown ${config.system.primaryUser}:staff "${userHome}/.paneru.toml"
+    /usr/bin/install -m 0644 "${paneruConfig}" "${stableConfigPath}"
+    /usr/sbin/chown ${config.system.primaryUser}:staff "${stableConfigPath}"
 
     if ! /usr/bin/codesign --force --sign "$cert_name" --keychain "$keychain" "$app_target"; then
       echo "Failed to sign $app_target with '$cert_name'." >&2
