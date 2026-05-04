@@ -56,6 +56,43 @@ The plugin SHALL track runtime terminal state, last known cwd, last known title,
 - **THEN** the plugin SHALL mark the terminal as waiting only during command execution
 - **AND** after command completion it SHALL store the reported success or error result with the source marked as shell-derived
 
+### Requirement: Configurable shell integration injection
+The plugin SHALL provide shell integration injection for tabterm-created interactive shell terminals. Shell integration SHALL be enabled by default, SHALL support a per-shell allowlist for `bash` and `zsh`, and SHALL NOT be injected when the global setting or matching shell allowlist entry is disabled.
+
+#### Scenario: Supported shell receives integration by default
+- **WHEN** the user starts a tabterm shell terminal with `bash` or `zsh` and does not override shell integration settings
+- **THEN** the plugin SHALL start the shell with plugin-owned shell integration loaded
+
+#### Scenario: Global shell integration disable bypasses injection
+- **WHEN** the user starts a tabterm shell terminal with shell integration globally disabled
+- **THEN** the plugin SHALL start the configured shell without injecting plugin-owned shell integration
+
+#### Scenario: Per-shell disable bypasses injection
+- **WHEN** the user starts a tabterm shell terminal whose shell allowlist entry is disabled
+- **THEN** the plugin SHALL start that shell without injecting plugin-owned shell integration
+
+#### Scenario: Unsupported shell bypasses injection
+- **WHEN** the user starts a tabterm shell terminal using a shell other than `bash` or `zsh`
+- **THEN** the plugin SHALL start that shell without injecting plugin-owned shell integration
+
+### Requirement: Bash and zsh integration events
+Injected `bash` and `zsh` shell integration SHALL emit terminal sequences compatible with tabterm's existing terminal request handling for prompt start, command input start, command execution start, command finish with exit status, current working directory, and terminal title updates.
+
+#### Scenario: Prompt reports cwd and readiness
+- **WHEN** an injected shell displays a prompt
+- **THEN** the shell integration SHALL emit a prompt-start event
+- **AND** it SHALL report the current working directory
+- **AND** it SHALL set the terminal title to the shell name
+
+#### Scenario: Command lifecycle reports execution state
+- **WHEN** the user runs a command in an injected shell
+- **THEN** the shell integration SHALL emit command input and command execution events before the command runs
+- **AND** it SHALL emit a command finish event with the command exit status before the next prompt
+
+#### Scenario: User shell startup remains primary
+- **WHEN** the plugin injects shell integration into `bash` or `zsh`
+- **THEN** the user's normal shell startup file SHALL be sourced before the plugin-owned integration script
+
 ### Requirement: Exited and externally closed UI states resolve predictably
 The plugin SHALL collapse the panel to a placeholder when the active terminal exits, and it SHALL treat external closure of the sidebar or panel windows as closure of the entire workspace UI.
 
@@ -68,3 +105,23 @@ The plugin SHALL collapse the panel to a placeholder when the active terminal ex
 - **WHEN** the sidebar or panel window is closed outside the plugin's normal close action
 - **THEN** the workspace SHALL mark its floating UI as closed
 - **AND** the plugin SHALL clear the mounted sidebar and panel runtime handles for that workspace
+
+### Requirement: Unified Tabterm user command API
+The plugin SHALL expose tabterm actions through a single `:Tabterm` user command with lowercase subcommands, and SHALL NOT register the previous top-level `Tabterm*` action commands.
+
+#### Scenario: Existing actions dispatch through subcommands
+- **WHEN** the user invokes `:Tabterm toggle`, `:Tabterm open`, `:Tabterm close`, `:Tabterm start`, `:Tabterm rename`, `:Tabterm delete`, `:Tabterm next`, or `:Tabterm prev`
+- **THEN** the plugin SHALL execute the same action previously exposed by the corresponding `TabtermToggle`, `TabtermOpen`, `TabtermClose`, `TabtermStart`, `TabtermRename`, `TabtermDelete`, `TabtermNext`, or `TabtermPrev` command
+
+#### Scenario: New command creation uses command subcommand
+- **WHEN** the user invokes `:Tabterm command` with or without trailing command text
+- **THEN** the plugin SHALL create a command terminal using the same behavior previously exposed by `TabtermNewCommand`
+- **AND** the plugin SHALL pass trailing command text as the optional command value when it is present
+
+#### Scenario: New shell creation uses shell subcommand
+- **WHEN** the user invokes `:Tabterm shell`
+- **THEN** the plugin SHALL create an interactive shell terminal using the same behavior previously exposed by `TabtermNewShell`
+
+#### Scenario: Subcommand completion lists supported actions
+- **WHEN** the user requests command-line completion for `:Tabterm `
+- **THEN** the plugin SHALL offer the supported subcommands `toggle`, `open`, `close`, `shell`, `command`, `start`, `rename`, `delete`, `next`, and `prev`
