@@ -365,6 +365,18 @@ local function sidebar_keymaps(bufnr)
 	vim.keymap.set("n", "<C-l>", function()
 		require("tabterm").focus_panel()
 	end, opts)
+	vim.keymap.set("n", "<C-D>", function()
+		require("tabterm").scroll_panel("<C-d>")
+	end, opts)
+	vim.keymap.set("n", "<C-U>", function()
+		require("tabterm").scroll_panel("<C-u>")
+	end, opts)
+	vim.keymap.set("n", "<C-F>", function()
+		require("tabterm").scroll_panel("<C-f>")
+	end, opts)
+	vim.keymap.set("n", "<C-B>", function()
+		require("tabterm").scroll_panel("<C-b>")
+	end, opts)
 end
 
 ---@param bufnr integer

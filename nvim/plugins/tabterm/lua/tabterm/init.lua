@@ -705,4 +705,22 @@ function M.focus_panel()
 	end
 end
 
+---@param keys string
+function M.scroll_panel(keys)
+	local workspace = current_workspace(false)
+	if not workspace or not workspace.runtime.visible then
+		return
+	end
+
+	local ui = ui_state.get(workspace.runtime.tabpage)
+	if not util.valid_win(ui.panel.winid) then
+		return
+	end
+
+	vim.api.nvim_win_call(ui.panel.winid, function()
+		local termcodes = vim.api.nvim_replace_termcodes(keys, true, false, true)
+		vim.cmd.normal({ termcodes, bang = true })
+	end)
+end
+
 return M
