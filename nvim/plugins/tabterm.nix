@@ -21,7 +21,7 @@
   extraConfigLua = lib.mkAfter ''
     require("tabterm").setup({
       ui = {
-        border = "rounded",
+        border = "round",
         sidebar_width = 30,
         float = {
           width = 0.90,

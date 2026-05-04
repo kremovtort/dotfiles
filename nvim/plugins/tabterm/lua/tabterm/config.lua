@@ -1,11 +1,13 @@
 local M = {}
 
+---@alias tabterm.BorderStyle "single"|"double"|"round"|"none"
+
 ---@class tabterm.FloatConfig
 ---@field width number
 ---@field height number
 
 ---@class tabterm.UIConfig
----@field border string|"none"|"single"
+---@field border tabterm.BorderStyle
 ---@field sidebar_width integer
 ---@field float tabterm.FloatConfig
 
@@ -26,7 +28,7 @@ local M = {}
 ---@field height number?
 
 ---@class tabterm.UIConfigInput
----@field border boolean|string?
+---@field border boolean|tabterm.BorderStyle?
 ---@field sidebar_width integer?
 ---@field float tabterm.FloatConfigInput?
 
@@ -41,6 +43,13 @@ local M = {}
 ---@class tabterm.ConfigInput
 ---@field ui tabterm.UIConfigInput?
 ---@field shell_integration tabterm.ShellIntegrationConfigInput?
+
+local valid_borders = {
+	single = true,
+	double = true,
+	round = true,
+	none = true,
+}
 
 ---@type tabterm.Config
 M.defaults = {
@@ -72,6 +81,8 @@ function M.normalize(config)
 	elseif normalized.ui.border == false then
 		normalized.ui.border = "none"
 	elseif normalized.ui.border == nil then
+		normalized.ui.border = M.defaults.ui.border
+	elseif not valid_borders[normalized.ui.border] then
 		normalized.ui.border = M.defaults.ui.border
 	end
 

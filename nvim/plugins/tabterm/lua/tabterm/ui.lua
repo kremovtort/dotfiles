@@ -64,7 +64,7 @@ end
 
 ---@return string
 local function border()
-	return config().border == "none" and "none" or config().border
+	return config().border == "round" and "rounded" or config().border
 end
 
 ---@param name string
@@ -150,6 +150,8 @@ function M.setup_highlights()
 	pcall(vim.api.nvim_set_hl, 0, "TabtermPanelHeaderSuccess", { default = true, link = "DiagnosticOk" })
 	pcall(vim.api.nvim_set_hl, 0, "TabtermPanelHeaderUnknown", { default = true, link = "DiagnosticInfo" })
 	pcall(vim.api.nvim_set_hl, 0, "TabtermPanelHeaderError", { default = true, link = "DiagnosticError" })
+	pcall(vim.api.nvim_set_hl, 0, "TabtermSidebar", { default = true, link = "Normal" })
+	pcall(vim.api.nvim_set_hl, 0, "TabtermPanel", { default = true, link = "NormalFloat" })
 	vim.api.nvim_set_hl(0, "TabtermSidebarSuccess", {
 		default = true,
 		link = "DiagnosticOk",
@@ -241,6 +243,29 @@ local function panel_win_config(layout)
 		border = border(),
 		zindex = 100,
 	}
+end
+
+---@param role "sidebar"|"panel"
+---@return "TabtermSidebar"|"TabtermPanel"
+local function window_highlight_group(role)
+	if border() == "none" and role == "sidebar" then
+		return "TabtermSidebar"
+	end
+	return "TabtermPanel"
+end
+
+---@param winid integer
+---@param role "sidebar"|"panel"
+local function apply_window_options(winid, role)
+	if not util.valid_win(winid) then
+		return
+	end
+
+	local group = window_highlight_group(role)
+	vim.wo[winid].winhighlight = "Normal:" .. group .. ",NormalFloat:" .. group
+	if role == "panel" then
+		vim.wo[winid].foldcolumn = border() == "none" and "1" or "0"
+	end
 end
 
 ---@param message any
@@ -509,6 +534,7 @@ function M.mount(tabpage)
 	end
 
 	ui.sidebar.winid = vim.api.nvim_open_win(ui.sidebar.bufnr, false, sidebar_win_config(layout))
+	apply_window_options(ui.sidebar.winid, "sidebar")
 
 	local panel_buf = ui.panel.bufnr
 	if not util.valid_buf(panel_buf) then
@@ -527,6 +553,7 @@ function M.mount(tabpage)
 	end
 
 	ui.panel.winid = vim.api.nvim_open_win(panel_buf, false, panel_win_config(layout))
+	apply_window_options(ui.panel.winid, "panel")
 	ui.panel.kind = "placeholder"
 end
 
@@ -546,6 +573,8 @@ function M.relayout(tabpage)
 	vim.api.nvim_win_set_config(ui.backdrop.winid, backdrop_win_config())
 	vim.api.nvim_win_set_config(ui.sidebar.winid, sidebar_win_config(layout))
 	vim.api.nvim_win_set_config(ui.panel.winid, panel_win_config(layout))
+	apply_window_options(ui.sidebar.winid, "sidebar")
+	apply_window_options(ui.panel.winid, "panel")
 end
 
 ---@param tabpage integer
