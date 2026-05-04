@@ -18,9 +18,10 @@
           or vim.wo[win].winbar ~= ""
           or vim.bo[buf].buftype == "terminal"
           or vim.bo[buf].buftype == "quickfix"
+          or vim.bo[buf].buftype == "nofile"
           or vim.bo[buf].ft:match("^opencode") ~= nil
           or vim.bo[buf].ft == "qf"
-          or vim.bo[buf].ft == 'help'
+          or vim.bo[buf].ft == "help"
         then
           return false
         end
