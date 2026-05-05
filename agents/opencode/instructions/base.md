@@ -43,7 +43,7 @@ Subagents solve 3 recurring problems:
 - Keep prompts tiny and task-focused; do not paste large context blobs.
 - To pass local context, use inline refs: `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based).
   Examples: `@agents/opencode/_AGENTS.md`, `@agents/opencode/_AGENTS.md:23:60`, `@agents/opencode/_AGENTS.md::<Subagent usage>`.
-- Subagents cannot invoke other subagents (`task` is unavailable in subagent context). Any further delegation must be done by the parent agent.
+- Subagents normally do not invoke other subagents. A subagent may use `task` only when its frontmatter explicitly allows `task` and its own role prompt names the allowed target subagents; otherwise further delegation must be done by the parent agent.
 
 ### Subagent roles and contracts
 
@@ -147,4 +147,4 @@ Subagents solve 3 recurring problems:
 - If the task needs build/test/lint execution or long log interpretation, delegate to `@runner`.
 - If the task is a repetitive large mechanical refactor (rename, import-path migration, structural replacement), delegate to `@codemodder`.
 - For full review/bug-finding, `@scout` is only evidence gathering; parent does analysis and uses `@runner` for validation.
-- Subagents cannot call other subagents; only the parent agent can perform further delegation.
+- Subagents may call other subagents only when their frontmatter explicitly allows `task` and their role prompt names the allowed target subagents; otherwise only the parent agent performs further delegation.

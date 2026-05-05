@@ -8,7 +8,7 @@
 }:
 let
   configDir = ".config/opencode";
-  magicContextVersion = "0.15.7";
+  magicContextVersion = "0.16.3";
 in
 {
   home.sessionVariables = {
@@ -58,6 +58,10 @@ in
       vcs-detect = agents + "/skills/vcs-detect";
       jujutsu = agents + "/skills/jujutsu";
       add-nixvim-plugin = agents + "/skills/add-nixvim-plugin";
+      openspec-review = agents + "/skills/openspec-review";
+      openspec-review-plan = agents + "/skills/openspec-review-plan";
+      openspec-review-apply-fixes = agents + "/skills/openspec-review-apply-fixes";
+      openspec-reviewer = agents + "/skills/openspec-reviewer";
       ast-grep = agentsInputs.astGrepClaudeSkill + "/ast-grep/skills/ast-grep";
       skill-creator = agentsInputs.anthropicSkills + "/skills/skill-creator";
     };
@@ -71,7 +75,7 @@ in
         "@mohak34/opencode-notifier@0.2.4"
         "cc-safety-net@0.8.2"
         "opencode-direnv@1.1.1"
-        "@plannotator/opencode@0.19.6"
+        "@plannotator/opencode@0.19.8"
         "@cortexkit/opencode-magic-context@${magicContextVersion}"
         "opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply"
       ];
