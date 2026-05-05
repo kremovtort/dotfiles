@@ -60,8 +60,7 @@ let
         0.66
         0.75
       ];
-      animation_speed = 50;
-      # horizontal_mouse_warp = -1; # currently too bad
+      animation_speed = 35;
       sliver_width = 1;
     };
     bindings = {
