@@ -181,7 +181,8 @@
         "plugins-seeker-nvim": "plugins-seeker-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
         "plugins-vcsigns-nvim": "plugins-vcsigns-nvim",
-        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim"
+        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim",
+        "tabterm": "tabterm"
       }
     },
     "systems": {
@@ -198,6 +199,25 @@
         "repo": "default",
         "type": "github"
       }
+    },
+    "tabterm": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "nixvim": [
+          "nixvim"
+        ]
+      },
+      "locked": {
+        "path": "./plugins/tabterm",
+        "type": "path"
+      },
+      "original": {
+        "path": "./plugins/tabterm",
+        "type": "path"
+      },
+      "parent": []
     }
   },
   "root": "root",

@@ -570,7 +570,8 @@
         "plugins-seeker-nvim": "plugins-seeker-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
         "plugins-vcsigns-nvim": "plugins-vcsigns-nvim",
-        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim"
+        "plugins-virtual-types-nvim": "plugins-virtual-types-nvim",
+        "tabterm": "tabterm"
       },
       "locked": {
         "path": "./nvim",
@@ -848,6 +849,29 @@
         "repo": "default",
         "type": "github"
       }
+    },
+    "tabterm": {
+      "inputs": {
+        "nixpkgs": [
+          "nvim",
+          "nixpkgs"
+        ],
+        "nixvim": [
+          "nvim",
+          "nixvim"
+        ]
+      },
+      "locked": {
+        "path": "./plugins/tabterm",
+        "type": "path"
+      },
+      "original": {
+        "path": "./plugins/tabterm",
+        "type": "path"
+      },
+      "parent": [
+        "nvim"
+      ]
     },
     "treefmt-nix": {
       "inputs": {

@@ -9,6 +9,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    tabterm = {
+      url = "path:./plugins/tabterm";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixvim.follows = "nixvim";
+    };
+
     # Plugins not in nixpkgs
     plugins-opencode-nvim = {
       url = "github:nickjvandyke/opencode.nvim";
@@ -81,6 +87,7 @@
               imports = [
                 ./config.nix
                 ./plugins.nix
+                inputs.tabterm.nixvimModules.default
               ]
               ++ extraModules;
             };
