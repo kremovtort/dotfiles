@@ -530,6 +530,31 @@ function M.setup_autocmds()
 		end,
 	})
 
+	vim.api.nvim_create_autocmd("TermEnter", {
+		group = state.augroup,
+		callback = function(ev)
+			if ui_state.lookup_buffer(ev.buf) then
+				vim.b[ev.buf].tabterm_normal_mode_intent = false
+			end
+		end,
+	})
+
+	vim.api.nvim_create_autocmd("TermLeave", {
+		group = state.augroup,
+		callback = function(ev)
+			if not ui_state.lookup_buffer(ev.buf) then
+				return
+			end
+
+			vim.schedule(function()
+				if not vim.api.nvim_buf_is_valid(ev.buf) then
+					return
+				end
+				vim.b[ev.buf].tabterm_normal_mode_intent = true
+			end)
+		end,
+	})
+
 	vim.api.nvim_create_autocmd("TermClose", {
 		group = state.augroup,
 		callback = function(ev)

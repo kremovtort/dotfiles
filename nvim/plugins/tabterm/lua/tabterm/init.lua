@@ -240,6 +240,28 @@ local function active_terminal(workspace)
 	return workspace and workspace.active_terminal_id and workspace.terminals_by_id[workspace.active_terminal_id] or nil
 end
 
+---@param terminal tabterm.Terminal?
+---@return integer?
+local function terminal_bufnr(terminal)
+	return terminal and ui_state.get_terminal_bufnr(terminal.id) or nil
+end
+
+---@param terminal tabterm.Terminal?
+---@return boolean
+local function has_normal_mode_intent(terminal)
+	local bufnr = terminal_bufnr(terminal)
+	return util.valid_buf(bufnr) and vim.b[bufnr].tabterm_normal_mode_intent == true
+end
+
+---@param terminal tabterm.Terminal?
+---@param value boolean
+local function set_normal_mode_intent(terminal, value)
+	local bufnr = terminal_bufnr(terminal)
+	if util.valid_buf(bufnr) then
+		vim.b[bufnr].tabterm_normal_mode_intent = value
+	end
+end
+
 ---@param workspace tabterm.Workspace?
 ---@return string?
 sidebar_terminal_id = function(workspace)
@@ -692,7 +714,13 @@ function M.focus_panel()
 	if vim.api.nvim_win_is_valid(ui.panel.winid) then
 		vim.api.nvim_set_current_win(ui.panel.winid)
 
-		if ui.panel.kind == "terminal" and terminal and terminal.runtime.phase == "live" then
+		if
+			ui.panel.kind == "terminal"
+			and terminal
+			and terminal.spec.kind == "shell"
+			and terminal.runtime.phase == "live"
+			and not has_normal_mode_intent(terminal)
+		then
 			vim.cmd("startinsert")
 		elseif
 			ui.panel.kind == "terminal"
@@ -715,6 +743,11 @@ function M.scroll_panel(keys)
 	local ui = ui_state.get(workspace.runtime.tabpage)
 	if not util.valid_win(ui.panel.winid) then
 		return
+	end
+
+	local terminal = active_terminal(workspace)
+	if ui.panel.kind == "terminal" then
+		set_normal_mode_intent(terminal, true)
 	end
 
 	vim.api.nvim_win_call(ui.panel.winid, function()

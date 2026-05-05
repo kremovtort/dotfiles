@@ -7,6 +7,9 @@ local util = require("tabterm.util")
 
 local M = {}
 local sidebar_ns = vim.api.nvim_create_namespace("tabterm.sidebar")
+local panel_placeholder_filetype = "tabterm-panel-placeholder"
+local panel_shell_filetype = "tabterm-panel-shell"
+local panel_command_filetype = "tabterm-panel-command"
 
 ---@class tabterm.FloatLayout
 ---@field row integer
@@ -274,6 +277,12 @@ local function single_line_message(message)
 	message = tostring(message or "")
 	message = message:gsub("\r", " "):gsub("\n+", " "):gsub("%s+", " ")
 	return vim.trim(message)
+end
+
+---@param terminal tabterm.Terminal
+---@return string
+local function panel_terminal_filetype(terminal)
+	return terminal.spec.kind == "shell" and panel_shell_filetype or panel_command_filetype
 end
 
 ---@return tabterm.WindowConfig
@@ -552,7 +561,7 @@ function M.mount(tabpage)
 	if not util.valid_buf(panel_buf) then
 		panel_buf = vim.api.nvim_create_buf(false, true)
 		---@cast panel_buf integer
-		set_scratch_options(panel_buf, "tabterm-placeholder")
+		set_scratch_options(panel_buf, panel_placeholder_filetype)
 		placeholder_keymaps(panel_buf)
 	end
 	ui.panel.bufnr = panel_buf
@@ -710,10 +719,11 @@ function M.render_placeholder(tabpage, workspace)
 	if not util.valid_buf(buf) or vim.bo[buf].buftype == "terminal" then
 		buf = vim.api.nvim_create_buf(false, true)
 		---@cast buf integer
-		set_scratch_options(buf, "tabterm-placeholder")
+		set_scratch_options(buf, panel_placeholder_filetype)
 		placeholder_keymaps(buf)
 		ui.panel.bufnr = buf
 	end
+	vim.bo[buf].filetype = panel_placeholder_filetype
 
 	local placeholder = model.placeholder_model(workspace)
 	local lines = {
@@ -796,6 +806,8 @@ function M.start_terminal(tabpage, terminal)
 	local bufnr = vim.api.nvim_create_buf(false, true)
 	ui.panel.bufnr = bufnr
 	vim.bo[bufnr].bufhidden = "hide"
+	vim.bo[bufnr].filetype = panel_terminal_filetype(terminal)
+	vim.b[bufnr].tabterm_normal_mode_intent = false
 	terminal_keymaps(bufnr)
 	vim.api.nvim_win_set_buf(ui.panel.winid, bufnr)
 
@@ -857,6 +869,7 @@ function M.execute(cmd)
 		if util.valid_win(ui.panel.winid) and util.valid_buf(args.bufnr) then
 			ui.panel.bufnr = args.bufnr
 			ui.panel.kind = "terminal"
+			vim.bo[args.bufnr].filetype = panel_terminal_filetype(args.terminal)
 			vim.api.nvim_win_set_buf(ui.panel.winid, args.bufnr)
 			vim.bo[args.bufnr].bufhidden = "hide"
 			set_panel_winbar(ui.panel.winid, args.terminal)
