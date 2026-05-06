@@ -8,7 +8,7 @@
 }:
 let
   configDir = ".config/opencode";
-  magicContextVersion = "0.17.0";
+  magicContextVersion = "0.17.2";
 in
 {
   home.sessionVariables = {
@@ -28,7 +28,10 @@ in
 
     protected_tags = 30;
 
-    historian.model = "openai/gpt-5.5";
+    historian = {
+      model = "openai/gpt-5.5";
+      fallback_models = ["opencode-go/glm-5.1"];
+    };
 
     nudge_interval_tokens = 25000;
 
@@ -75,7 +78,7 @@ in
         "@mohak34/opencode-notifier@0.2.4"
         "cc-safety-net@0.8.2"
         "opencode-direnv@1.1.1"
-        "@plannotator/opencode@0.19.8"
+        "@plannotator/opencode@0.19.10"
         "@cortexkit/opencode-magic-context@${magicContextVersion}"
         "opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply"
       ];
