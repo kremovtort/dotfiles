@@ -8,7 +8,7 @@
 }:
 let
   configDir = ".config/opencode";
-  magicContextVersion = "0.16.3";
+  magicContextVersion = "0.17.0";
 in
 {
   home.sessionVariables = {
