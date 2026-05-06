@@ -75,6 +75,22 @@
         "type": "github"
       }
     },
+    "plugins-cursortab-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778251944,
+        "narHash": "sha256-BxQeIoZCTh5mMTcc9hmFqQslrBFMTyvJJf3dWHw7LHA=",
+        "owner": "cursortab",
+        "repo": "cursortab.nvim",
+        "rev": "8c100956a6e3ddf06ff61f6fab97914acb53b571",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cursortab",
+        "repo": "cursortab.nvim",
+        "type": "github"
+      }
+    },
     "plugins-direnv-nvim": {
       "flake": false,
       "locked": {
@@ -176,6 +192,7 @@
         "nixpkgs": "nixpkgs",
         "nixvim": "nixvim",
         "plugins-async-nvim": "plugins-async-nvim",
+        "plugins-cursortab-nvim": "plugins-cursortab-nvim",
         "plugins-direnv-nvim": "plugins-direnv-nvim",
         "plugins-opencode-nvim": "plugins-opencode-nvim",
         "plugins-seeker-nvim": "plugins-seeker-nvim",

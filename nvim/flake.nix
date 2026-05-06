@@ -51,6 +51,11 @@
       flake = false;
     };
 
+    plugins-cursortab-nvim = {
+      url = "github:cursortab/cursortab.nvim";
+      flake = false;
+    };
+
   };
 
   outputs =

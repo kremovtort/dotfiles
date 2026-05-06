@@ -8,7 +8,6 @@
     ./plugins/origami.nix
     ./plugins/treesitter.nix
     ./plugins/lsp.nix
-    ./plugins/supermaven.nix
     ./plugins/blink-cmp.nix
     ./plugins/which-key.nix
     ./plugins/noice.nix
@@ -37,6 +36,7 @@
     ./plugins/auto-session.nix
     ./plugins/yanky.nix
 
+    ./plugins/cursortab.nix
     ./plugins/direnv.nix
     ./plugins/langmapper.nix
     ./plugins/lualine.nix

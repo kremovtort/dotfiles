@@ -1,9 +1,16 @@
-{ inputs, pkgs, self, config, ... }:
+{
+  inputs,
+  pkgs,
+  self,
+  config,
+  ...
+}:
 {
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
 
   home.sessionVariables.SOY_TOKEN = ''$(cat "${config.sops.secrets.soy-token.path}")'';
   home.sessionVariables.VMCTL_TOKEN = ''$(cat "${config.sops.secrets.vmctl-token.path}")'';
+  home.sessionVariables.MERCURY_AI_TOKEN = ''$(cat "${config.sops.secrets.mercury-ai-token.path}")'';
 
   home.packages = [
     pkgs.age
@@ -22,19 +29,20 @@
 
   sops = {
     defaultSopsFile = "${self}/secrets/secrets.yaml";
-    
+
     age.sshKeyPaths = [ "${config.home.homeDirectory}/.ssh/id_ed25519" ];
-    
-    secrets.openrouter-api-key = {};
-    secrets.context7-api-key = {};
-    secrets.tavily-api-key = {};
-    secrets.zai-api-key = {};
-    secrets.exa-api-key = {};
-    secrets.opencode-api-key = {};
-    secrets.soy-token = {};
-    secrets.vmctl-token = {};
-    secrets.mcp-token = {};
-    secrets.minimax-coding-plan-key = {};
-    secrets.morphllm-key = {};
+
+    secrets.openrouter-api-key = { };
+    secrets.context7-api-key = { };
+    secrets.tavily-api-key = { };
+    secrets.zai-api-key = { };
+    secrets.exa-api-key = { };
+    secrets.opencode-api-key = { };
+    secrets.soy-token = { };
+    secrets.vmctl-token = { };
+    secrets.mcp-token = { };
+    secrets.minimax-coding-plan-key = { };
+    secrets.morphllm-key = { };
+    secrets.mercury-ai-token = { };
   };
 }
