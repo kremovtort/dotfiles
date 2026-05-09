@@ -11,6 +11,7 @@
   home.sessionVariables.SOY_TOKEN = ''$(cat "${config.sops.secrets.soy-token.path}")'';
   home.sessionVariables.VMCTL_TOKEN = ''$(cat "${config.sops.secrets.vmctl-token.path}")'';
   home.sessionVariables.MERCURY_AI_TOKEN = ''$(cat "${config.sops.secrets.mercury-ai-token.path}")'';
+  home.sessionVariables.TAVILY_API_KEY = ''$(cat "${config.sops.secrets.tavily-api-key.path}")'';
 
   home.packages = [
     pkgs.age

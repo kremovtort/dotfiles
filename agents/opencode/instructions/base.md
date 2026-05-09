@@ -1,150 +1,165 @@
-# opencode global rules
+# Agent global rules (OpenCode + Pi)
 
-These rules are injected globally for OpenCode sessions.
+These rules are injected globally for OpenCode sessions and are also installed as Pi global instructions via `agents/pi.nix`.
 
-## VCS detection
+## Never discard unrelated changes
 
-- Before running any VCS command, determine the VCS in use.
-- If the project rules do not explicitly state the VCS, load and follow the `vcs-detect` skill.
-- Use the detected VCS (`jj` vs `git`) consistently for the rest of the task.
-
-## Tooling recommendations
-
-- Prefer semi-automatic code editing when it is sufficient:
-  - Use `ast_grep_search` / `ast_grep_replace` for simple mechanical refactors.
-  - For tasks like “create a new file as a copy of another file”, “move/rename file”, or “copy file”, prefer shell commands like `cp` and `mv` instead of manual edits.
-
-## **Never discard unrelated changes** just because they look “extra”.
-- This includes any destructive commands in any VCS (e.g. `jj restore`, `git reset --hard`, `git checkout --`, force pushes, etc.).
-- If you accidentally mixed multiple concerns in one change, use `jj split` to separate them into multiple commits/changes.
-- If build/generated output (e.g. `flake.lock`) changes unexpectedly, keep it as a separate commit/change. The user decides whether to discard it and will do so themselves.
+- Never discard unrelated changes just because they look “extra”.
+- This includes destructive commands in any VCS, for example `jj restore`, `git reset --hard`, `git checkout --`, force pushes, and similar operations.
+- If you accidentally mixed multiple concerns in one change, use non-destructive separation workflows and ask before rewriting user work.
+- If build/generated output, such as `flake.lock`, changes unexpectedly, keep it as a separate change. The user decides whether to discard it.
 - Only discard changes when the user explicitly asked you to do it.
 
-## Subagent usage (this section applies only to primary agents, i.e. @build and @plan)
+## Subagent usage
 
-### Why subagents matter (use them by default)
+Use subagents by default for mechanical I/O work: heavy search, documentation lookup, repetitive codemods, independent review passes, and other tasks that can bloat the parent context.
 
-The parent agent is best at reasoning and integration. Subagents are best at doing mechanical I/O work (searching, running commands, reading docs, indexing diffs) quickly and without polluting the parent context.
+The parent agent owns interpretation and final decisions. Subagents collect and compress evidence.
 
-Subagents solve 3 recurring problems:
-- Speed: specialized agents run targeted workflows faster than the parent agent doing the same tool loop.
-- Context rot: large diffs/logs/noisy outputs stay out of parent context (https://research.trychroma.com/context-rot).
-- Grounding: outputs are optimized for evidence (raw errors, verbatim quotes, `path:line` refs).
+### Runtime-specific invocation
 
-### Delegation defaults
+#### OpenCode
 
-- Delegate mechanical I/O work by default: heavy search, command execution, external docs lookup, log triage.
-- Parent agent owns interpretation and final decisions; subagents collect and compress evidence.
-- Skip delegation only for truly trivial one-call tasks that do not risk context bloat.
+- Delegate to the named subagent, for example `@scout`, `@docs-digger`, `@codemodder`, or `@openspec-reviewer-gpt`.
+- Send a single JSON object matching that subagent's input contract; no prose wrapper.
+
+#### Pi with `npm:@tintinweb/pi-subagents`
+
+- Use the `Agent` tool.
+- Set `subagent_type` to the custom agent filename, for example `scout`, `docs-digger`, `codemodder`, `openspec-reviewer-gpt`, `openspec-reviewer-glm`, or `openspec-reviewer-kimi`.
+- Put the formatted JSON payload in the `prompt` string and do not add prose around it.
+- Use a short `description` of 3-5 words.
+- Do not set `schedule` unless the user explicitly asked for delayed or recurring execution.
+
+Example Pi call:
+
+```js
+Agent({
+  subagent_type: "scout",
+  description: "Find auth flow",
+  prompt:
+    '{\n  "q": "Trace how login reaches token issuance",\n  "mode": "trace",\n  "focus": "auth login token"\n}',
+  run_in_background: false,
+});
+```
 
 ### Invocation rules (all subagents)
 
-- Send a single JSON object matching that subagent's input contract; no prose wrapper.
+- Send exactly one JSON object matching the target subagent's input contract.
 - Keep prompts tiny and task-focused; do not paste large context blobs.
 - To pass local context, use inline refs: `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based).
-  Examples: `@agents/opencode/_AGENTS.md`, `@agents/opencode/_AGENTS.md:23:60`, `@agents/opencode/_AGENTS.md::<Subagent usage>`.
-- Subagents normally do not invoke other subagents. A subagent may use `task` only when its frontmatter explicitly allows `task` and its own role prompt names the allowed target subagents; otherwise further delegation must be done by the parent agent.
+  - Examples: `@agents/opencode/instructions/base.md`, `@agents/opencode/instructions/base.md:23:60`, `@agents/opencode/instructions/base.md::<Subagent usage>`.
+- Subagents normally do not invoke other subagents. Only OpenSpec reviewer variants may call `scout` or `docs-digger` for focused evidence gathering.
+- For build/test/lint execution in Pi, prefer the `process` tool for long-running/noisy commands. There is no custom `runner` subagent in this repository unless one is added later.
 
-### Subagent roles and contracts
+## Subagent roles and contracts
 
-- `scout`:
-  - Purpose: fast read-only codebase discovery and call-path tracing.
-  - Delegate by default for repository navigation work: locating files/symbols/config entries, finding usages, mapping references, and tracing indirect flows (`X -> wrapper/layer -> Y`).
-  - How it helps: faster targeted discovery, less context bloat from search I/O, and grounded evidence via precise `path:line` refs.
-  - Input contract (single JSON object):
-    ```json
+### `scout`
+
+- Purpose: fast read-only codebase discovery and call-path tracing.
+- Delegate by default for repository navigation work: locating files/symbols/config entries, finding usages, mapping references, and tracing indirect flows (`X -> wrapper/layer -> Y`).
+- Output: 2-6 concise sentences in the user's language with refs like `path/to/file.ext:line`; for trace mode include a compact hop chain plus 2-5 refs.
+- Hard scope: discovery/indexing helper only. Do not use for full code review, final quality/security/performance verdicts, or autonomous bug-finding loops.
+
+Input contract:
+
+```json
+{
+  "q": "what to find/trace",
+  "mode": "search|trace",
+  "focus": "optional keywords/paths",
+  "from": "trace start (optional)",
+  "to": "trace target (optional)"
+}
+```
+
+### `docs-digger`
+
+- Purpose: documentation research for authoritative, quotable evidence with minimal context bloat.
+- Delegate when the parent needs source-backed facts: CLI flag semantics, API behavior, config options, standards/spec details, or error interpretation from official docs.
+- Output: Markdown citations pack, not a full end-user solution. Every quote must be verbatim, short, and paired with `Source:` metadata.
+- Not for codebase tracing or command execution triage.
+
+Input contract:
+
+```json
+{
+  "q": "exact research question",
+  "focus": "optional keywords/paths",
+  "limit": 8,
+  "prefer": ["man", "web", "github", "code", "api"],
+  "skills": ["optional-skill-name"]
+}
+```
+
+### `codemodder`
+
+- Purpose: deterministic mechanical edits for large repetitive refactors.
+- Delegate only for broad but simple transformations that follow explicit rules.
+- Use `mode="plan"` before `mode="apply"` unless the user explicitly asks for direct application and the rule is low risk.
+- Hard scope: mechanical edits only. No architecture decisions, no tests/builds, no VCS operations.
+- Output: one machine-readable JSON object with result, counts, changed paths, skipped items, manual follow-ups, and idempotency remainder.
+
+Input contract:
+
+```json
+{
+  "goal": "what to transform",
+  "mode": "plan|apply",
+  "include": ["glob"],
+  "exclude": ["glob"],
+  "edits": [
     {
-      "q": "what to find/trace",
-      "mode": "search|trace",
-      "focus": "optional keywords/paths",
-      "from": "trace start (optional)",
-      "to": "trace target (optional)"
+      "id": "rule-id",
+      "kind": "ast_replace|regex_replace|literal_replace",
+      "lang": "optional",
+      "pattern": "match",
+      "rewrite": "replacement"
     }
-    ```
-  - Context refs: `q`/`focus` may include inline refs (for example `@path:line` or `@path::identifier`) to narrow discovery without opening extra files.
-  - Output contract: 2-6 concise sentences in the user's language with clickable refs like `path/to/file.ext:line`; for trace mode include a compact hop chain like `A -> B -> C` plus 2-5 refs.
-  - Search style: minimal targeted reads/searches, prefer high-signal refs over exhaustive dumps.
-  - Hard scope: discovery/indexing helper only. Do not use for full code review, final quality/security/performance verdicts, or autonomous bug-finding loops.
-  - Parent ownership: interpretation, architecture decisions, and validation via `runner` when execution checks are needed.
+  ],
+  "safety": {
+    "max_files": 200,
+    "max_edits_per_file": 50,
+    "allow_new_files": false,
+    "allow_delete_files": false,
+    "stop_on_ambiguous": true
+  },
+  "focus": "optional keywords/paths"
+}
+```
 
-- `runner`:
-  - Purpose: build/test/lint execution and log triage to keep parent context clean.
-  - Delegate by default whenever command output can be noisy: project builds/checks, test suites, linters, or long failure logs that need quick actionable extraction.
-  - How it helps: faster execution triage, less context bloat from long logs, and grounded diagnostics with raw verbatim errors and resolved `path:line[:col]`.
-  - Input contract (single JSON object):
-    ```json
-    {
-      "cmd": "exact command",
-      "cwd": "optional working directory",
-      "limit": 5,
-      "focus": "optional regex/keywords/paths"
-    }
-    ```
-  - Output contract: one Markdown `toml` code block containing strict TOML with `result` (`PASS`/`FAIL`), included/omitted counters, and up to `limit` raw actionable diagnostics.
-  - Diagnostic rules: MUST run `cmd` for real; never simulate. On failure include verbatim error text and resolved `path:line[:col]` when possible. On pass include warnings (up to `limit`) and aggregate the rest.
-  - Selection rules: prioritize `focus` matches, earliest root-cause-like errors, and cross-file/module coverage; if errors exist do not emit full warnings (counts only).
-  - Path handling: prefer repo-relative locations; attempt path resolution for toolchains that print non-repo-relative paths.
-  - Not for final product decisions: parent agent owns interpretation, fixes, and user-facing conclusions.
+### `openspec-reviewer-gpt`, `openspec-reviewer-glm`, `openspec-reviewer-kimi`
 
-- `docs-digger`:
-  - Purpose: documentation research for authoritative, quotable evidence with minimal context bloat.
-  - Delegate when parent needs source-backed facts: CLI flag semantics, API behavior, config options, standards/spec details, or error interpretation from official docs.
-  - How it helps: faster source lookup, less context bloat from broad web/doc exploration, and grounded answers via short verbatim quotes with explicit sources.
-  - Input contract (single JSON object):
-    ```json
-    {
-      "q": "exact research question",
-      "focus": "optional keywords/paths",
-      "limit": 8,
-      "prefer": ["man", "context7", "web", "github", "code", "api"],
-      "skills": ["optional-skill-name"]
-    }
-    ```
-  - Context refs: can consume inline refs in `q`/`focus` like `@path:line` for targeted local grounding.
-  - Research order: official and primary sources first (man pages, Context7, vendor/framework docs, specs), then authoritative web pages (quoted via fetch), then GitHub/community examples as supporting material.
-  - Output contract: Markdown citations pack, not a full end-user solution. Each quote must be verbatim, short, and paired with mandatory `Source:` metadata (URL, man command, repo/path, or local `path:line`).
-  - Quality rules: no paraphrasing inside quote blocks, clearly label non-official/community evidence, and avoid dumping large pages.
-  - Not for codebase tracing or command execution triage; those belong to `scout` and `runner`.
+- Purpose: independent read-only review of one OpenSpec change and its implementation.
+- Delegate from OpenSpec review workflows when you need multiple model perspectives.
+- Each reviewer must load/follow the shared `openspec-reviewer` skill and return Markdown findings using that skill's output format.
+- Reviewers may use `scout` or `docs-digger` only for focused evidence gathering. They must not edit files or ask subagents to edit.
 
-- `codemodder`:
-  - Purpose: deterministic mechanical edits for large repetitive refactors.
-  - Delegate for broad but simple code transformations that follow explicit rules.
-  - How it helps: faster repetitive refactors, less context bloat from large edit loops, and grounded edit evidence via deterministic machine-readable results.
-  - Input contract (single JSON object):
-    ```json
-    {
-      "goal": "what to transform",
-      "mode": "plan|apply",
-      "include": ["glob"],
-      "exclude": ["glob"],
-      "edits": [
-        {
-          "id": "rule-id",
-          "kind": "ast_replace|regex_replace|literal_replace",
-          "lang": "optional",
-          "pattern": "match",
-          "rewrite": "replacement"
-        }
-      ],
-      "safety": {
-        "max_files": 200,
-        "max_edits_per_file": 50,
-        "allow_new_files": false,
-        "allow_delete_files": false,
-        "stop_on_ambiguous": true
-      },
-      "focus": "optional keywords/paths"
-    }
-    ```
-  - Output contract: single machine-readable JSON object with status, counts, changed paths, skipped items, manual follow-ups, and idempotency remainder.
-  - Hard scope: mechanical edits only. No architecture decisions, no tests/builds, no VCS operations.
+Input contract:
 
-### Summary
+```json
+{
+  "change": "openspec-change-name",
+  "location": {
+    "kind": "working-copy|jj-revset|jj-bookmark|git-branch|git-commit|git-range|github-pr|arc-review|patch|custom",
+    "value": "user-provided location or command details"
+  },
+  "artifacts": {
+    "proposal": ["path"],
+    "design": ["path"],
+    "specs": ["path"],
+    "tasks": ["path"]
+  },
+  "diff_context": "optional summary or command output from the orchestrator",
+  "focus": "optional review focus"
+}
+```
 
-- If the task needs codebase discovery ("where is X?", "who calls Y?", "find config for Z?"), delegate to `@scout` immediately.
-- In the parent agent, do at most **one** discovery tool call (`glob`/`grep`/`read`) before delegating to `@scout`.
-- If the task needs external documentation research, delegate to `@docs-digger`.
-- If the task needs build/test/lint execution or long log interpretation, delegate to `@runner`.
-- If the task is a repetitive large mechanical refactor (rename, import-path migration, structural replacement), delegate to `@codemodder`.
-- For full review/bug-finding, `@scout` is only evidence gathering; parent does analysis and uses `@runner` for validation.
-- Subagents may call other subagents only when their frontmatter explicitly allows `task` and their role prompt names the allowed target subagents; otherwise only the parent agent performs further delegation.
+## Delegation defaults
+
+- If the task needs codebase discovery (“where is X?”, “who calls Y?”, “find config for Z?”), delegate to `scout` early.
+- In the parent agent, do at most one discovery tool call before delegating to `scout`, unless the answer is trivial.
+- If the task needs external documentation research, delegate to `docs-digger`.
+- If the task is a repetitive mechanical refactor, delegate to `codemodder` with an explicit rule set.
+- If the task needs independent OpenSpec review, run the reviewer variants in parallel and synthesize their findings in the parent.
+- For full review/bug-finding, `scout` is only evidence gathering; the parent does analysis and validation.

@@ -65,9 +65,10 @@ Do not assume Git.
 
 You may use:
 
-- `glob`, `grep`, `read` for local repo inspection.
+- `glob`/`find`, `grep`, `ls`, and `read` for local repo inspection.
 - `bash` for read-only inspection commands and VCS/diff commands.
-- `task` only to call `scout` and `docs-digger` when useful.
+- OpenCode: `task` only to call `scout` and `docs-digger` when useful.
+- Pi with `npm:@tintinweb/pi-subagents`: `Agent` only to call `scout` and `docs-digger` when useful. Put the target subagent payload as a formatted JSON object in the `prompt` string.
 
 Use `scout` when you need fast project-pattern discovery, call-path tracing, or usage mapping.
 

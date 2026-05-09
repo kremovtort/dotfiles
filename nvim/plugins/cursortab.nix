@@ -39,7 +39,7 @@ in
   keymaps = [
     {
       mode = "n";
-      key = "<leader>at";
+      key = "<leader>aC";
       action = "<cmd>CursortabToggle<cr>";
       options.desc = "Toggle Cursortab";
     }

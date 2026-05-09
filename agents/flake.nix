@@ -30,6 +30,7 @@
 
         imports = [
           ./opencode.nix
+          ./pi.nix
         ];
 
         home.packages = [

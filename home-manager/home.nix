@@ -87,11 +87,16 @@ in
     ".config/ov/config.yaml".source = "${self}/ov.yaml";
     ".npmrc".text = ''
       @vertis:registry=https://npm.yandex-team.ru/
+    ''
+    + lib.optionalString isDarwin ''
+      prefix=/opt/homebrew
     '';
   };
 
   home.shell.enableZshIntegration = true;
   home.sessionPath = [
+    # Prefer Home Manager's Nix profile (notably node/npm) over Homebrew shims.
+    "${config.home.homeDirectory}/.nix-profile/bin"
     "/opt/homebrew/bin"
     "/codenv/arcadia"
     "${config.home.homeDirectory}/arcadia"

@@ -72,11 +72,14 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
 
 5. **Run three reviewers in parallel**
 
-   In one assistant tool-use message, launch these subagents concurrently with the same JSON payload:
-
+   Launch these subagents concurrently with the same JSON payload:
    - `openspec-reviewer-gpt`
    - `openspec-reviewer-glm`
    - `openspec-reviewer-kimi`
+
+   Runtime notes:
+   - OpenCode: use the subagent/task mechanism with the payload as the direct JSON object.
+   - Pi with `npm:@tintinweb/pi-subagents`: use one `Agent` tool call per reviewer in the same assistant tool-use message, set `subagent_type` to the reviewer name, and put the formatted payload JSON in `prompt`; prefer `run_in_background: true` for parallel review.
 
    Payload shape:
 
@@ -103,19 +106,17 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
 6. **Verify reviewer findings**
 
    For every substantive finding:
-
    - Re-read the cited code and OpenSpec artifact lines.
    - Confirm the finding against actual diff/scope and project patterns.
    - Deduplicate overlapping findings across reviewers.
    - Reject false positives explicitly.
    - Downgrade uncertain claims instead of overstating them.
 
-   Use `scout` yourself if you need extra project-pattern discovery to validate a finding. Use `docs-digger` only for source-backed external facts.
+   Use `scout` yourself if you need extra project-pattern discovery to validate a finding. Use `docs-digger` only for source-backed external facts. In Pi, call them through `Agent` with the same JSON-payload-in-`prompt` convention.
 
 7. **Prioritize confirmed findings**
 
    Use these priorities:
-
    - `P0 Blocker`: unsafe to accept; severe correctness, security, data-loss, build, or spec contradiction.
    - `P1 Must Fix`: required behavior missing/wrong, spec/design violation, or material unrelated code in scope.
    - `P2 Should Fix`: important maintainability, test, convention, or reuse issue with concrete evidence.

@@ -1,0 +1,25 @@
+{
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.5",
+  "defaultThinkingLevel": "xhigh",
+  "packages": [
+    "npm:@plannotator/pi-extension",
+    "npm:pi-websearch-tavily",
+    "npm:@cortexkit/pi-magic-context",
+    "npm:@tintinweb/pi-subagents",
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@aliou/pi-processes",
+    "npm:pi-tool-display",
+    "npm:pi-smart-fetch",
+    "npm:pi-mermaid",
+    "npm:vim-motions-pi",
+    "npm:pi-permission-system"
+  ],
+  "lastChangelogVersion": "0.74.0",
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "enableInstallTelemetry": false,
+  "theme": "catppuccin-espresso",
+  "autocompleteMaxVisible": 7
+}

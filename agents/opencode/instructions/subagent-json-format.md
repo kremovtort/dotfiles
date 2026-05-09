@@ -2,26 +2,46 @@
 
 Use human-readable formatted JSON at subagent boundaries.
 
-## Invocation Rule
+## Invocation rule
 
-- When delegating to a subagent, construct the payload as a single JSON object that matches the subagent contract.
-- If the payload is shown to the user, render it in a fenced `json` block with 2-space indentation.
-- Do not wrap JSON payloads in prose when a pure object is required.
+- Construct the payload as a single JSON object that matches the target subagent contract.
+- Use valid JSON only: double-quoted keys/strings, no trailing commas, no comments.
+- Use 2-space indentation.
+- Keep nesting shallow and prefer arrays of objects over dense prose.
 
-## Result Rule
+## Runtime wrappers
+
+### OpenCode
+
+When the subagent interface expects a direct payload, send only the JSON object with no prose wrapper.
+
+### Pi with `npm:@tintinweb/pi-subagents`
+
+The `Agent` tool's `prompt` parameter is a string. Put only the formatted JSON object in that string.
+
+```js
+Agent({
+  subagent_type: "docs-digger",
+  description: "Check Nix docs",
+  prompt:
+    '{\n  "q": "What does builtins.readFile return in Nix?",\n  "limit": 4\n}',
+  run_in_background: true,
+});
+```
+
+Do not wrap the JSON in explanatory prose inside `prompt`.
+
+## Display rule
+
+If the payload is shown to the user, render it in a fenced `json` block with 2-space indentation.
+
+## Result rule
 
 - Prefer formatted JSON output from subagents whenever the subagent contract permits JSON.
-- If a subagent contract requires non-JSON output (for example strict TOML or Markdown citations), keep that contract unchanged and also provide a concise parent-level JSON summary for readability.
-- Parent-level JSON summaries should use stable keys:
+- If a subagent contract requires non-JSON output, such as Markdown citations or Markdown review findings, keep that contract unchanged.
+- When summarizing subagent results at the parent level, use stable keys:
   - `subagent`
   - `result`
   - `highlights`
   - `artifacts`
   - `next_actions`
-
-## Formatting Rule
-
-- Use valid JSON only (double-quoted keys/strings, no trailing commas).
-- Use 2-space indentation for readability.
-- Keep nesting shallow and prefer arrays of objects over dense prose.
-- Do not include code comments inside JSON.
