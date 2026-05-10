@@ -11,7 +11,7 @@
     "npm:pi-tool-display",
     "npm:pi-smart-fetch",
     "npm:pi-mermaid",
-    "npm:vim-motions-pi",
+    "npm:pi-mcp-adapter",
     "./packages/agent-permission-framework"
   ],
   "lastChangelogVersion": "0.74.0",
@@ -20,5 +20,6 @@
   },
   "enableInstallTelemetry": false,
   "theme": "catppuccin-espresso",
-  "autocompleteMaxVisible": 7
+  "autocompleteMaxVisible": 7,
+  "hideThinkingBlock": false
 }

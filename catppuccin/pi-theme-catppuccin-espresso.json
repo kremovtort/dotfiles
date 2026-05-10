@@ -46,7 +46,7 @@
     "thinkingText": "subtext0",
 
     "selectedBg": "surface0",
-    "userMessageBg": "base",
+    "userMessageBg": "surface0",
     "userMessageText": "text",
     "customMessageBg": "mantle",
     "customMessageText": "text",
