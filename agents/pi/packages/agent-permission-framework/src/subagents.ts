@@ -14,6 +14,7 @@ import { AgentRuntimeState, persistAudit, persistRuntime } from "./runtime.ts";
 import { enforceDecision, evaluateToolCall } from "./enforcement.ts";
 import { withoutRecursiveFrameworkExtension } from "./extension-filter.ts";
 import { evaluateDelegationPermission } from "./policy.ts";
+import { shouldWaitForSubagentResult, waitForSubagentResult } from "./subagent-result-wait.ts";
 import { SubagentRegistry, type RunRecordInternal, type SubagentExecutorHelpers } from "./subagent-registry.ts";
 export { SubagentRegistry } from "./subagent-registry.ts";
 
@@ -86,7 +87,7 @@ type AgentDetails = {
   turnCount?: number;
   maxTurns?: number;
   durationMs: number;
-  status: "queued" | "running" | "background" | "completed" | "steered" | "stopped" | "error" | "aborted";
+  status: "queued" | "running" | "background" | "completed" | "steered" | "stopped" | "cancelled" | "error" | "aborted";
   activity?: string;
   spinnerFrame?: number;
   agentId?: string;
@@ -189,9 +190,9 @@ function renderAgentResult(result: any, { expanded, isPartial }: { expanded?: bo
     return new Text(line, 0, 0);
   }
 
-  if (details.status === "stopped") {
+  if (details.status === "stopped" || details.status === "cancelled") {
     const s = stats(details);
-    return new Text(theme.fg("dim", "■") + (s ? " " + s : "") + "\n" + theme.fg("dim", "  ⎿  Stopped"), 0, 0);
+    return new Text(theme.fg("dim", "■") + (s ? " " + s : "") + "\n" + theme.fg("dim", `  ⎿  ${details.status === "cancelled" ? "Cancelled waiting" : "Stopped"}`), 0, 0);
   }
 
   const s = stats(details);
@@ -532,20 +533,24 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
       return new Text("▸ " + theme.fg("toolTitle", theme.bold("Get Agent Result")) + "  " + theme.fg("muted", args.agent_id ?? ""), 0, 0);
     },
     renderResult: renderAgentResult,
-    async execute(_toolCallId, params, _signal, onUpdate) {
+    async execute(_toolCallId, params, signal, onUpdate) {
       const run = registry.get(params.agent_id);
       if (!run) return textResult(`Agent not found: "${params.agent_id}". It may have been cleaned up.`);
-      if (params.wait && (run.status === "queued" || run.status === "running")) {
-        emitToolProgress(onUpdate, params.agent_id);
-        await new Promise<void>((resolve) => {
-          const interval = setInterval(() => {
-            emitToolProgress(onUpdate, params.agent_id);
-            if (run.status !== "queued" && run.status !== "running") {
-              clearInterval(interval);
-              resolve();
-            }
-          }, 1000);
+      if (shouldWaitForSubagentResult(params.wait, run)) {
+        const waitOutcome = await waitForSubagentResult(run, {
+          signal,
+          onProgress: () => emitToolProgress(onUpdate, params.agent_id),
         });
+        if (waitOutcome === "cancelled") {
+          const current = registry.publicRun(run);
+          const status = current.status === "failed" ? "error" : current.status;
+          return textResult(
+            `Result wait cancelled for agent ${current.id}.\n` +
+            `Agent is still ${status}; the background run was not cancelled.\n` +
+            `Use get_subagent_result with this agent ID to retrieve the current or completed result later.`,
+            detailsFromRun(current, "cancelled"),
+          );
+        }
       }
       const serializable = registry.publicRun(run);
       const duration = serializable.startedAt ? formatMs((serializable.completedAt ?? Date.now()) - serializable.startedAt) : "0ms";

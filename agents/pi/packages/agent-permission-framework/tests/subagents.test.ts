@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { withoutRecursiveFrameworkExtension } from "../src/extension-filter.ts";
 import { AgentRuntimeState } from "../src/runtime.ts";
+import { shouldWaitForSubagentResult, waitForSubagentResult } from "../src/subagent-result-wait.ts";
 import { SubagentRegistry } from "../src/subagent-registry.ts";
 import type { AgentDefinition, AgentIdentity, SubagentRunRecord } from "../src/types.ts";
 
@@ -44,6 +45,18 @@ async function waitFor(predicate: () => boolean, label: string): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 5));
   }
   assert.fail(`Timed out waiting for ${label}`);
+}
+
+async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(`Timed out waiting for ${label}`)), 1000);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }
 
 const parentIdentity: AgentIdentity = {
@@ -115,6 +128,69 @@ test("parallel background runs synchronously register independent IDs and queue 
   assert.deepEqual(results.map((run) => run.status), ["completed", "completed", "completed"]);
   assert.deepEqual(results.map((run) => run.output), ["done:one", "done:two", "done:three"]);
   assert.deepEqual(registry.stats(), { active: 0, queued: 0, total: 3 });
+});
+
+test("waiting for a background subagent result can be aborted without aborting the run", async () => {
+  const gate = deferred();
+  const registry = new SubagentRegistry(1, undefined, undefined, async (run) => {
+    await gate.promise;
+    run.output = "done";
+    run.status = "completed";
+  });
+
+  const { run, completion } = startRun(registry, "long-running");
+  await waitFor(() => registry.get(run.id)?.status === "running", "run to start");
+  const live = registry.get(run.id)!;
+  const controller = new AbortController();
+  let progressUpdates = 0;
+
+  const wait = waitForSubagentResult(live, {
+    signal: controller.signal,
+    intervalMs: 5,
+    onProgress: () => progressUpdates++,
+  });
+
+  await waitFor(() => progressUpdates > 0, "result wait progress");
+  controller.abort();
+
+  assert.equal(await withTimeout(wait, "aborted result wait"), "cancelled");
+  assert.equal(registry.get(run.id)?.status, "running");
+  assert.equal(registry.get(run.id)?.error, undefined);
+
+  gate.resolve();
+  const completed = await withTimeout(completion, "background completion after cancelled wait");
+  assert.equal(completed.status, "completed");
+  assert.equal(completed.output, "done");
+  assert.equal(registry.get(run.id)?.status, "completed");
+});
+
+test("waiting for a background subagent result resolves normally when the run completes", async () => {
+  const gate = deferred();
+  const registry = new SubagentRegistry(1, undefined, undefined, async (run) => {
+    await gate.promise;
+    run.output = "done";
+    run.status = "completed";
+  });
+
+  const { run, completion } = startRun(registry, "normal-wait");
+  await waitFor(() => registry.get(run.id)?.status === "running", "run to start");
+  const live = registry.get(run.id)!;
+  const wait = waitForSubagentResult(live, { intervalMs: 5 });
+
+  gate.resolve();
+
+  assert.equal(await withTimeout(wait, "normal result wait"), "completed");
+  assert.equal((await withTimeout(completion, "normal completion")).status, "completed");
+});
+
+test("result wait predicate only waits for requested queued or running runs", async () => {
+  assert.equal(shouldWaitForSubagentResult(false, { status: "running" }), false);
+  assert.equal(shouldWaitForSubagentResult(undefined, { status: "running" }), false);
+  assert.equal(shouldWaitForSubagentResult(true, { status: "completed" }), false);
+  assert.equal(shouldWaitForSubagentResult(true, { status: "failed" }), false);
+  assert.equal(shouldWaitForSubagentResult(true, { status: "queued" }), true);
+  assert.equal(shouldWaitForSubagentResult(true, { status: "running" }), true);
+  assert.equal(await waitForSubagentResult({ status: "completed" }, { intervalMs: 5 }), "completed");
 });
 
 test("failed setup releases capacity and promotes queued runs", async () => {

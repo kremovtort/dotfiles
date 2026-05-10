@@ -94,7 +94,6 @@ export const builtinAgents: AgentDefinition[] = [
       },
       bash: {
         default: "allow",
-        allow: ["^just (test|build|switch)( .*)?$", "^npm (test|run test|run check)( .*)?$"],
         deny: ["\\brm\\s+-rf\\b", "\\bsudo\\b", "\\bgit\\s+reset\\s+--hard\\b"],
       },
       files: {
