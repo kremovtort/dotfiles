@@ -218,7 +218,13 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
   });
 
   pi.on("tool_call", async (event, ctx) => {
-    const decision = evaluateToolCall(runtime, { toolName: event.toolName, input: event.input as Record<string, unknown>, toolCallId: event.toolCallId }, ctx);
+    const decision = evaluateToolCall(
+      runtime,
+      { toolName: event.toolName, input: event.input as Record<string, unknown>, toolCallId: event.toolCallId },
+      ctx,
+      runtime.activePolicy,
+      { includeDelegation: event.toolName !== "subagent" },
+    );
     const result = await enforceDecision(runtime, decision, ctx);
     debugLog("permission_decision", { decision, blocked: result?.block === true, identity: runtime.activeIdentity });
     const lastAudit = runtime.audit.at(-1);

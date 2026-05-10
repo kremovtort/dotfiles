@@ -101,6 +101,40 @@ Answer with only PASS queue if all five final results contain their QUEUE_N mark
 
 Expected: final output contains `PASS queue` or `PASS queue-no-observed-queue` when the model/provider completed too quickly to observe queueing.
 
+## Scripted check 6: reviewer-style parallel background launch
+
+```bash
+pi --agent build -p '
+Launch exactly three background subagents in one tool-call batch if possible, each with run_in_background: true and max_turns: 3:
+1. subagent_type: scout, description: Reviewer GPT smoke, prompt: Return exactly REVIEWER_GPT_OK. Do not call tools.
+2. subagent_type: scout, description: Reviewer GLM smoke, prompt: Return exactly REVIEWER_GLM_OK. Do not call tools.
+3. subagent_type: scout, description: Reviewer Kimi smoke, prompt: Return exactly REVIEWER_KIMI_OK. Do not call tools.
+
+Record all three Agent IDs from the launch results, including any queued launch. Then call get_subagent_result with wait: true for each ID.
+Answer with only PASS reviewer-parallel if all three IDs were returned independently and their retrieved results contain REVIEWER_GPT_OK, REVIEWER_GLM_OK, and REVIEWER_KIMI_OK respectively. Otherwise answer FAIL reviewer-parallel and explain briefly.
+'
+```
+
+Expected: final output contains `PASS reviewer-parallel`.
+
+## Scripted check 7: inherited-extension read-only scout can inspect the repository
+
+```bash
+pi --agent build -p '
+Use the subagent tool once with:
+- subagent_type: scout
+- description: Runtime inherited extensions
+- prompt: {"q":"Find how Pi is integrated into Neovim in this repository","mode":"search","focus":"pi nvim agents home-manager"}
+- run_in_background: true
+- max_turns: 30
+
+Capture the returned Agent ID. Then call get_subagent_result with wait: true and verbose: false for that ID.
+Answer with only PASS inherited-extensions if the result includes at least one concrete repository path reference and does not say read/grep/find/ls were resolved to deny; otherwise answer FAIL inherited-extensions and explain briefly.
+'
+```
+
+Expected: final output contains `PASS inherited-extensions`.
+
 ## Optional TUI rendering check
 
 Run the foreground/background/result/steering scenarios from an interactive Pi TUI session and verify:
@@ -112,4 +146,4 @@ Run the foreground/background/result/steering scenarios from an interactive Pi T
 
 ## Completion criteria
 
-The runtime check passes when scripted checks 1-5 complete with PASS results and the optional TUI check confirms compact rendering after `/reload` or restart.
+The runtime check passes when scripted checks 1-7 complete with PASS results and the optional TUI check confirms compact rendering after `/reload` or restart.

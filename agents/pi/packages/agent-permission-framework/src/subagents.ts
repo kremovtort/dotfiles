@@ -6,30 +6,16 @@ import {
   getAgentDir,
   SessionManager,
   SettingsManager,
-  type AgentSession,
   type ExtensionAPI,
   type ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import type { AgentDefinition, AgentIdentity, AuditEntry, PermissionPolicy, SubagentRunRecord } from "./types.ts";
-import { composePolicies } from "./policy.ts";
+import type { AgentDefinition, SubagentRunRecord } from "./types.ts";
 import { AgentRuntimeState, persistAudit, persistRuntime } from "./runtime.ts";
 import { enforceDecision, evaluateToolCall } from "./enforcement.ts";
+import { withoutRecursiveFrameworkExtension } from "./extension-filter.ts";
 import { evaluateDelegationPermission } from "./policy.ts";
-
-type RunRecordInternal = SubagentRunRecord & {
-  session?: AgentSession;
-  resolve?: (run: SubagentRunRecord) => void;
-  definition: AgentDefinition;
-  effectivePolicy: PermissionPolicy;
-  modelOverride?: string;
-  thinkingOverride?: string;
-  maxTurnsOverride?: number;
-  signal?: AbortSignal;
-  ctx?: ExtensionContext;
-  inheritContext?: boolean;
-  inheritExtensions?: boolean;
-  inheritSkills?: boolean;
-};
+import { SubagentRegistry, type RunRecordInternal, type SubagentExecutorHelpers } from "./subagent-registry.ts";
+export { SubagentRegistry } from "./subagent-registry.ts";
 
 const AgentParams = Type.Object({
   prompt: Type.String({ description: "The task for the agent to perform." }),
@@ -58,10 +44,6 @@ const SteerParams = Type.Object({
   agent_id: Type.String({ description: "The agent ID to steer (must be currently running)." }),
   message: Type.String({ description: "The steering message to send. This will appear as a user message in the agent's conversation." }),
 });
-
-function id(): string {
-  return `agent-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 function normalizeMaxTurns(n: number | undefined): number | undefined {
   if (n == null || n === 0) return undefined;
@@ -104,7 +86,7 @@ type AgentDetails = {
   turnCount?: number;
   maxTurns?: number;
   durationMs: number;
-  status: "running" | "background" | "completed" | "steered" | "stopped" | "error" | "aborted";
+  status: "queued" | "running" | "background" | "completed" | "steered" | "stopped" | "error" | "aborted";
   activity?: string;
   spinnerFrame?: number;
   agentId?: string;
@@ -131,7 +113,7 @@ function describeActivity(run: SubagentRunRecord): string {
 }
 
 function detailsFromRun(run: SubagentRunRecord, status?: AgentDetails["status"], spinnerFrame = 0): AgentDetails {
-  const mappedStatus = status ?? (run.status === "failed" ? "error" : run.status === "aborted" ? "aborted" : run.status === "running" || run.status === "queued" ? "running" : run.status === "steered" ? "steered" : "completed");
+  const mappedStatus = status ?? (run.status === "failed" ? "error" : run.status === "aborted" ? "aborted" : run.status === "running" ? "running" : run.status === "queued" ? "queued" : run.status === "steered" ? "steered" : "completed");
   return {
     displayName: run.agentName,
     description: run.description,
@@ -169,6 +151,13 @@ function renderAgentResult(result: any, { expanded, isPartial }: { expanded?: bo
     if (d.tokens) parts.push(d.tokens);
     return parts.map((p) => theme.fg("dim", p)).join(" " + theme.fg("dim", "·") + " ");
   };
+
+  if (details.status === "queued") {
+    const s = stats(details);
+    let line = theme.fg("accent", "…") + (s ? " " + s : "");
+    line += "\n" + theme.fg("dim", `  ⎿  Queued for execution slot (ID: ${details.agentId})`);
+    return new Text(line, 0, 0);
+  }
 
   if (isPartial || details.status === "running") {
     const frame = SPINNER[details.spinnerFrame ?? 0];
@@ -218,7 +207,8 @@ function formatRunProgress(run: SubagentRunRecord): string {
   if (run.toolUses) parts.push(`${run.toolUses} tool use${run.toolUses === 1 ? "" : "s"}`);
   if (elapsed) parts.push(`${elapsed}s`);
 
-  const lines = [`Subagent ${run.agentName} (${run.id}) is ${run.status}${parts.length ? ` — ${parts.join(", ")}` : ""}`];
+  const queueSuffix = run.status === "queued" && run.queuedPosition ? ` (queue position ${run.queuedPosition})` : "";
+  const lines = [`Subagent ${run.agentName} (${run.id}) is ${run.status}${queueSuffix}${parts.length ? ` — ${parts.join(", ")}` : ""}`];
   if (run.status === "queued") lines.push("Waiting for an execution slot.");
   if (run.status === "running" && run.sessionId) lines.push(`Session: ${run.sessionId}`);
   if (run.output) lines.push("", "Latest output:", tail(run.output));
@@ -252,275 +242,156 @@ function buildSystemPrompt(agent: AgentDefinition, ctx: ExtensionContext, run: R
 
 export const SUBAGENT_RUN_ENTRY = "agent-permission-framework-subagent-run";
 
-export class SubagentRegistry {
-  private runs = new Map<string, RunRecordInternal>();
-  private queue: RunRecordInternal[] = [];
-  private active = 0;
-  private concurrency: number;
-  private onUpdate?: (run: SubagentRunRecord) => void;
-  private onAudit?: (audit: AuditEntry) => void;
-
-  constructor(concurrency = 4, onUpdate?: (run: SubagentRunRecord) => void, onAudit?: (audit: AuditEntry) => void) {
-    this.concurrency = concurrency;
-    this.onUpdate = onUpdate;
-    this.onAudit = onAudit;
+async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecutorHelpers): Promise<void> {
+  const ctx = run.ctx as ExtensionContext | undefined;
+  if (!ctx) {
+    run.status = "failed";
+    run.error = "Subagent run cannot start without an ExtensionContext.";
+    return;
   }
+  const agent = run.definition;
+  const maxTurns = normalizeMaxTurns(run.maxTurnsOverride ?? agent.maxTurns);
+  run.maxTurns = maxTurns;
+  run.turnCount = 0;
+  run.toolUses = 0;
+  run.status = "running";
+  run.startedAt = run.startedAt ?? Date.now();
+  helpers.update(run);
 
-  list(): SubagentRunRecord[] {
-    return [...this.runs.values()].map((run) => this.publicRun(run));
-  }
+  let unsubscribe: (() => void) | undefined;
+  let aborted = false;
+  let softLimitReached = false;
+  const graceTurns = 5;
 
-  get(runId: string): RunRecordInternal | undefined {
-    return this.runs.get(runId);
-  }
+  try {
+    const modelInput = run.modelOverride ?? agent.model;
+    const model = resolveModel(ctx, modelInput);
+    if (modelInput && !model) throw new Error(`Model not found for subagent ${agent.name}: ${modelInput}`);
 
-  restore(runs: SubagentRunRecord[]): void {
-    for (const run of runs) {
-      if (this.runs.has(run.id)) continue;
-      this.runs.set(run.id, { ...run, definition: { name: run.agentName, kind: "subagent", source: run.identity.source, description: run.agentName, prompt: "", enabled: true, promptMode: "replace" }, effectivePolicy: {} });
-    }
-  }
-
-  start(options: {
-    agent: AgentDefinition;
-    task: string;
-    description?: string;
-    cwd: string;
-    parentIdentity: AgentIdentity | undefined;
-    runtime: AgentRuntimeState;
-    ctx: ExtensionContext;
-    parentPolicy?: PermissionPolicy;
-    background: boolean;
-    modelOverride?: string;
-    thinkingOverride?: string;
-    maxTurnsOverride?: number;
-    signal?: AbortSignal;
-    inheritContext?: boolean;
-    inheritExtensions?: boolean;
-    inheritSkills?: boolean;
-  }): { run: SubagentRunRecord; completion: Promise<SubagentRunRecord> } {
-    const runId = id();
-    const effectivePolicy = composePolicies(options.parentPolicy, options.agent.permission);
-    const identity = options.runtime.createChild(options.parentIdentity, options.agent, runId, effectivePolicy);
-    const run: RunRecordInternal = {
-      id: runId,
-      agentName: options.agent.name,
-      description: options.description,
-      task: options.task,
-      status: "queued",
-      output: "",
-      identity,
-      cwd: options.cwd,
-      steering: [],
-      definition: options.agent,
-      effectivePolicy,
-      modelOverride: options.modelOverride,
-      thinkingOverride: options.thinkingOverride,
-      maxTurnsOverride: options.maxTurnsOverride,
-      maxTurns: normalizeMaxTurns(options.maxTurnsOverride ?? options.agent.maxTurns),
-      signal: options.signal,
-      ctx: options.ctx,
-      inheritContext: options.inheritContext ?? options.agent.inheritContext ?? false,
-      inheritExtensions: options.inheritExtensions ?? options.agent.inheritExtensions ?? false,
-      inheritSkills: options.inheritSkills ?? options.agent.inheritSkills ?? true,
-    };
-    const completion = new Promise<SubagentRunRecord>((resolve) => {
-      run.resolve = resolve;
+    const agentDir = getAgentDir();
+    const settingsManager = SettingsManager.create(run.cwd, agentDir);
+    const childRuntime = new AgentRuntimeState();
+    childRuntime.activeIdentity = run.identity;
+    childRuntime.activePolicy = run.effectivePolicy;
+    const promptSteeringCount = run.steering.length;
+    const loader = new DefaultResourceLoader({
+      cwd: run.cwd,
+      agentDir,
+      settingsManager,
+      noExtensions: run.inheritExtensions !== true,
+      noSkills: run.inheritSkills === false,
+      noPromptTemplates: true,
+      noThemes: true,
+      noContextFiles: true,
+      systemPrompt: buildSystemPrompt(agent, ctx, run, maxTurns),
+      extensionsOverride: withoutRecursiveFrameworkExtension,
+      extensionFactories: [
+        (childPi) => {
+          childPi.on("tool_call", async (event, childCtx) => {
+            const decision = evaluateToolCall(
+              childRuntime,
+              { toolName: event.toolName, input: event.input as Record<string, unknown>, toolCallId: event.toolCallId },
+              childCtx,
+              childRuntime.activePolicy,
+              { includeDelegation: event.toolName !== "subagent" },
+            );
+            const result = await enforceDecision(childRuntime, decision, childCtx);
+            const lastAudit = childRuntime.audit.at(-1);
+            if (lastAudit) helpers.audit(lastAudit);
+            return result;
+          });
+        },
+      ],
     });
-    this.runs.set(runId, run);
-    this.queue.push(run);
-    this.onUpdate?.(this.publicRun(run));
-    this.pump();
-    return { run: this.publicRun(run), completion };
-  }
+    await loader.reload();
 
-  async steer(runId: string, message: string): Promise<SubagentRunRecord | undefined> {
-    const run = this.runs.get(runId);
-    if (!run) return undefined;
-    run.steering.push(message);
-    if (run.status === "running" && run.session) await run.session.steer(message);
-    this.onUpdate?.(this.publicRun(run));
-    return run;
-  }
-
-  publicRun(run: RunRecordInternal): SubagentRunRecord {
-    const {
-      session: _session,
-      resolve: _resolve,
-      definition: _definition,
-      effectivePolicy: _effectivePolicy,
-      modelOverride: _modelOverride,
-      thinkingOverride: _thinkingOverride,
-      maxTurnsOverride: _maxTurnsOverride,
-      signal: _signal,
-      ctx: _ctx,
-      inheritContext: _inheritContext,
-      inheritExtensions: _inheritExtensions,
-      inheritSkills: _inheritSkills,
-      ...serializable
-    } = run;
-    return serializable;
-  }
-
-  private pump(): void {
-    while (this.active < this.concurrency && this.queue.length > 0) {
-      const run = this.queue.shift()!;
-      this.active++;
-      this.execute(run).finally(() => {
-        this.active--;
-        this.pump();
-      });
+    const { session } = await createAgentSession({
+      cwd: run.cwd,
+      agentDir,
+      model,
+      thinkingLevel: run.thinkingOverride ?? agent.thinking,
+      tools: agent.tools,
+      resourceLoader: loader,
+      sessionManager: SessionManager.inMemory(run.cwd),
+      settingsManager,
+    });
+    run.session = session;
+    run.sessionId = session.sessionId;
+    for (const message of run.steering.slice(promptSteeringCount)) {
+      await session.steer(message);
     }
-  }
 
-  private async execute(run: RunRecordInternal): Promise<void> {
-    const ctx = run.ctx;
-    if (!ctx) {
-      run.status = "failed";
-      run.error = "Subagent run cannot start without an ExtensionContext.";
-      run.completedAt = Date.now();
-      this.onUpdate?.(this.publicRun(run));
-      run.resolve?.(this.publicRun(run));
-      return;
+    if (agent.disallowedTools?.length) {
+      const denied = new Set(agent.disallowedTools);
+      session.setActiveToolsByName(session.getActiveToolNames().filter((tool) => !denied.has(tool)));
     }
-    const agent = run.definition;
-    const maxTurns = normalizeMaxTurns(run.maxTurnsOverride ?? agent.maxTurns);
-    run.maxTurns = maxTurns;
-    run.turnCount = 0;
-    run.toolUses = 0;
-    run.status = "running";
-    run.startedAt = Date.now();
-    this.onUpdate?.(this.publicRun(run));
 
-    let unsubscribe: (() => void) | undefined;
-    let aborted = false;
-    let softLimitReached = false;
-    const graceTurns = 5;
+    const onAbort = () => {
+      aborted = true;
+      run.status = "aborted";
+      run.error = `${run.error ?? ""}\nSubagent aborted by parent signal.`.trim();
+      helpers.update(run);
+      void session.abort();
+    };
+    if (run.signal?.aborted) onAbort();
+    else run.signal?.addEventListener("abort", onAbort, { once: true });
 
-    try {
-      const modelInput = run.modelOverride ?? agent.model;
-      const model = resolveModel(ctx, modelInput);
-      if (modelInput && !model) throw new Error(`Model not found for subagent ${agent.name}: ${modelInput}`);
-
-      const agentDir = getAgentDir();
-      const settingsManager = SettingsManager.create(run.cwd, agentDir);
-      const childRuntime = new AgentRuntimeState();
-      childRuntime.activeIdentity = run.identity;
-      childRuntime.activePolicy = run.effectivePolicy;
-      const promptSteeringCount = run.steering.length;
-      const loader = new DefaultResourceLoader({
-        cwd: run.cwd,
-        agentDir,
-        settingsManager,
-        noExtensions: run.inheritExtensions !== true,
-        noSkills: run.inheritSkills === false,
-        noPromptTemplates: true,
-        noThemes: true,
-        noContextFiles: true,
-        systemPrompt: buildSystemPrompt(agent, ctx, run, maxTurns),
-        extensionFactories: [
-          (childPi) => {
-            childPi.on("tool_call", async (event, childCtx) => {
-              const decision = evaluateToolCall(childRuntime, { toolName: event.toolName, input: event.input as Record<string, unknown>, toolCallId: event.toolCallId }, childCtx);
-              const result = await enforceDecision(childRuntime, decision, childCtx);
-              const lastAudit = childRuntime.audit.at(-1);
-              if (lastAudit) this.onAudit?.(lastAudit);
-              return result;
-            });
-          },
-        ],
-      });
-      await loader.reload();
-
-      const { session } = await createAgentSession({
-        cwd: run.cwd,
-        agentDir,
-        model,
-        thinkingLevel: run.thinkingOverride ?? agent.thinking,
-        tools: agent.tools,
-        resourceLoader: loader,
-        sessionManager: SessionManager.inMemory(run.cwd),
-        settingsManager,
-      });
-      run.session = session;
-      run.sessionId = session.sessionId;
-      for (const message of run.steering.slice(promptSteeringCount)) {
-        await session.steer(message);
+    let currentMessageText = "";
+    unsubscribe = session.subscribe((event: any) => {
+      if (event.type === "message_start") currentMessageText = "";
+      if (event.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
+        currentMessageText += event.assistantMessageEvent.delta;
+        run.output = currentMessageText;
+        helpers.update(run);
       }
-
-      if (agent.disallowedTools?.length) {
-        const denied = new Set(agent.disallowedTools);
-        session.setActiveToolsByName(session.getActiveToolNames().filter((tool) => !denied.has(tool)));
+      if (event.type === "message_end") {
+        const text = textFromMessage(event.message);
+        if (text) run.output = text;
+        helpers.update(run);
       }
-
-      const onAbort = () => {
-        aborted = true;
-        run.status = "aborted";
-        run.error = `${run.error ?? ""}\nSubagent aborted by parent signal.`.trim();
-        this.onUpdate?.(this.publicRun(run));
-        void session.abort();
-      };
-      if (run.signal?.aborted) onAbort();
-      else run.signal?.addEventListener("abort", onAbort, { once: true });
-
-      let currentMessageText = "";
-      unsubscribe = session.subscribe((event: any) => {
-        if (event.type === "message_start") currentMessageText = "";
-        if (event.type === "message_update" && event.assistantMessageEvent?.type === "text_delta") {
-          currentMessageText += event.assistantMessageEvent.delta;
-          run.output = currentMessageText;
-          this.onUpdate?.(this.publicRun(run));
-        }
-        if (event.type === "message_end") {
-          const text = textFromMessage(event.message);
-          if (text) run.output = text;
-          this.onUpdate?.(this.publicRun(run));
-        }
-        if (event.type === "tool_execution_start") {
-          run.toolUses = (run.toolUses ?? 0) + 1;
-          this.onUpdate?.(this.publicRun(run));
-        }
-        if (event.type === "turn_end") {
-          run.turnCount = (run.turnCount ?? 0) + 1;
-          if (maxTurns != null) {
-            if (!softLimitReached && run.turnCount >= maxTurns) {
-              softLimitReached = true;
-              void session.steer("You have reached your turn limit. Wrap up immediately — provide your final answer now.");
-            } else if (softLimitReached && run.turnCount >= maxTurns + graceTurns) {
-              aborted = true;
-              run.status = "aborted";
-              run.error = `${run.error ?? ""}\nSubagent exceeded max_turns (${maxTurns}) plus ${graceTurns} grace turns.`.trim();
-              void session.abort();
-            }
+      if (event.type === "tool_execution_start") {
+        run.toolUses = (run.toolUses ?? 0) + 1;
+        helpers.update(run);
+      }
+      if (event.type === "turn_end") {
+        run.turnCount = (run.turnCount ?? 0) + 1;
+        if (maxTurns != null) {
+          if (!softLimitReached && run.turnCount >= maxTurns) {
+            softLimitReached = true;
+            void session.steer("You have reached your turn limit. Wrap up immediately — provide your final answer now.");
+          } else if (softLimitReached && run.turnCount >= maxTurns + graceTurns) {
+            aborted = true;
+            run.status = "aborted";
+            run.error = `${run.error ?? ""}\nSubagent exceeded max_turns (${maxTurns}) plus ${graceTurns} grace turns.`.trim();
+            void session.abort();
           }
-          this.onUpdate?.(this.publicRun(run));
         }
-        if (event.type === "agent_end" && event.finalError) {
-          run.error = `${run.error ?? ""}\n${event.finalError}`.trim();
-        }
-      });
-
-      await session.prompt(`Task: ${run.task}`);
-      run.signal?.removeEventListener("abort", onAbort);
-      run.status = aborted ? "aborted" : run.error ? "failed" : "completed";
-      if (!run.output) {
-        const lastAssistant = [...session.messages].reverse().find((message: any) => message.role === "assistant");
-        run.output = textFromMessage(lastAssistant);
+        helpers.update(run);
       }
-    } catch (error) {
-      run.status = aborted ? "aborted" : "failed";
-      run.error = `${run.error ?? ""}\n${error instanceof Error ? error.message : String(error)}`.trim();
-    } finally {
-      unsubscribe?.();
-      run.session?.dispose();
-      run.completedAt = Date.now();
-      this.onUpdate?.(this.publicRun(run));
-      run.resolve?.(this.publicRun(run));
+      if (event.type === "agent_end" && event.finalError) {
+        run.error = `${run.error ?? ""}\n${event.finalError}`.trim();
+      }
+    });
+
+    await session.prompt(`Task: ${run.task}`);
+    run.signal?.removeEventListener("abort", onAbort);
+    run.status = aborted ? "aborted" : run.error ? "failed" : "completed";
+    if (!run.output) {
+      const lastAssistant = [...session.messages].reverse().find((message: any) => message.role === "assistant");
+      run.output = textFromMessage(lastAssistant);
     }
+  } catch (error) {
+    run.status = aborted ? "aborted" : "failed";
+    run.error = `${run.error ?? ""}\n${error instanceof Error ? error.message : String(error)}`.trim();
+  } finally {
+    unsubscribe?.();
+    run.session?.dispose?.();
   }
 }
 
 export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegistry, runtime: AgentRuntimeState, getAgents: () => AgentDefinition[], defaultCwd: () => string): void {
+  registry.setExecutor(executeSubagentRun);
+
   function persistPermissionSideEffects(): void {
     const lastAudit = runtime.audit.at(-1);
     if (lastAudit) persistAudit(pi, lastAudit);
@@ -533,7 +404,7 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
     if (!live) return;
     const run = registry.publicRun(live);
     const spinnerFrame = Math.floor(Date.now() / 80) % SPINNER.length;
-    onUpdate({ content: [{ type: "text", text: formatRunProgress(run) }], details: detailsFromRun(run, "running", spinnerFrame) });
+    onUpdate({ content: [{ type: "text", text: formatRunProgress(run) }], details: detailsFromRun(run, undefined, spinnerFrame) });
   }
 
   pi.registerTool({
@@ -623,7 +494,6 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
         inheritExtensions: params.inherit_extensions,
         inheritSkills: params.inherit_skills,
       });
-      emitToolProgress(onUpdate, run.id);
       if (background) {
         const isQueued = run.status === "queued";
         return textResult(
@@ -631,13 +501,14 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
           `Agent ID: ${run.id}\n` +
           `Type: ${agent.name}\n` +
           `Description: ${params.description}\n` +
-          (isQueued ? `Position: queued\n` : "") +
+          (isQueued ? `Queue position: ${run.queuedPosition ?? "unknown"}\n` : `Status: running\n`) +
           `\nYou will be notified when this agent completes.\n` +
           `Use get_subagent_result to retrieve full results, or steer_subagent to send it messages.\n` +
           `Do not duplicate this agent's work.`,
-          detailsFromRun(run, "background"),
+          detailsFromRun(run, isQueued ? "queued" : "background"),
         );
       }
+      emitToolProgress(onUpdate, run.id);
       const progressTimer = setInterval(() => emitToolProgress(onUpdate, run.id), 1000);
       const completed = await completion.finally(() => clearInterval(progressTimer));
       emitToolProgress(onUpdate, run.id);
@@ -683,7 +554,9 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
         `Agent: ${serializable.id}\n` +
         `Type: ${serializable.agentName} | Status: ${status} | Tool uses: ${serializable.toolUses ?? 0} | Duration: ${duration}\n` +
         `Description: ${serializable.description ?? serializable.agentName}\n\n`;
-      if (serializable.status === "queued" || serializable.status === "running") output += "Agent is still running. Use wait: true or check back later.";
+      if (serializable.status === "queued") {
+        output += `Agent is queued${serializable.queuedPosition ? ` at position ${serializable.queuedPosition}` : ""}. Waiting for an execution slot; use wait: true or check back later.`;
+      } else if (serializable.status === "running") output += "Agent is running. Use wait: true or check back later.";
       else if (serializable.status === "failed") output += `Error: ${serializable.error}`;
       else output += serializable.output?.trim() || "No output.";
       if (params.verbose) {

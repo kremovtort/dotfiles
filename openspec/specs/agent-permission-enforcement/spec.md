@@ -37,7 +37,7 @@ The framework MUST evaluate policy rules deterministically. A matching `deny` ru
 - **THEN** the framework SHALL deny the action
 
 ### Requirement: Tool calls are enforced against the active agent identity
-The framework MUST evaluate every model-requested tool call against the active runtime identity before execution. Denied tool calls SHALL be blocked. Approval-required tool calls SHALL execute only after an approval is granted for the active identity and action fingerprint.
+The framework MUST evaluate every model-requested tool call against the active runtime identity before execution. Denied tool calls SHALL be blocked. Approval-required tool calls SHALL execute only after an approval is granted for the active identity and action fingerprint. Interactive approval prompts SHALL present shared permission details as request-level prompt content and SHALL keep response choices as concise decision labels.
 
 #### Scenario: Allowed tool call executes
 - **WHEN** the active agent requests a tool call that its effective policy allows
@@ -51,7 +51,8 @@ The framework MUST evaluate every model-requested tool call against the active r
 #### Scenario: Approval-required tool call prompts user
 - **WHEN** the active agent requests a tool call that resolves to `ask`
 - **AND** an interactive UI is available
-- **THEN** the framework SHALL prompt the user with the agent identity, action summary, matched rule, and approval scope
+- **THEN** the framework SHALL prompt the user with the agent identity, action summary, matched rule, and approval scope as request-level permission details
+- **AND** each response choice SHALL contain only the decision label for that choice
 - **AND** the tool call SHALL execute only if the user approves it
 
 #### Scenario: Approval-required tool call fails closed without UI

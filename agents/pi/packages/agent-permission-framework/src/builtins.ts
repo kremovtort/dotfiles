@@ -39,10 +39,19 @@ export const builtinAgents: AgentDefinition[] = [
       files: {
         default: "ask",
         read: { default: "allow" },
-        write: { default: "deny" },
-        edit: { default: "deny" },
+        write: {
+          default: "deny",
+          deny: ["/nix/store/**/*"]
+        },
+        edit: {
+          default: "deny",
+          deny: ["/nix/store/**/*"]
+        },
         deny: [".git/**", "secrets/**", "**/.env", "**/.env.*"],
-        external_directory: "ask",
+        external_directory: {
+          default: "ask",
+          allow: ["/nix/store/**/*"]
+        },
       },
       agents: {
         default: "ask",
@@ -91,10 +100,19 @@ export const builtinAgents: AgentDefinition[] = [
       files: {
         default: "ask",
         read: { default: "allow" },
-        write: { default: "allow" },
-        edit: { default: "allow" },
+        write: {
+          default: "allow",
+          deny: ["/nix/store/**/*"]
+        },
+        edit: {
+          default: "allow",
+          deny: ["/nix/store/**/*"]
+        },
         deny: [".git/**", "secrets/**"],
-        external_directory: "ask",
+        external_directory: {
+          default: "ask",
+          allow: ["/nix/store/**/*"]
+        },
       },
       agents: {
         default: "ask",
@@ -138,10 +156,19 @@ export const builtinAgents: AgentDefinition[] = [
       files: {
         default: "ask",
         read: { default: "allow" },
-        write: { default: "deny" },
-        edit: { default: "deny" },
+        write: {
+          default: "deny",
+          deny: ["/nix/store/**/*"]
+        },
+        edit: {
+          default: "deny",
+          deny: ["/nix/store/**/*"]
+        },
         deny: [".git/**", "secrets/**", "**/.env", "**/.env.*"],
-        external_directory: "ask",
+        external_directory: {
+          default: "ask",
+          allow: ["/nix/store/**/*"]
+        },
       },
       agents: {
         default: "ask",

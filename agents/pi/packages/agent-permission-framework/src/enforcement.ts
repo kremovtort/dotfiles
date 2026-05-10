@@ -72,6 +72,22 @@ function filePathForTool(input: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
+let approvalQueue: Promise<void> = Promise.resolve();
+
+async function serializeApproval<T>(fn: () => Promise<T>): Promise<T> {
+  const previous = approvalQueue;
+  let release!: () => void;
+  approvalQueue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await previous.catch(() => undefined);
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
+
 function strictest(decisions: PermissionDecision[]): PermissionDecision {
   return decisions.reduce((current, next) => {
     if (current.state === "deny") return current;
@@ -87,8 +103,10 @@ export function evaluateToolCall(
   event: ToolCallLike,
   ctx: EnforcementContextLike,
   policy: PermissionPolicy | undefined = runtime.activePolicy,
+  options: { includeDelegation?: boolean } = {},
 ): PermissionDecision {
   const hasUI = ctx.hasUI !== false;
+  const includeDelegation = options.includeDelegation ?? true;
   const decisions = [evaluateToolPermission(policy, event.toolName, hasUI)];
 
   if (event.toolName === "bash") {
@@ -96,7 +114,7 @@ export function evaluateToolCall(
     if (command) decisions.push(evaluateBashPermission(policy, command, hasUI));
   }
 
-  if (event.toolName === "subagent") {
+  if (includeDelegation && event.toolName === "subagent") {
     const request = requestedAgent(event.input);
     if (request) decisions.push(evaluateDelegationPermission(policy, request, hasUI));
   }
@@ -129,7 +147,7 @@ export async function enforceDecision(
     return { block: true, reason: decision.reason };
   }
 
-  if (ctx.hasUI === false || !ctx.ui?.confirm || !identity) {
+  if (ctx.hasUI === false || (!ctx.ui?.select && !ctx.ui?.confirm) || !identity) {
     const denied: PermissionDecision = { ...decision, state: "deny", reason: `${decision.reason}; denied because no interactive approval is available` };
     runtime.addAudit(denied, false);
     return { block: true, reason: denied.reason };
@@ -142,19 +160,20 @@ export async function enforceDecision(
     decision.matchedRule ? `Rule: ${decision.matchedRule}` : undefined,
   ].filter(Boolean).join("\n");
 
-  let scope: "once" | "session" | undefined;
-  if (ctx.ui.select) {
-    const choice = await ctx.ui.select("Permission required", [
-      `Allow once\n${message}`,
-      `Allow for this session\n${message}`,
-      "Deny",
-    ]);
-    if (choice?.startsWith("Allow once")) scope = "once";
-    else if (choice?.startsWith("Allow for this session")) scope = "session";
-  } else {
-    const approved = await ctx.ui.confirm("Permission required", `${message}\n\nAllow this action once?`);
-    if (approved) scope = "once";
-  }
+  const scope = await serializeApproval<"once" | "session" | undefined>(async () => {
+    if (ctx.ui?.select) {
+      const choice = await ctx.ui.select(`Required permission\n\n${message}`, [
+        "Allow once",
+        "Allow for this session",
+        "Deny",
+      ]);
+      if (choice?.startsWith("Allow once")) return "once";
+      if (choice?.startsWith("Allow for this session")) return "session";
+      return undefined;
+    }
+    const approved = await ctx.ui?.confirm?.("Permission required", `${message}\n\nAllow this action once?`);
+    return approved ? "once" : undefined;
+  });
 
   if (!scope) {
     runtime.addAudit({ ...decision, state: "deny", reason: `${decision.reason}; denied by user` }, false);
