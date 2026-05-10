@@ -1,0 +1,51 @@
+{
+  "name": "pi-agent-permission-framework",
+  "version": "0.1.0",
+  "description": "Pi extension package that combines main/subagent runtime identities with deterministic permission enforcement.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Alexander Makarov <i@kremovtort.ru>",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-extension",
+    "agents",
+    "subagents",
+    "permissions",
+    "policy"
+  ],
+  "files": [
+    "src/**/*.ts",
+    "docs/**/*.md",
+    "README.md",
+    "LICENSES.md"
+  ],
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "check": "npm test"
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "typebox": "^1.1.24"
+  }
+}

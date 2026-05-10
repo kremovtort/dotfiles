@@ -19,6 +19,9 @@
     ".pi/agent/agents".source =
       config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/agents/pi/agents";
 
+    ".pi/agent/packages/agent-permission-framework".source =
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/agents/pi/packages/agent-permission-framework";
+
     ".pi/agent/AGENTS.md".text = builtins.concatStringsSep "\n\n" [
       (builtins.readFile ./opencode/instructions/base.md)
       (builtins.readFile ./opencode/instructions/subagent-json-format.md)
@@ -30,6 +33,7 @@
     ".pi/agent/magic-context.jsonc".text = builtins.toJSON {
       "$schema" =
         "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
+
       enabled = true;
 
       cache_ttl = {
@@ -37,14 +41,14 @@
         "openai-codex/gpt-5.5" = "30m";
       };
 
-      protected_tags = 30;
+      protected_tags = 20;
 
       historian = {
         model = "openai-codex/gpt-5.5";
         fallback_models = [ "opencode-go/glm-5.1" ];
       };
 
-      nudge_interval_tokens = 25000;
+      nudge_interval_tokens = 15000;
 
       dreamer = {
         enabled = true;

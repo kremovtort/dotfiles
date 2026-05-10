@@ -6,14 +6,13 @@
     "npm:@plannotator/pi-extension",
     "npm:pi-websearch-tavily",
     "npm:@cortexkit/pi-magic-context",
-    "npm:@tintinweb/pi-subagents",
     "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@aliou/pi-processes",
     "npm:pi-tool-display",
     "npm:pi-smart-fetch",
     "npm:pi-mermaid",
     "npm:vim-motions-pi",
-    "npm:pi-permission-system"
+    "./packages/agent-permission-framework"
   ],
   "lastChangelogVersion": "0.74.0",
   "terminal": {
