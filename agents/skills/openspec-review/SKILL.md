@@ -11,6 +11,8 @@ Review an OpenSpec change and its implementation with three independent reviewer
 
 Before reading diffs or launching reviewers, explicitly ask where the implementation changes are located.
 
+If the environment provides a built-in tool for asking the user a question, use that tool for this location prompt instead of asking only in plain assistant text.
+
 Ask an open-ended question such as:
 
 > Where are the implementation changes for this OpenSpec change? Examples: current working copy, current jj change, jj revset/bookmark, git branch, git commit/range, GitHub PR URL/number, Arc review/branch, patch file, or a custom read-only diff command.
@@ -35,7 +37,7 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
 
 1. **Ask for implementation location**
 
-   Use the question above. Capture the answer as `location.kind` and `location.value`.
+   Use the question above. If the runtime exposes a dedicated ask-user/question tool, use it for this prompt. Capture the answer as `location.kind` and `location.value`.
 
 2. **Detect VCS before VCS commands**
 
