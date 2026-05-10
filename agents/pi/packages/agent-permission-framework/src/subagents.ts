@@ -15,6 +15,7 @@ import { enforceDecision, evaluateToolCall } from "./enforcement.ts";
 import { withoutRecursiveFrameworkExtension } from "./extension-filter.ts";
 import { evaluateDelegationPermission } from "./policy.ts";
 import { shouldWaitForSubagentResult, waitForSubagentResult } from "./subagent-result-wait.ts";
+import { finalSubagentStatus } from "./subagent-status.ts";
 import { SubagentRegistry, type RunRecordInternal, type SubagentExecutorHelpers } from "./subagent-registry.ts";
 export { SubagentRegistry } from "./subagent-registry.ts";
 
@@ -255,6 +256,7 @@ async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecu
   run.maxTurns = maxTurns;
   run.turnCount = 0;
   run.toolUses = 0;
+  run.activeTools = [];
   run.status = "running";
   run.startedAt = run.startedAt ?? Date.now();
   helpers.update(run);
@@ -352,6 +354,19 @@ async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecu
       }
       if (event.type === "tool_execution_start") {
         run.toolUses = (run.toolUses ?? 0) + 1;
+        run.activeTools = [...(run.activeTools ?? []), event.toolName].filter((toolName): toolName is string => typeof toolName === "string" && toolName.length > 0);
+        helpers.update(run);
+      }
+      if (event.type === "tool_execution_end") {
+        const toolName = typeof event.toolName === "string" ? event.toolName : undefined;
+        if (toolName) {
+          const active = [...(run.activeTools ?? [])];
+          const index = active.indexOf(toolName);
+          if (index >= 0) active.splice(index, 1);
+          run.activeTools = active;
+        } else {
+          run.activeTools = [];
+        }
         helpers.update(run);
       }
       if (event.type === "turn_end") {
@@ -376,12 +391,14 @@ async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecu
 
     await session.prompt(`Task: ${run.task}`);
     run.signal?.removeEventListener("abort", onAbort);
-    run.status = aborted ? "aborted" : run.error ? "failed" : "completed";
+    run.activeTools = [];
+    run.status = finalSubagentStatus({ aborted, error: run.error, softLimitReached });
     if (!run.output) {
       const lastAssistant = [...session.messages].reverse().find((message: any) => message.role === "assistant");
       run.output = textFromMessage(lastAssistant);
     }
   } catch (error) {
+    run.activeTools = [];
     run.status = aborted ? "aborted" : "failed";
     run.error = `${run.error ?? ""}\n${error instanceof Error ? error.message : String(error)}`.trim();
   } finally {

@@ -6,6 +6,7 @@ import { discoverAgents, findAgent, selectMainAgents } from "./agents.ts";
 import { enforceDecision, evaluateToolCall } from "./enforcement.ts";
 import { stablePolicyHash } from "./policy.ts";
 import { registerSubagentTools, SUBAGENT_RUN_ENTRY, SubagentRegistry } from "./subagents.ts";
+import { SubagentWidget } from "./subagent-widget.ts";
 import type { AgentDefinition, PermissionPolicy } from "./types.ts";
 import { debugLog } from "./debug.ts";
 
@@ -45,7 +46,12 @@ function promptForAgent(systemPrompt: string, agent: AgentDefinition): string {
 
 export default function agentPermissionFramework(pi: ExtensionAPI): void {
   const runtime = new AgentRuntimeState();
-  const subagents = new SubagentRegistry(4, (run) => pi.appendEntry(SUBAGENT_RUN_ENTRY, run), (audit) => persistAudit(pi, audit));
+  let subagentWidget: SubagentWidget | undefined;
+  const subagents = new SubagentRegistry(4, (run) => {
+    pi.appendEntry(SUBAGENT_RUN_ENTRY, run);
+    subagentWidget?.update();
+  }, (audit) => persistAudit(pi, audit));
+  subagentWidget = new SubagentWidget(subagents);
   let agents: AgentDefinition[] = [...builtinAgents];
   let activeMainAgent: AgentDefinition | undefined;
   let cwd = process.cwd();
@@ -209,6 +215,12 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
       persistRuntime(pi, runtime);
     }
     if (runtime.activeIdentity) ctx.ui.setStatus("agent", ctx.ui.theme.fg("accent", `agent:${runtime.activeIdentity.agentName}`));
+    subagentWidget?.setUICtx(ctx.hasUI === false ? undefined : ctx.ui);
+    subagentWidget?.update();
+  });
+
+  pi.on("turn_start", async () => {
+    subagentWidget?.onTurnStart();
   });
 
   pi.on("before_agent_start", async (event, ctx) => {
@@ -234,6 +246,7 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
   });
 
   pi.on("session_shutdown", async () => {
+    subagentWidget?.dispose();
     persistRuntime(pi, runtime);
   });
 }

@@ -138,6 +138,7 @@ export interface SubagentRunRecord {
   turnCount?: number;
   maxTurns?: number;
   toolUses?: number;
+  activeTools?: string[];
   queuedPosition?: number;
   steering: string[];
 }

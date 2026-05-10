@@ -3,8 +3,16 @@ import test from "node:test";
 import { withoutRecursiveFrameworkExtension } from "../src/extension-filter.ts";
 import { AgentRuntimeState } from "../src/runtime.ts";
 import { shouldWaitForSubagentResult, waitForSubagentResult } from "../src/subagent-result-wait.ts";
+import { finalSubagentStatus } from "../src/subagent-status.ts";
 import { SubagentRegistry } from "../src/subagent-registry.ts";
 import type { AgentDefinition, AgentIdentity, SubagentRunRecord } from "../src/types.ts";
+
+test("max-turn soft-limit wrap-up finalizes as steered", () => {
+  assert.equal(finalSubagentStatus({ aborted: false, softLimitReached: true }), "steered");
+  assert.equal(finalSubagentStatus({ aborted: false, softLimitReached: false }), "completed");
+  assert.equal(finalSubagentStatus({ aborted: false, error: "boom", softLimitReached: true }), "failed");
+  assert.equal(finalSubagentStatus({ aborted: true, softLimitReached: true }), "aborted");
+});
 
 test("child extension inheritance filters recursive framework extension only", () => {
   const result = withoutRecursiveFrameworkExtension({
