@@ -13,7 +13,7 @@ import type { AgentDefinition, SubagentRunRecord } from "./types.ts";
 import { AgentRuntimeState, persistAudit, persistRuntime } from "./runtime.ts";
 import { createUIApprovalBroker, enforceDecision, evaluateToolCall } from "./enforcement.ts";
 import { withoutRecursiveFrameworkExtension } from "./extension-filter.ts";
-import { evaluateDelegationPermission } from "./policy.ts";
+import { deriveActiveToolNames, evaluateDelegationPermission } from "./policy.ts";
 import { shouldWaitForSubagentResult, waitForSubagentResult } from "./subagent-result-wait.ts";
 import { finalSubagentStatus } from "./subagent-status.ts";
 import { SubagentRegistry, type RunRecordInternal, type SubagentExecutorHelpers } from "./subagent-registry.ts";
@@ -323,7 +323,6 @@ async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecu
       agentDir,
       model,
       thinkingLevel: run.thinkingOverride ?? agent.thinking,
-      tools: agent.tools,
       resourceLoader: loader,
       sessionManager: SessionManager.inMemory(run.cwd),
       settingsManager,
@@ -334,10 +333,11 @@ async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecu
       await session.steer(message);
     }
 
-    if (agent.disallowedTools?.length) {
-      const denied = new Set(agent.disallowedTools);
-      session.setActiveToolsByName(session.getActiveToolNames().filter((tool) => !denied.has(tool)));
-    }
+    session.setActiveToolsByName(deriveActiveToolNames(
+      run.effectivePolicy,
+      session.getAllTools().map((tool: { name: string }) => tool.name),
+      Boolean(run.approvalBroker) || ctx.hasUI !== false,
+    ));
 
     const onAbort = () => {
       aborted = true;

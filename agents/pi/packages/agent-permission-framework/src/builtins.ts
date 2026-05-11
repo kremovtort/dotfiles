@@ -1,4 +1,98 @@
-import type { AgentDefinition } from "./types.ts";
+import { normalizePermissionPolicy } from "./policy.ts";
+import type { AgentDefinition, PermissionPolicy } from "./types.ts";
+
+function permission(value: unknown): PermissionPolicy {
+  return normalizePermissionPolicy(value) ?? {};
+}
+
+const protectedReadToolRules: Record<string, "allow" | "deny"> = {
+  "*": "allow",
+  ".git": "deny",
+  ".git/**": "deny",
+  "secrets": "deny",
+  "secrets/**": "deny",
+  ".env": "deny",
+  ".env.*": "deny",
+  ".env.example": "allow",
+  "**/.env": "deny",
+  "**/.env.*": "deny",
+  "**/.env.example": "allow",
+};
+
+const protectedMutationToolRules: Record<string, "allow" | "deny"> = {
+  "*": "allow",
+  ".git": "deny",
+  ".git/**": "deny",
+  "secrets": "deny",
+  "secrets/**": "deny",
+  ".env": "deny",
+  ".env.*": "deny",
+  "**/.env": "deny",
+  "**/.env.*": "deny",
+  "/nix/store": "deny",
+  "/nix/store/**": "deny",
+};
+
+const safeInspectionBashRules: Record<string, "allow" | "deny"> = {
+  "*": "deny",
+  "cat *": "allow",
+  "head *": "allow",
+  "tail *": "allow",
+  "less *": "allow",
+  "more *": "allow",
+  "grep *": "allow",
+  "rg *": "allow",
+  "find *": "allow",
+  "fd *": "allow",
+  "ls*": "allow",
+  "pwd": "allow",
+  "echo *": "allow",
+  "printf *": "allow",
+  "wc *": "allow",
+  "sort *": "allow",
+  "uniq *": "allow",
+  "diff *": "allow",
+  "file *": "allow",
+  "stat *": "allow",
+  "du *": "allow",
+  "df *": "allow",
+  "tree *": "allow",
+  "which *": "allow",
+  "whereis *": "allow",
+  "type *": "allow",
+  "env": "allow",
+  "printenv*": "allow",
+  "uname*": "allow",
+  "whoami": "allow",
+  "id": "allow",
+  "date": "allow",
+  "ps*": "allow",
+  "jq *": "allow",
+  "bat *": "allow",
+  "eza *": "allow",
+  "git status*": "allow",
+  "git log*": "allow",
+  "git diff*": "allow",
+  "git show*": "allow",
+  "git branch*": "allow",
+  "git remote*": "allow",
+  "git config --get*": "allow",
+  "git ls-*": "allow",
+  "npm list*": "allow",
+  "npm ls*": "allow",
+  "npm view*": "allow",
+  "npm info*": "allow",
+  "npm search*": "allow",
+  "npm outdated*": "allow",
+  "npm audit*": "allow",
+  "node --version*": "allow",
+  "python --version*": "allow",
+  "rm *": "deny",
+  "sudo *": "deny",
+  "chmod *": "deny",
+  "chown *": "deny",
+  "*>*": "deny",
+};
 
 export const builtinAgents: AgentDefinition[] = [
   {
@@ -8,7 +102,6 @@ export const builtinAgents: AgentDefinition[] = [
     description: "Read-only exploration and implementation planning agent.",
     enabled: true,
     promptMode: "append",
-    tools: ["read", "grep", "find", "ls", "bash", "subagent", "get_subagent_result", "steer_subagent"],
     thinking: "xhigh",
     prompt: [
       "You are the plan main agent.",
@@ -16,52 +109,34 @@ export const builtinAgents: AgentDefinition[] = [
       "Use subagents only when their delegated policy allows it.",
       "Produce concise plans, risks, and verification steps.",
     ].join("\n"),
-    permission: {
-      default: "allow",
+    permission: permission({
+      "*": "allow",
       tools: {
-        default: "allow",
-        read: "allow",
-        grep: "allow",
-        find: "allow",
-        ls: "allow",
-        bash: "ask",
+        "*": "allow",
+        read: protectedReadToolRules,
+        grep: protectedReadToolRules,
+        find: protectedReadToolRules,
+        ls: protectedReadToolRules,
+        bash: "allow",
         subagent: "ask",
         get_subagent_result: "allow",
         steer_subagent: "ask",
         edit: "deny",
         write: "deny",
       },
-      bash: {
-        readOnly: true,
-        default: "allow",
-        deny: ["rm *", "sudo *", "chmod *", "chown *", ">", ">>"],
+      bash: safeInspectionBashRules,
+      external_directory: {
+        "*": "ask",
+        "/nix/store/**": "allow",
       },
-      files: {
-        default: "ask",
-        read: { default: "allow" },
-        write: {
-          default: "deny",
-          deny: ["/nix/store/**/*"]
-        },
-        edit: {
-          default: "deny",
-          deny: ["/nix/store/**/*"]
-        },
-        deny: [".git/**", "secrets/**", "**/.env", "**/.env.*"],
-        external_directory: {
-          default: "ask",
-          allow: ["/nix/store/**/*"]
-        },
-      },
-      agents: {
-        default: "ask",
+      subagents: {
+        "*": "ask",
         scout: "allow",
         "docs-digger": "allow",
-        project: "ask",
-        model_override: "ask",
-        tool_override: "ask",
+        "source:project": "ask",
+        "override:model": "ask",
       },
-    },
+    }),
   },
   {
     name: "build",
@@ -70,59 +145,39 @@ export const builtinAgents: AgentDefinition[] = [
     description: "Implementation agent with approval gates for mutations and commands.",
     enabled: true,
     promptMode: "append",
-    tools: ["read", "grep", "find", "ls", "bash", "edit", "write", "subagent", "get_subagent_result", "steer_subagent"],
     thinking: "xhigh",
     prompt: [
       "You are the build main agent.",
       "Make focused implementation changes and use permission prompts for risky actions.",
       "Keep scope tight and preserve unrelated user work.",
     ].join("\n"),
-    permission: {
-      default: "ask",
+    permission: permission({
+      "*": "ask",
       tools: {
-        default: "ask",
-        read: "allow",
-        grep: "allow",
-        find: "allow",
-        ls: "allow",
-        edit: "allow",
-        write: "allow",
-        bash: "allow",
-        subagent: "allow",
-        get_subagent_result: "allow",
-        steer_subagent: "allow",
+        "*": "allow",
+        read: protectedReadToolRules,
+        edit: protectedMutationToolRules,
+        write: protectedMutationToolRules,
       },
       bash: {
-        default: "allow",
-        deny: ["\\brm\\s+-rf\\b", "\\bsudo\\b", "\\bgit\\s+reset\\s+--hard\\b"],
+        "*": "allow",
+        "*rm -rf*": "deny",
+        "*sudo*": "deny",
+        "git reset --hard*": "deny",
       },
-      files: {
-        default: "ask",
-        read: { default: "allow" },
-        write: {
-          default: "allow",
-          deny: ["/nix/store/**/*"]
-        },
-        edit: {
-          default: "allow",
-          deny: ["/nix/store/**/*"]
-        },
-        deny: [".git/**", "secrets/**"],
-        external_directory: {
-          default: "ask",
-          allow: ["/nix/store/**/*"]
-        },
+      external_directory: {
+        "*": "ask",
+        "/nix/store/**": "allow",
       },
-      agents: {
-        default: "ask",
+      subagents: {
+        "*": "ask",
         scout: "allow",
         "docs-digger": "allow",
         codemodder: "ask",
-        project: "ask",
-        model_override: "ask",
-        tool_override: "ask",
+        "source:project": "ask",
+        "override:model": "ask",
       },
-    },
+    }),
   },
   {
     name: "ask",
@@ -131,50 +186,36 @@ export const builtinAgents: AgentDefinition[] = [
     description: "Conversational and research agent with minimal local mutation access.",
     enabled: true,
     promptMode: "append",
-    tools: ["read", "grep", "find", "ls", "subagent", "get_subagent_result"],
     thinking: "medium",
     prompt: [
       "You are the ask main agent.",
       "Answer questions, research, and clarify requirements.",
       "Avoid mutating files or executing shell commands unless explicitly approved.",
     ].join("\n"),
-    permission: {
-      default: "ask",
+    permission: permission({
+      "*": "ask",
       tools: {
-        default: "ask",
-        read: "allow",
-        grep: "allow",
-        find: "allow",
-        ls: "allow",
+        "*": "allow",
+        read: protectedReadToolRules,
+        grep: protectedReadToolRules,
+        find: protectedReadToolRules,
+        ls: protectedReadToolRules,
         subagent: "ask",
         get_subagent_result: "allow",
         bash: "deny",
         edit: "deny",
         write: "deny",
       },
-      files: {
-        default: "ask",
-        read: { default: "allow" },
-        write: {
-          default: "deny",
-          deny: ["/nix/store/**/*"]
-        },
-        edit: {
-          default: "deny",
-          deny: ["/nix/store/**/*"]
-        },
-        deny: [".git/**", "secrets/**", "**/.env", "**/.env.*"],
-        external_directory: {
-          default: "ask",
-          allow: ["/nix/store/**/*"]
-        },
+      external_directory: {
+        "*": "ask",
+        "/nix/store/**": "allow",
       },
-      agents: {
-        default: "ask",
+      subagents: {
+        "*": "ask",
         scout: "allow",
         "docs-digger": "allow",
-        project: "ask",
+        "source:project": "ask",
       },
-    },
+    }),
   },
 ];

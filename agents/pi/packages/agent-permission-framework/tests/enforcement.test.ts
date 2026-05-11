@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { enforceDecision, evaluateToolCall } from "../src/enforcement.ts";
+import { normalizePermissionPolicy } from "../src/policy.ts";
 import { AgentRuntimeState } from "../src/runtime.ts";
 import type { PermissionApprovalBroker, PermissionDecision, PermissionPolicy } from "../src/types.ts";
 
@@ -10,18 +11,20 @@ function runtime(policy: PermissionPolicy): AgentRuntimeState {
   return state;
 }
 
-test("tool call enforcement applies skill policies for skill-prefixed tools", () => {
+const policy = (value: unknown): PermissionPolicy => normalizePermissionPolicy(value) ?? {};
+
+test("tool call enforcement applies ordinary tool permissions for skill-prefixed tools", () => {
   const decision = evaluateToolCall(
-    runtime({ default: "allow", skills: { default: "deny", "openspec-review": "allow" } }),
+    runtime(policy({ "*": "allow", tools: { "skill:*": "deny", "skill:openspec-review": "allow" } })),
     { toolName: "skill:unknown", input: {} },
     { cwd: "/repo", hasUI: true },
   );
   assert.equal(decision.state, "deny");
 });
 
-test("tool call enforcement applies skill policies from explicit skill input", () => {
+test("tool call enforcement applies ordinary tool permissions from explicit skill input", () => {
   const decision = evaluateToolCall(
-    runtime({ default: "allow", skills: { default: "deny", "openspec-review": "allow" } }),
+    runtime(policy({ "*": "allow", tools: { use_skill: { "*": "deny", "openspec-review": "allow" } } })),
     { toolName: "use_skill", input: { skill: "openspec-review" } },
     { cwd: "/repo", hasUI: true },
   );
@@ -29,27 +32,45 @@ test("tool call enforcement applies skill policies from explicit skill input", (
 });
 
 test("subagent preflight can enforce only tool permission without delegation prompt", () => {
-  const policy: PermissionPolicy = {
-    default: "allow",
+  const permissions = policy({
+    "*": "allow",
     tools: { subagent: "allow" },
-    agents: { default: "ask" },
-  };
+    subagents: { "*": "ask" },
+  });
 
   const preflight = evaluateToolCall(
-    runtime(policy),
+    runtime(permissions),
     { toolName: "subagent", input: { subagent_type: "openspec-reviewer-gpt", run_in_background: true } },
     { cwd: "/repo", hasUI: true },
-    policy,
+    permissions,
     { includeDelegation: false },
   );
   assert.equal(preflight.state, "allow");
 
   const full = evaluateToolCall(
-    runtime(policy),
+    runtime(permissions),
     { toolName: "subagent", input: { subagent_type: "openspec-reviewer-gpt", run_in_background: true } },
     { cwd: "/repo", hasUI: true },
   );
   assert.equal(full.state, "ask");
+});
+
+test("bash command guard denies despite generic bash tool access", () => {
+  const decision = evaluateToolCall(
+    runtime(policy({ "*": "allow", tools: { bash: "allow" }, bash: { "*": "allow", "rm *": "deny" } })),
+    { toolName: "bash", input: { command: "rm -rf tmp" } },
+    { cwd: "/repo", hasUI: true },
+  );
+  assert.equal(decision.state, "deny");
+});
+
+test("file external-directory guard combines with tool permission", () => {
+  const decision = evaluateToolCall(
+    runtime(policy({ "*": "allow", tools: { read: "allow" }, external_directory: { "*": "ask" } })),
+    { toolName: "read", input: { path: "/tmp/outside.txt" } },
+    { cwd: "/repo", hasUI: true },
+  );
+  assert.equal(decision.state, "ask");
 });
 
 test("interactive approval prompt keeps permission details out of select choices", async () => {
@@ -126,7 +147,7 @@ test("interactive approval prompts are serialized for parallel asks", async () =
   const decisions: PermissionDecision[] = ["one", "two", "three"].map((target) => ({
     state: "ask",
     reason: `ask ${target}`,
-    fingerprint: { category: "agent", operation: "delegate", target, normalized: `agent:delegate:${target}` },
+    fingerprint: { category: "subagent", operation: "delegate", target, normalized: `subagent:delegate:${target}` },
   }));
 
   const results = await Promise.all(decisions.map((decision) => enforceDecision(state, decision, ctx)));

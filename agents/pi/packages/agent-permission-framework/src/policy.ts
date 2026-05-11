@@ -1,112 +1,176 @@
+import { homedir } from "node:os";
 import { relative, resolve } from "node:path";
 import type {
   ActionFingerprint,
   DecisionState,
   DelegationRequest,
-  FilePolicy,
-  PatternRuleSet,
   PermissionDecision,
+  PermissionPatternRule,
   PermissionPolicy,
+  PermissionRule,
+  PermissionRuleObject,
+  ToolPermission,
+  ToolPermissionEntry,
+  ToolPermissionObject,
 } from "./types.ts";
 
 const DECISIONS = new Set(["allow", "ask", "deny"]);
-const SAFE_READ_ONLY_COMMANDS = [
-  /^\s*(cat|head|tail|less|more|grep|rg|find|fd|ls|pwd|echo|printf|wc|sort|uniq|diff|file|stat|du|df|tree|which|whereis|type|env|printenv|uname|whoami|id|date|ps|jq|bat|eza)\b/i,
-  /^\s*git\s+(status|log|diff|show|branch|remote|config\s+--get|ls-)\b/i,
-  /^\s*npm\s+(list|ls|view|info|search|outdated|audit)\b/i,
-  /^\s*node\s+--version\b/i,
-  /^\s*python\s+--version\b/i,
-];
+const SUPPORTED_PERMISSION_KEYS = new Set(["*", "tools", "bash", "subagents", "external_directory"]);
+const RULE_OBJECT_KEYS = new Set(["rules"]);
+const TOOL_OBJECT_KEYS = new Set(["entries"]);
+const SUPPORTED_KEYS_MESSAGE = "Supported permission entries are '*', 'tools', 'bash', 'subagents', and 'external_directory'. MCP permissions are not supported yet.";
 
-const COMPOSED_POLICY = Symbol("agent-permission-framework.composedPolicy");
-type ComposedPolicy = PermissionPolicy & { [COMPOSED_POLICY]?: { parent?: PermissionPolicy; child?: PermissionPolicy } };
-
-function composed(policy: PermissionPolicy | undefined): { parent?: PermissionPolicy; child?: PermissionPolicy } | undefined {
-  return (policy as ComposedPolicy | undefined)?.[COMPOSED_POLICY];
-}
-
-function strictestDecision(a: PermissionDecision, b: PermissionDecision): PermissionDecision {
-  if (a.state === "deny" || b.state === "deny") return a.state === "deny" ? a : b;
-  if (a.state === "ask" || b.state === "ask") return a.state === "ask" ? a : b;
-  return a;
-}
-
-function neutralDecision(category: ActionFingerprint["category"], operation: string, target: string): PermissionDecision {
-  return decision("allow", `${category} ${target} has no child restriction`, makeFingerprint(category, operation, target));
-}
-
-function childPolicyForCategory(policy: PermissionPolicy | undefined, category: keyof PermissionPolicy): PermissionPolicy | undefined {
-  if (!policy) return undefined;
-  return policy.default != null || policy[category] != null ? policy : undefined;
-}
-
-function withComposedPolicy(base: PermissionPolicy, parent: PermissionPolicy | undefined, child: PermissionPolicy | undefined): PermissionPolicy {
-  Object.defineProperty(base, COMPOSED_POLICY, { value: { parent, child }, enumerable: false });
-  return base;
-}
-
-function isDecision(value: unknown): value is DecisionState {
+export function isDecision(value: unknown): value is DecisionState {
   return typeof value === "string" && DECISIONS.has(value);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isRuleObject(value: PermissionRule | undefined): value is PermissionRuleObject {
+  return isRecord(value) && Array.isArray((value as PermissionRuleObject).rules);
+}
+
+function isToolObject(value: ToolPermission | undefined): value is ToolPermissionObject {
+  return isRecord(value) && Array.isArray((value as ToolPermissionObject).entries);
+}
+
+function parseRule(raw: unknown, path: string): PermissionRule {
+  if (isDecision(raw)) return raw;
+  if (!isRecord(raw)) throw new Error(`${path} must be a permission action or an object of pattern rules.`);
+
+  if (Array.isArray((raw as { rules?: unknown }).rules) && Object.keys(raw).every((key) => RULE_OBJECT_KEYS.has(key))) {
+    const rules = (raw as { rules: unknown[] }).rules.map((entry, index): PermissionPatternRule => {
+      if (!isRecord(entry) || typeof entry.pattern !== "string" || !isDecision(entry.decision)) {
+        throw new Error(`${path}.rules[${index}] must contain a string pattern and allow|ask|deny decision.`);
+      }
+      return { pattern: entry.pattern, decision: entry.decision };
+    });
+    return { rules };
+  }
+
+  const rules: PermissionPatternRule[] = [];
+  for (const [pattern, decision] of Object.entries(raw)) {
+    if (!isDecision(decision)) throw new Error(`${path}.${pattern} must be allow, ask, or deny.`);
+    rules.push({ pattern, decision });
+  }
+  return { rules };
+}
+
+function parseTools(raw: unknown, path: string): ToolPermission {
+  if (isDecision(raw)) return raw;
+  if (!isRecord(raw)) throw new Error(`${path} must be a permission action or an object of tool rules.`);
+
+  if (Array.isArray((raw as { entries?: unknown }).entries) && Object.keys(raw).every((key) => TOOL_OBJECT_KEYS.has(key))) {
+    const entries = (raw as { entries: unknown[] }).entries.map((entry, index): ToolPermissionEntry => {
+      if (!isRecord(entry) || typeof entry.pattern !== "string" || entry.rule == null) {
+        throw new Error(`${path}.entries[${index}] must contain a string pattern and rule.`);
+      }
+      return { pattern: entry.pattern, rule: parseRule(entry.rule, `${path}.entries[${index}].rule`) };
+    });
+    return { entries };
+  }
+
+  const entries: ToolPermissionEntry[] = [];
+  for (const [pattern, rule] of Object.entries(raw)) {
+    entries.push({ pattern, rule: parseRule(rule, `${path}.${pattern}`) });
+  }
+  return { entries };
+}
+
+function hasPolicyContent(policy: PermissionPolicy): boolean {
+  return policy.default != null || policy.tools != null || policy.bash != null || policy.subagents != null || policy.external_directory != null;
+}
+
+function legacyToolPolicy(allowedTools?: string[], disallowedTools?: string[]): ToolPermissionObject | undefined {
+  const entries: ToolPermissionEntry[] = [];
+  if (allowedTools?.length) {
+    entries.push({ pattern: "*", rule: "deny" });
+    for (const tool of allowedTools) entries.push({ pattern: tool, rule: "allow" });
+  }
+  for (const tool of disallowedTools ?? []) entries.push({ pattern: tool, rule: "deny" });
+  return entries.length ? { entries } : undefined;
+}
+
+export function normalizePermissionPolicy(
+  raw: unknown,
+  legacy: { allowedTools?: string[]; disallowedTools?: string[] } = {},
+): PermissionPolicy | undefined {
+  let policy: PermissionPolicy = {};
+
+  if (raw == null) {
+    policy = {};
+  } else if (isDecision(raw)) {
+    policy = { default: raw };
+  } else if (isRecord(raw)) {
+    for (const [key, value] of Object.entries(raw)) {
+      if (!SUPPORTED_PERMISSION_KEYS.has(key)) {
+        throw new Error(`Unsupported permission category "${key}". ${SUPPORTED_KEYS_MESSAGE}`);
+      }
+      if (key === "*") {
+        if (!isDecision(value)) throw new Error(`permission.* must be allow, ask, or deny.`);
+        policy.default = value;
+      } else if (key === "tools") policy.tools = parseTools(value, "permission.tools");
+      else if (key === "bash") policy.bash = parseRule(value, "permission.bash");
+      else if (key === "subagents") policy.subagents = parseRule(value, "permission.subagents");
+      else if (key === "external_directory") policy.external_directory = parseRule(value, "permission.external_directory");
+    }
+  } else {
+    throw new Error(`permission must be allow, ask, deny, or an object. ${SUPPORTED_KEYS_MESSAGE}`);
+  }
+
+  const legacyTools = legacyToolPolicy(legacy.allowedTools, legacy.disallowedTools);
+  if (legacyTools) policy = mergePermissionPolicies(policy, { tools: legacyTools });
+  return hasPolicyContent(policy) ? policy : undefined;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+}
+
+function expandHomePattern(pattern: string): string {
+  const home = homedir();
+  if (pattern === "~" || pattern === "$HOME") return home;
+  if (pattern.startsWith("~/")) return `${home}${pattern.slice(1)}`;
+  if (pattern.startsWith("$HOME/")) return `${home}${pattern.slice("$HOME".length)}`;
+  return pattern;
+}
+
 function globToRegExp(pattern: string): RegExp {
-  const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*\*/g, "__DOUBLE_STAR__")
-    .replace(/\*/g, "[^/]*")
-    .replace(/__DOUBLE_STAR__/g, ".*");
-  return new RegExp(`^${escaped}$`);
+  let source = "";
+  for (const ch of pattern) {
+    if (ch === "*") source += ".*";
+    else if (ch === "?") source += ".";
+    else source += escapeRegExp(ch);
+  }
+  return new RegExp(`^${source}$`);
 }
 
 export function matchesPattern(pattern: string, value: string): boolean {
-  if (pattern === value) return true;
-  if (pattern.includes("*") || pattern.includes("?")) return globToRegExp(pattern.replace(/\?/g, "[^/]")).test(value);
-  if (pattern.startsWith("^") || pattern.includes("\\b") || pattern.endsWith("$")) {
-    try {
-      return new RegExp(pattern).test(value);
-    } catch {
-      return false;
-    }
-  }
-  return value.includes(pattern);
+  return globToRegExp(expandHomePattern(pattern)).test(value);
 }
 
-function collectFromRuleSet(ruleSet: PatternRuleSet | undefined, target: string): Array<{ state: DecisionState; rule: string }> {
-  if (!ruleSet) return [];
-  const matches: Array<{ state: DecisionState; rule: string }> = [];
-  for (const state of ["deny", "ask", "allow"] as const) {
-    const rules = ruleSet[state] ?? [];
-    for (const rule of rules) {
-      if (matchesPattern(rule, target)) matches.push({ state, rule: `${state}:${rule}` });
-    }
-  }
-  return matches;
-}
-
-function chooseDecision(
-  matches: Array<{ state: DecisionState; rule: string }>,
+function evaluateRule(
+  rule: PermissionRule | undefined,
+  targets: string[],
   fallback: DecisionState,
+  rulePath: string,
 ): { state: DecisionState; rule?: string } {
-  for (const state of ["deny", "ask", "allow"] as const) {
-    const match = matches.find((candidate) => candidate.state === state);
-    if (match) return { state, rule: match.rule };
+  if (!rule) return { state: fallback };
+  if (isDecision(rule)) return { state: rule, rule: `${rulePath}:${rule}` };
+
+  let matched: { state: DecisionState; rule: string } | undefined;
+  for (const entry of rule.rules) {
+    if (targets.some((target) => matchesPattern(entry.pattern, target))) {
+      matched = { state: entry.decision, rule: `${rulePath}:${entry.pattern}` };
+    }
   }
-  return { state: fallback };
+  return matched ?? { state: fallback };
 }
 
 function defaultDecision(policy: PermissionPolicy | undefined, hasUI: boolean): DecisionState {
   return policy?.default ?? (hasUI ? "ask" : "deny");
-}
-
-function evaluateNamedCategory(
-  category: (PatternRuleSet & Record<string, unknown>) | undefined,
-  target: string,
-  fallback: DecisionState,
-): { state: DecisionState; rule?: string } {
-  const matches = collectFromRuleSet(category, target);
-  const exact = category?.[target];
-  if (isDecision(exact)) matches.push({ state: exact, rule: `exact:${target}` });
-  return chooseDecision(matches, category?.default ?? fallback);
 }
 
 export function makeFingerprint(
@@ -126,20 +190,41 @@ function decision(
   return { state, reason, matchedRule, fingerprint };
 }
 
+export function strictestDecision(a: PermissionDecision, b: PermissionDecision): PermissionDecision {
+  if (a.state === "deny" || b.state === "deny") return a.state === "deny" ? a : b;
+  if (a.state === "ask" || b.state === "ask") return a.state === "ask" ? a : b;
+  return a;
+}
+
+function evaluateToolRule(
+  tools: ToolPermission | undefined,
+  toolName: string,
+  target: string,
+  fallback: DecisionState,
+): { state: DecisionState; rule?: string } {
+  if (!tools) return { state: fallback };
+  if (isDecision(tools)) return { state: tools, rule: `tools:${tools}` };
+
+  let matchedEntry: ToolPermissionEntry | undefined;
+  for (const entry of tools.entries) {
+    if (matchesPattern(entry.pattern, toolName)) matchedEntry = entry;
+  }
+  if (!matchedEntry) return { state: fallback };
+  const rule = matchedEntry.rule;
+  if (isDecision(rule)) return { state: rule, rule: `tools:${matchedEntry.pattern}` };
+  return evaluateRule(rule, [target], fallback, `tools:${matchedEntry.pattern}`);
+}
+
 export function evaluateToolPermission(
   policy: PermissionPolicy | undefined,
   toolName: string,
   hasUI: boolean,
+  target = toolName,
 ): PermissionDecision {
-  const parts = composed(policy);
-  if (parts) {
-    const parentDecision = parts.parent ? evaluateToolPermission(parts.parent, toolName, hasUI) : neutralDecision("tool", "call", toolName);
-    const childDecision = childPolicyForCategory(parts.child, "tools") ? evaluateToolPermission(parts.child, toolName, hasUI) : neutralDecision("tool", "call", toolName);
-    return strictestDecision(parentDecision, childDecision);
-  }
   const fallback = defaultDecision(policy, hasUI);
-  const result = evaluateNamedCategory(policy?.tools, toolName, fallback);
-  return decision(result.state, `tool ${toolName} resolved to ${result.state}`, makeFingerprint("tool", "call", toolName), result.rule);
+  const result = evaluateToolRule(policy?.tools, toolName, target, fallback);
+  const fingerprintTarget = target === toolName ? toolName : `${toolName}:${target}`;
+  return decision(result.state, `tool ${toolName} resolved to ${result.state} for ${target}`, makeFingerprint("tool", "call", fingerprintTarget), result.rule);
 }
 
 export function evaluateBashPermission(
@@ -147,29 +232,9 @@ export function evaluateBashPermission(
   command: string,
   hasUI: boolean,
 ): PermissionDecision {
-  const parts = composed(policy);
-  if (parts) {
-    const parentDecision = parts.parent ? evaluateBashPermission(parts.parent, command, hasUI) : neutralDecision("bash", "exec", command);
-    const childDecision = childPolicyForCategory(parts.child, "bash") ? evaluateBashPermission(parts.child, command, hasUI) : neutralDecision("bash", "exec", command);
-    return strictestDecision(parentDecision, childDecision);
-  }
-  const bash = policy?.bash;
-  const matches = collectFromRuleSet(bash, command);
-  if (bash?.readOnly) {
-    const safe = SAFE_READ_ONLY_COMMANDS.some((pattern) => pattern.test(command));
-    matches.push({ state: safe ? "allow" : "deny", rule: safe ? "readOnly:safe" : "readOnly:blocked" });
-  }
-  const fallback = bash?.default ?? defaultDecision(policy, hasUI);
-  const result = chooseDecision(matches, fallback);
+  const fallback = defaultDecision(policy, hasUI);
+  const result = evaluateRule(policy?.bash, [command], fallback, "bash");
   return decision(result.state, `bash command resolved to ${result.state}`, makeFingerprint("bash", "exec", command), result.rule);
-}
-
-function fileRuleSet(filePolicy: FilePolicy | undefined, operation: string): PatternRuleSet | undefined {
-  if (!filePolicy) return undefined;
-  if (operation === "read") return filePolicy.read;
-  if (operation === "write") return filePolicy.write;
-  if (operation === "edit") return filePolicy.edit;
-  return undefined;
 }
 
 export function normalizePathForPolicy(cwd: string, rawPath: string): { absolute: string; projectRelative: string; external: boolean } {
@@ -182,6 +247,21 @@ export function normalizePathForPolicy(cwd: string, rawPath: string): { absolute
   };
 }
 
+export function evaluateExternalDirectoryPermission(
+  policy: PermissionPolicy | undefined,
+  rawPath: string,
+  cwd: string,
+  hasUI: boolean,
+): PermissionDecision {
+  const normalized = normalizePathForPolicy(cwd, rawPath);
+  if (!normalized.external) {
+    return decision("allow", `${normalized.projectRelative} is inside the project`, makeFingerprint("file", "external_directory", normalized.projectRelative));
+  }
+  const fallback = defaultDecision(policy, hasUI);
+  const result = evaluateRule(policy?.external_directory, [normalized.absolute], fallback, "external_directory");
+  return decision(result.state, `external path ${normalized.absolute} resolved to ${result.state}`, makeFingerprint("file", "external_directory", normalized.absolute), result.rule);
+}
+
 export function evaluateFilePermission(
   policy: PermissionPolicy | undefined,
   operation: "read" | "write" | "edit",
@@ -189,29 +269,11 @@ export function evaluateFilePermission(
   cwd: string,
   hasUI: boolean,
 ): PermissionDecision {
-  const parts = composed(policy);
-  if (parts) {
-    const parentDecision = parts.parent ? evaluateFilePermission(parts.parent, operation, rawPath, cwd, hasUI) : neutralDecision("file", operation, rawPath);
-    const childDecision = childPolicyForCategory(parts.child, "files") ? evaluateFilePermission(parts.child, operation, rawPath, cwd, hasUI) : neutralDecision("file", operation, rawPath);
-    return strictestDecision(parentDecision, childDecision);
-  }
-  const files = policy?.files;
   const normalized = normalizePathForPolicy(cwd, rawPath);
-  const target = normalized.projectRelative;
-  const matches = [
-    ...collectFromRuleSet(files, target),
-    ...collectFromRuleSet(fileRuleSet(files, operation), target),
-  ];
-
-  if (normalized.external) {
-    const external = files?.external_directory;
-    if (isDecision(external)) matches.push({ state: external, rule: `external_directory:${external}` });
-    else matches.push(...collectFromRuleSet(external, normalized.absolute));
-  }
-
-  const fallback = fileRuleSet(files, operation)?.default ?? files?.default ?? defaultDecision(policy, hasUI);
-  const result = chooseDecision(matches, fallback);
-  return decision(result.state, `${operation} ${target} resolved to ${result.state}`, makeFingerprint("file", operation, target), result.rule);
+  const target = normalized.external ? normalized.absolute : normalized.projectRelative;
+  const toolDecision = evaluateToolPermission(policy, operation, hasUI, target);
+  if (!normalized.external) return toolDecision;
+  return strictestDecision(toolDecision, evaluateExternalDirectoryPermission(policy, rawPath, cwd, hasUI));
 }
 
 function stableStringify(value: unknown): string {
@@ -226,12 +288,23 @@ function delegationTarget(request: DelegationRequest): string {
     source: request.source,
     background: request.background,
     modelOverride: request.modelOverride,
-    toolOverride: request.toolOverride,
     inheritContext: request.inheritContext,
     inheritExtensions: request.inheritExtensions,
     inheritSkills: request.inheritSkills,
     cwd: request.cwd,
   })}`;
+}
+
+function delegationTargets(request: DelegationRequest): string[] {
+  const targets = [request.agentName, delegationTarget(request)];
+  if (request.source) targets.push(`source:${request.source}`);
+  if (request.background) targets.push("background");
+  if (request.modelOverride) targets.push("override:model");
+  if (request.inheritContext) targets.push("context_inheritance");
+  if (request.inheritExtensions) targets.push("extension_inheritance");
+  if (request.inheritSkills) targets.push("skill_inheritance");
+  if (request.cwd) targets.push(`cwd:${request.cwd}`);
+  return targets;
 }
 
 export function evaluateDelegationPermission(
@@ -240,29 +313,9 @@ export function evaluateDelegationPermission(
   hasUI: boolean,
 ): PermissionDecision {
   const target = delegationTarget(request);
-  const parts = composed(policy);
-  if (parts) {
-    const parentDecision = parts.parent ? evaluateDelegationPermission(parts.parent, request, hasUI) : neutralDecision("agent", "delegate", target);
-    const childDecision = childPolicyForCategory(parts.child, "agents") ? evaluateDelegationPermission(parts.child, request, hasUI) : neutralDecision("agent", "delegate", target);
-    return strictestDecision(parentDecision, childDecision);
-  }
-  const agents = policy?.agents;
-  const matches = collectFromRuleSet(agents, request.agentName);
-  const exact = agents?.[request.agentName];
-  if (isDecision(exact)) matches.push({ state: exact, rule: `agent:${request.agentName}` });
-  if (request.source === "project" && isDecision(agents?.project)) {
-    matches.push({ state: agents.project, rule: `project:${agents.project}` });
-  }
-  if (request.background && isDecision(agents?.background)) matches.push({ state: agents.background, rule: "background" });
-  if (request.modelOverride && isDecision(agents?.model_override)) matches.push({ state: agents.model_override, rule: "model_override" });
-  if (request.toolOverride?.length && isDecision(agents?.tool_override)) matches.push({ state: agents.tool_override, rule: "tool_override" });
-  if (request.inheritContext && isDecision(agents?.context_inheritance)) matches.push({ state: agents.context_inheritance, rule: "context_inheritance" });
-  if (request.inheritExtensions && isDecision(agents?.extension_inheritance)) matches.push({ state: agents.extension_inheritance, rule: "extension_inheritance" });
-  if (request.inheritSkills && isDecision(agents?.skill_inheritance)) matches.push({ state: agents.skill_inheritance, rule: "skill_inheritance" });
-
-  const fallback = agents?.default ?? defaultDecision(policy, hasUI);
-  const result = chooseDecision(matches, fallback);
-  return decision(result.state, `delegation to ${request.agentName} resolved to ${result.state}`, makeFingerprint("agent", "delegate", target), result.rule);
+  const fallback = defaultDecision(policy, hasUI);
+  const result = evaluateRule(policy?.subagents, delegationTargets(request), fallback, "subagents");
+  return decision(result.state, `delegation to ${request.agentName} resolved to ${result.state}`, makeFingerprint("subagent", "delegate", target), result.rule);
 }
 
 export function evaluateSkillPermission(
@@ -270,67 +323,79 @@ export function evaluateSkillPermission(
   skillName: string,
   hasUI: boolean,
 ): PermissionDecision {
-  const parts = composed(policy);
-  if (parts) {
-    const parentDecision = parts.parent ? evaluateSkillPermission(parts.parent, skillName, hasUI) : neutralDecision("skill", "use", skillName);
-    const childDecision = childPolicyForCategory(parts.child, "skills") ? evaluateSkillPermission(parts.child, skillName, hasUI) : neutralDecision("skill", "use", skillName);
-    return strictestDecision(parentDecision, childDecision);
-  }
-  const fallback = defaultDecision(policy, hasUI);
-  const result = evaluateNamedCategory(policy?.skills, skillName, fallback);
-  return decision(result.state, `skill ${skillName} resolved to ${result.state}`, makeFingerprint("skill", "use", skillName), result.rule);
+  return evaluateToolPermission(policy, `skill:${skillName}`, hasUI, skillName);
 }
 
 export function fingerprintEquals(a: ActionFingerprint, b: ActionFingerprint): boolean {
   return a.normalized === b.normalized;
 }
 
-function minDecision(a: DecisionState | undefined, b: DecisionState | undefined): DecisionState | undefined {
-  if (!a) return b;
-  if (!b) return a;
-  if (a === "deny" || b === "deny") return "deny";
-  if (a === "ask" || b === "ask") return "ask";
-  return "allow";
+function asRuleObject(rule: PermissionRule): PermissionRuleObject {
+  return isDecision(rule) ? { rules: [{ pattern: "*", decision: rule }] } : rule;
 }
 
-function mergeRuleSet(parent?: PatternRuleSet, child?: PatternRuleSet): PatternRuleSet | undefined {
-  if (!parent && !child) return undefined;
+function mergeRule(parent?: PermissionRule, child?: PermissionRule): PermissionRule | undefined {
+  if (!parent) return child;
+  if (!child) return parent;
+  if (isDecision(child)) return child;
+  return { rules: [...asRuleObject(parent).rules, ...child.rules] };
+}
+
+function asToolObject(rule: ToolPermission): ToolPermissionObject {
+  return isDecision(rule) ? { entries: [{ pattern: "*", rule }] } : rule;
+}
+
+function mergeTools(parent?: ToolPermission, child?: ToolPermission): ToolPermission | undefined {
+  if (!parent) return child;
+  if (!child) return parent;
+  if (isDecision(child)) return child;
+  return { entries: [...asToolObject(parent).entries, ...child.entries] };
+}
+
+export function mergePermissionPolicies(parent: PermissionPolicy | undefined, child: PermissionPolicy | undefined): PermissionPolicy {
   return {
-    default: minDecision(parent?.default, child?.default),
-    allow: [...(parent?.allow ?? []), ...(child?.allow ?? [])],
-    ask: [...(parent?.ask ?? []), ...(child?.ask ?? [])],
-    deny: [...(parent?.deny ?? []), ...(child?.deny ?? [])],
+    default: child?.default ?? parent?.default,
+    tools: mergeTools(parent?.tools, child?.tools),
+    bash: mergeRule(parent?.bash, child?.bash),
+    subagents: mergeRule(parent?.subagents, child?.subagents),
+    external_directory: mergeRule(parent?.external_directory, child?.external_directory),
   };
 }
 
-function mergeNamedCategory<T extends PatternRuleSet & Record<string, unknown>>(parent?: T, child?: T): T | undefined {
-  if (!parent && !child) return undefined;
-  const merged: Record<string, unknown> = { ...mergeRuleSet(parent, child) };
-  const keys = new Set([...Object.keys(parent ?? {}), ...Object.keys(child ?? {})]);
-  for (const key of keys) {
-    if (["default", "allow", "ask", "deny"].includes(key)) continue;
-    const parentValue = parent?.[key];
-    const childValue = child?.[key];
-    if (isDecision(parentValue) || isDecision(childValue)) merged[key] = minDecision(parentValue as DecisionState | undefined, childValue as DecisionState | undefined);
-    else if (typeof parentValue === "object" || typeof childValue === "object") merged[key] = mergeNamedCategory(parentValue as T | undefined, childValue as T | undefined);
-    else merged[key] = childValue ?? parentValue;
-  }
-  return merged as T;
+export function composePolicies(parent: PermissionPolicy | undefined, child: PermissionPolicy | undefined): PermissionPolicy {
+  return mergePermissionPolicies(parent, child);
 }
 
-export function composePolicies(parent: PermissionPolicy | undefined, child: PermissionPolicy | undefined): PermissionPolicy {
-  return withComposedPolicy({
-    default: minDecision(parent?.default, child?.default) ?? "deny",
-    tools: mergeNamedCategory(parent?.tools, child?.tools),
-    bash: mergeNamedCategory(parent?.bash, child?.bash),
-    files: mergeNamedCategory(parent?.files, child?.files),
-    agents: mergeNamedCategory(parent?.agents, child?.agents),
-    skills: mergeNamedCategory(parent?.skills, child?.skills),
-  }, parent, child);
+function toolRuleCanResolveNonDeny(rule: PermissionRule, fallback: DecisionState): boolean {
+  if (isDecision(rule)) return rule !== "deny";
+  const lastCatchAllIndex = rule.rules.findLastIndex((entry) => entry.pattern === "*");
+  if (lastCatchAllIndex >= 0) {
+    const catchAll = rule.rules[lastCatchAllIndex];
+    return catchAll.decision !== "deny" || rule.rules.slice(lastCatchAllIndex + 1).some((entry) => entry.decision !== "deny");
+  }
+  return fallback !== "deny" || rule.rules.some((entry) => entry.decision !== "deny");
+}
+
+export function isToolCategoricallyDenied(policy: PermissionPolicy | undefined, toolName: string, hasUI: boolean): boolean {
+  const fallback = defaultDecision(policy, hasUI);
+  const tools = policy?.tools;
+  if (!tools) return fallback === "deny";
+  if (isDecision(tools)) return tools === "deny";
+
+  let matchedEntry: ToolPermissionEntry | undefined;
+  for (const entry of tools.entries) {
+    if (matchesPattern(entry.pattern, toolName)) matchedEntry = entry;
+  }
+  if (!matchedEntry) return fallback === "deny";
+  return !toolRuleCanResolveNonDeny(matchedEntry.rule, fallback);
+}
+
+export function deriveActiveToolNames(policy: PermissionPolicy | undefined, toolNames: string[], hasUI: boolean): string[] {
+  return toolNames.filter((toolName) => !isToolCategoricallyDenied(policy, toolName, hasUI));
 }
 
 export function stablePolicyHash(policy: PermissionPolicy | undefined): string {
-  const json = JSON.stringify(policy ?? {}, Object.keys(policy ?? {}).sort());
+  const json = stableStringify(policy ?? {});
   let hash = 2166136261;
   for (let i = 0; i < json.length; i++) {
     hash ^= json.charCodeAt(i);

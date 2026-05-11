@@ -84,7 +84,7 @@ function parseYamlSubset(lines: string[], startIndex: number, indent: number): [
       continue;
     }
 
-    const key = match[1].trim();
+    const key = unquote(match[1].trim());
     const rest = match[2] ?? "";
     if (rest.trim() !== "") {
       obj[key] = parseScalar(rest);

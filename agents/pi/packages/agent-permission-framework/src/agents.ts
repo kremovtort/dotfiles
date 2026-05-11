@@ -2,7 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { parseFrontmatter, toBoolean, toStringArray } from "./frontmatter.ts";
-import type { AgentDefinition, AgentKind, AgentSource, PermissionPolicy, ThinkingLevel } from "./types.ts";
+import { normalizePermissionPolicy } from "./policy.ts";
+import type { AgentDefinition, AgentKind, AgentSource, ThinkingLevel } from "./types.ts";
 
 export interface AgentDiscoveryOptions {
   cwd: string;
@@ -75,8 +76,14 @@ export function parseAgentMarkdown(content: string, source: AgentSource, filePat
 
   const enabled = toBoolean(frontmatter.enabled) ?? true;
   const promptMode = frontmatter.prompt_mode === "append" ? "append" : "replace";
-  const permission = asRecord(frontmatter.permission) as PermissionPolicy | undefined;
   const tools = toStringArray(frontmatter.tools);
+  const disallowedTools = toStringArray(frontmatter.disallowed_tools);
+  let permission;
+  try {
+    permission = normalizePermissionPolicy(frontmatter.permission, { allowedTools: tools, disallowedTools });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
 
   return {
     name,
@@ -87,7 +94,7 @@ export function parseAgentMarkdown(content: string, source: AgentSource, filePat
     filePath,
     enabled,
     tools,
-    disallowedTools: toStringArray(frontmatter.disallowed_tools),
+    disallowedTools,
     model: asString(frontmatter.model),
     thinking: asThinking(frontmatter.thinking),
     maxTurns: asNumber(frontmatter.max_turns),

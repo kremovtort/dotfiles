@@ -2,9 +2,9 @@ import type { AgentRuntimeState } from "./runtime.ts";
 import {
   evaluateBashPermission,
   evaluateDelegationPermission,
-  evaluateFilePermission,
-  evaluateSkillPermission,
+  evaluateExternalDirectoryPermission,
   evaluateToolPermission,
+  normalizePathForPolicy,
 } from "./policy.ts";
 import type {
   AuditEntry,
@@ -49,26 +49,15 @@ function requestedAgent(input: Record<string, unknown>): DelegationRequest | und
   if (!agentName) return undefined;
   const model = inputString(input, ["model"]);
   const cwd = inputString(input, ["cwd"]);
-  const tools = Array.isArray(input.tools) ? input.tools.map(String) : undefined;
   return {
     agentName,
     background: input.run_in_background === true,
     modelOverride: model,
-    toolOverride: tools,
     inheritContext: input.inherit_context === true || input.inheritContext === true,
     inheritExtensions: input.inherit_extensions === true || input.inheritExtensions === true,
     inheritSkills: input.inherit_skills === true || input.inheritSkills === true,
     cwd,
   };
-}
-
-function requestedSkill(toolName: string, input: Record<string, unknown>, policy: PermissionPolicy | undefined): string | undefined {
-  if (toolName.startsWith("skill:")) return toolName.slice("skill:".length);
-  if (toolName.startsWith("skill.")) return toolName.slice("skill.".length);
-  if (["skill", "use_skill", "run_skill"].includes(toolName)) return inputString(input, ["skill", "skill_name", "skillName", "name"]);
-  const skills = policy?.skills as Record<string, unknown> | undefined;
-  if (skills && !["default", "allow", "ask", "deny"].includes(toolName) && Object.prototype.hasOwnProperty.call(skills, toolName)) return toolName;
-  return undefined;
 }
 
 function fileOperationForTool(toolName: string): "read" | "write" | "edit" | undefined {
@@ -82,6 +71,32 @@ function filePathForTool(input: Record<string, unknown>): string | undefined {
   const direct = inputString(input, ["path", "file_path", "filePath"]);
   if (direct) return direct;
   return undefined;
+}
+
+function stableInputString(input: Record<string, unknown>): string {
+  const stable = (value: unknown): string => {
+    if (value == null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stable(record[key])}`).join(",")}}`;
+  };
+  return stable(input);
+}
+
+function pathTargetForTool(input: Record<string, unknown>, cwd: string): string | undefined {
+  const rawPath = filePathForTool(input);
+  if (!rawPath) return undefined;
+  const normalized = normalizePathForPolicy(cwd, rawPath);
+  return normalized.external ? normalized.absolute : normalized.projectRelative;
+}
+
+function primaryTargetForTool(toolName: string, input: Record<string, unknown>, cwd: string): string {
+  if (toolName === "bash") return inputString(input, ["command"]) ?? stableInputString(input);
+  if (toolName === "subagent") return inputString(input, ["subagent_type", "agent", "type"]) ?? stableInputString(input);
+  if (toolName === "get_subagent_result" || toolName === "steer_subagent") return inputString(input, ["agent_id", "run_id", "id"]) ?? stableInputString(input);
+  const pathTarget = pathTargetForTool(input, cwd);
+  if (pathTarget) return pathTarget;
+  return inputString(input, ["skill", "skill_name", "skillName", "query", "pattern", "glob", "url", "uri", "command", "name"]) ?? stableInputString(input);
 }
 
 let approvalQueue: Promise<void> = Promise.resolve();
@@ -119,7 +134,8 @@ export function evaluateToolCall(
 ): PermissionDecision {
   const hasUI = ctx.hasUI !== false;
   const includeDelegation = options.includeDelegation ?? true;
-  const decisions = [evaluateToolPermission(policy, event.toolName, hasUI)];
+  const target = primaryTargetForTool(event.toolName, event.input, ctx.cwd);
+  const decisions = [evaluateToolPermission(policy, event.toolName, hasUI, target)];
 
   if (event.toolName === "bash") {
     const command = inputString(event.input, ["command"]);
@@ -131,12 +147,12 @@ export function evaluateToolCall(
     if (request) decisions.push(evaluateDelegationPermission(policy, request, hasUI));
   }
 
-  const skillName = requestedSkill(event.toolName, event.input, policy);
-  if (skillName) decisions.push(evaluateSkillPermission(policy, skillName, hasUI));
-
   const operation = fileOperationForTool(event.toolName);
   const filePath = filePathForTool(event.input);
-  if (operation && filePath) decisions.push(evaluateFilePermission(policy, operation, filePath, ctx.cwd, hasUI));
+  if (operation && filePath) {
+    const normalized = normalizePathForPolicy(ctx.cwd, filePath);
+    if (normalized.external) decisions.push(evaluateExternalDirectoryPermission(policy, filePath, ctx.cwd, hasUI));
+  }
 
   return strictest(decisions);
 }

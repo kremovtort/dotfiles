@@ -1,8 +1,4 @@
-## Purpose
-
-Define the expected permission policy, enforcement, approval, and audit behavior for the Pi agent permission framework.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Permission policies are normalized from agent and framework configuration
 The framework MUST parse OpenCode-compatible permission policies from agent definitions and framework-level defaults into a single normalized policy model. The normalized model SHALL support `allow`, `ask`, and `deny` decisions for the `tools`, `bash`, `subagents`, and top-level `external_directory` permission entries. A `permission` value MAY be a single decision string that applies as the default for the policy, or an object containing supported permission entries and a `*` default rule. MCP access, skill-specific permissions, and Pi-specific special operations are deferred to future changes unless they are represented as ordinary tool permissions under `tools`.
@@ -52,30 +48,6 @@ The framework MUST evaluate policy rules deterministically. Within a single Open
 - **WHEN** an action has no matching rule and no configured default
 - **AND** the session has no interactive UI
 - **THEN** the framework SHALL deny the action
-
-### Requirement: Tool calls are enforced against the active agent identity
-The framework MUST evaluate every model-requested tool call against the active runtime identity before execution. Denied tool calls SHALL be blocked. Approval-required tool calls SHALL execute only after an approval is granted for the active identity and action fingerprint. Interactive approval prompts SHALL present shared permission details as request-level prompt content and SHALL keep response choices as concise decision labels.
-
-#### Scenario: Allowed tool call executes
-- **WHEN** the active agent requests a tool call that its effective policy allows
-- **THEN** the framework SHALL allow the tool call to execute
-
-#### Scenario: Denied tool call is blocked
-- **WHEN** the active agent requests a tool call that its effective policy denies
-- **THEN** the framework SHALL block the tool call before execution
-- **AND** the tool result SHALL communicate that the action was denied by policy
-
-#### Scenario: Approval-required tool call prompts user
-- **WHEN** the active agent requests a tool call that resolves to `ask`
-- **AND** an interactive UI is available
-- **THEN** the framework SHALL prompt the user with the agent identity, action summary, matched rule, and approval scope as request-level permission details
-- **AND** each response choice SHALL contain only the decision label for that choice
-- **AND** the tool call SHALL execute only if the user approves it
-
-#### Scenario: Approval-required tool call fails closed without UI
-- **WHEN** the active agent requests a tool call that resolves to `ask`
-- **AND** no interactive UI is available
-- **THEN** the framework SHALL deny the tool call before execution
 
 ### Requirement: Bash commands are classified and permissioned separately from the bash tool name
 The framework MUST evaluate bash command content, working directory, and relevant execution metadata in addition to the generic `bash` tool permission. Bash policies SHALL use the OpenCode-style `bash` entry, where the entry is either a direct permission action or an ordered object of command-pattern rules. Commands that do not match explicit bash rules SHALL resolve using the effective bash default decision.
@@ -130,6 +102,8 @@ The framework MUST evaluate subagent delegation requests before creating any chi
 - **THEN** the framework SHALL require explicit user approval before launching that subagent
 - **AND** the framework SHALL deny the launch without UI unless policy explicitly allows trusted project agents
 
+## ADDED Requirements
+
 ### Requirement: Subagent effective policy uses OpenCode override layering
 The framework MUST compose framework defaults, parent runtime defaults, and subagent-local permission policies using OpenCode override semantics. Broader policy layers SHALL be applied first, more specific agent-local layers SHALL be applied later, ordered rule objects SHALL be appended in layer order, and later matching rules SHALL take precedence within each permission entry. A subagent-local permission policy SHALL be able to narrow or broaden inherited defaults after the parent has allowed the delegation through the `subagents` permission entry.
 
@@ -147,85 +121,9 @@ The framework MUST compose framework defaults, parent runtime defaults, and suba
 - **WHEN** a parent policy denies delegation to a requested subagent through `permission.subagents`
 - **THEN** the framework SHALL block the subagent launch before applying the child runtime policy
 
-### Requirement: Temporary approvals are scoped and persisted
-The framework MUST scope temporary approvals to the active agent identity, action fingerprint, and selected approval scope. Persisted session approvals SHALL be reconstructable on session resume and SHALL NOT apply to unrelated agents or different action fingerprints.
+## REMOVED Requirements
 
-#### Scenario: Approval is reused for matching action
-- **WHEN** the user approves an action with a reusable scope
-- **AND** the same agent identity requests the same action fingerprint within that scope
-- **THEN** the framework SHALL allow the action without prompting again
+### Requirement: Subagent effective policy cannot exceed parent delegation grant
+**Reason**: Subagent effective-policy composition now follows OpenCode override semantics, where the more specific agent policy takes precedence over inherited defaults after delegation is allowed.
 
-#### Scenario: Approval does not cross identities
-- **WHEN** one agent identity has an approval for an action fingerprint
-- **AND** a different agent identity requests the same action fingerprint
-- **THEN** the framework SHALL evaluate the request independently of the other identity's approval
-
-#### Scenario: Session resume restores unexpired approvals
-- **WHEN** a session is resumed with persisted unexpired approvals
-- **THEN** the framework SHALL restore those approvals before evaluating new actions
-
-### Requirement: Permission decisions are auditable
-The framework MUST record permission decisions, denials, user approvals, subagent delegation checks, policy hashes, and active identity information in session-persistent audit data. Audit data SHALL be sufficient to explain why an action was allowed, denied, or prompted.
-
-#### Scenario: Denied action records audit entry
-- **WHEN** the framework denies an action
-- **THEN** it SHALL record the agent identity, action summary, decision, and matched rule or default reason in audit data
-
-#### Scenario: Approved action records approval scope
-- **WHEN** the user approves an `ask` action
-- **THEN** the framework SHALL record the approval scope and policy context used for that decision
-
-#### Scenario: Explain command reports matched policy
-- **WHEN** the user requests an explanation for a prior permission decision
-- **THEN** the framework SHALL present the recorded identity, action fingerprint, decision, and matched rule or default reason
-
-### Requirement: Prompt and active-tool shaping are advisory, not authoritative
-The framework MUST use prompt injection and active-tool selection only as user-experience and model-guidance mechanisms. The pre-execution permission check SHALL remain the authoritative enforcement point for actions that reach tool execution.
-
-#### Scenario: Inactive tool call is still checked if requested
-- **WHEN** the model requests a tool call that was not included in the current active tool set
-- **THEN** the framework SHALL still evaluate the call through the permission engine before any execution can occur
-
-#### Scenario: Prompt instruction cannot bypass deny rule
-- **WHEN** the prompt or conversation text instructs the agent to ignore permissions
-- **AND** the requested action matches a deny rule
-- **THEN** the framework SHALL deny the action
-
-### Requirement: Subagent approval requests are parent-mediated
-The framework MUST route approval-required tool calls from delegated subagents through a parent-visible permission approval bridge. The bridge SHALL request only the permission decision from the parent UI and SHALL NOT expose the full parent extension UI surface to the child session.
-
-#### Scenario: Child ask prompts in parent-visible UI
-- **WHEN** a running subagent requests a tool call that resolves to `ask` under its effective policy
-- **AND** a parent-visible interactive UI is available
-- **THEN** the framework SHALL present a permission prompt in the parent-visible UI before executing the tool call
-- **AND** the prompt SHALL identify the subagent runtime identity, action fingerprint, action summary, matched rule when available, and approval scope choices
-- **AND** the child tool call SHALL execute only if the user approves the request
-
-#### Scenario: Child approval remains scoped to child identity
-- **WHEN** the user approves a subagent permission request through the parent-visible bridge
-- **THEN** the framework SHALL persist the approval against the subagent runtime identity and action fingerprint
-- **AND** the approval SHALL NOT apply to the parent main agent, sibling subagents, or different action fingerprints
-
-#### Scenario: Child ask denies without parent-visible approval path
-- **WHEN** a running subagent requests a tool call that resolves to `ask`
-- **AND** no parent-visible approval path is available
-- **THEN** the framework SHALL deny the tool call before execution
-- **AND** the denial reason SHALL state that interactive approval is unavailable for the subagent request
-
-#### Scenario: Child ask denies on approval timeout or abort
-- **WHEN** a running subagent permission request is waiting for user approval
-- **AND** the approval timeout expires or the relevant abort signal is cancelled before the user approves
-- **THEN** the framework SHALL deny the child tool call before execution
-- **AND** the denial reason SHALL identify timeout or abort as the reason
-
-### Requirement: Subagent permission waits are auditable
-The framework MUST record subagent permission approval waits and their final outcomes in session-persistent audit data. Audit records SHALL be sufficient to distinguish an allowed, user-denied, timeout-denied, abort-denied, and UI-unavailable subagent request.
-
-#### Scenario: Pending child approval records audit context
-- **WHEN** a subagent tool call enters a pending approval wait
-- **THEN** the framework SHALL record audit data containing the subagent identity, action fingerprint, action summary, matched rule when available, and pending approval state
-
-#### Scenario: Resolved child approval records final outcome
-- **WHEN** a pending subagent permission request resolves
-- **THEN** the framework SHALL record whether the request was approved or denied
-- **AND** the record SHALL include the approval scope or denial reason used for the decision
+**Migration**: Policies that previously relied on parent/child intersection MUST express launch restrictions in the parent's `permission.subagents` rules or delegate to a subagent profile whose own `permission` block encodes the desired limits.

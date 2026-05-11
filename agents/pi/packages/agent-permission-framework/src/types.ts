@@ -1,46 +1,37 @@
 export type DecisionState = "allow" | "ask" | "deny";
+export type PermissionAction = DecisionState;
 export type AgentKind = "main" | "subagent";
 export type AgentSource = "builtin" | "user" | "project" | "child";
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 
-export interface PatternRuleSet {
-  default?: DecisionState;
-  allow?: string[];
-  ask?: string[];
-  deny?: string[];
+export interface PermissionPatternRule {
+  pattern: string;
+  decision: PermissionAction;
 }
 
-export type NamedDecisionMap = Record<string, DecisionState | undefined>;
-
-export interface FilePolicy extends PatternRuleSet {
-  read?: PatternRuleSet;
-  write?: PatternRuleSet;
-  edit?: PatternRuleSet;
-  external_directory?: DecisionState | PatternRuleSet;
+export interface PermissionRuleObject {
+  rules: PermissionPatternRule[];
 }
 
-export interface BashPolicy extends PatternRuleSet {
-  readOnly?: boolean;
-  cwd?: PatternRuleSet;
+export type PermissionRule = PermissionAction | PermissionRuleObject;
+
+export interface ToolPermissionEntry {
+  pattern: string;
+  rule: PermissionRule;
 }
 
-export interface DelegationPolicy extends PatternRuleSet {
-  background?: PatternRuleSet | DecisionState;
-  project?: DecisionState;
-  model_override?: DecisionState;
-  tool_override?: DecisionState;
-  context_inheritance?: DecisionState;
-  extension_inheritance?: DecisionState;
-  skill_inheritance?: DecisionState;
+export interface ToolPermissionObject {
+  entries: ToolPermissionEntry[];
 }
+
+export type ToolPermission = PermissionAction | ToolPermissionObject;
 
 export interface PermissionPolicy {
-  default?: DecisionState;
-  tools?: PatternRuleSet & NamedDecisionMap;
-  bash?: BashPolicy;
-  files?: FilePolicy;
-  agents?: DelegationPolicy & NamedDecisionMap;
-  skills?: PatternRuleSet & NamedDecisionMap;
+  default?: PermissionAction;
+  tools?: ToolPermission;
+  bash?: PermissionRule;
+  subagents?: PermissionRule;
+  external_directory?: PermissionRule;
 }
 
 export interface AgentDefinition {
@@ -51,7 +42,9 @@ export interface AgentDefinition {
   source: AgentSource;
   filePath?: string;
   enabled: boolean;
+  /** @deprecated Legacy migration input only. Runtime tool availability is derived from permission. */
   tools?: string[];
+  /** @deprecated Legacy migration input only. Runtime tool availability is derived from permission. */
   disallowedTools?: string[];
   model?: string;
   thinking?: ThinkingLevel;
@@ -77,7 +70,7 @@ export interface AgentIdentity {
 }
 
 export interface ActionFingerprint {
-  category: "tool" | "bash" | "file" | "agent" | "skill";
+  category: "tool" | "bash" | "file" | "subagent" | "agent" | "skill";
   operation: string;
   target: string;
   normalized: string;
@@ -140,7 +133,6 @@ export interface DelegationRequest {
   source?: AgentSource;
   background?: boolean;
   modelOverride?: string;
-  toolOverride?: string[];
   inheritContext?: boolean;
   inheritExtensions?: boolean;
   inheritSkills?: boolean;

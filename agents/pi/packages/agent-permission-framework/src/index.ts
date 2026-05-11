@@ -4,7 +4,7 @@ import { AgentRuntimeState, persistAudit, persistRuntime, restoreRuntimeFromSess
 import { builtinAgents } from "./builtins.ts";
 import { discoverAgents, findAgent, selectMainAgents } from "./agents.ts";
 import { enforceDecision, evaluateToolCall } from "./enforcement.ts";
-import { stablePolicyHash } from "./policy.ts";
+import { deriveActiveToolNames, stablePolicyHash } from "./policy.ts";
 import { registerSubagentTools, SUBAGENT_RUN_ENTRY, SubagentRegistry } from "./subagents.ts";
 import { SubagentWidget } from "./subagent-widget.ts";
 import type { AgentDefinition, PermissionPolicy } from "./types.ts";
@@ -25,7 +25,8 @@ function getEntries(ctx: ExtensionContext): Array<Record<string, unknown>> {
 }
 
 async function applyMainAgentSettings(pi: ExtensionAPI, ctx: ExtensionContext, agent: AgentDefinition): Promise<void> {
-  if (agent.tools?.length) pi.setActiveTools(agent.tools);
+  const availableTools = pi.getAllTools().map((tool) => tool.name);
+  pi.setActiveTools(deriveActiveToolNames(agent.permission, availableTools, ctx.hasUI !== false));
   if (agent.thinking) pi.setThinkingLevel(agent.thinking);
   if (agent.model) {
     const parsed = splitModel(agent.model);
