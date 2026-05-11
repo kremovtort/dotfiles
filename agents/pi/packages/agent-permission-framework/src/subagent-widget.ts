@@ -92,6 +92,7 @@ function truncateLine(text: string, len = 60): string {
 }
 
 function describeActivity(run: SubagentRunRecord): string {
+  if (run.pendingPermission) return `waiting for permission: ${run.pendingPermission.action}`;
   if (run.activeTools && run.activeTools.length > 0) {
     const groups = new Map<string, number>();
     for (const toolName of run.activeTools) {

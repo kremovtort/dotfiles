@@ -5,7 +5,7 @@ import { AgentRuntimeState } from "../src/runtime.ts";
 import { shouldWaitForSubagentResult, waitForSubagentResult } from "../src/subagent-result-wait.ts";
 import { finalSubagentStatus } from "../src/subagent-status.ts";
 import { SubagentRegistry } from "../src/subagent-registry.ts";
-import type { AgentDefinition, AgentIdentity, SubagentRunRecord } from "../src/types.ts";
+import type { AgentDefinition, AgentIdentity, PermissionApprovalBroker, PendingPermissionRequest, SubagentRunRecord } from "../src/types.ts";
 
 test("max-turn soft-limit wrap-up finalizes as steered", () => {
   assert.equal(finalSubagentStatus({ aborted: false, softLimitReached: true }), "steered");
@@ -224,6 +224,48 @@ test("failed setup releases capacity and promotes queued runs", async () => {
   assert.equal(completed.status, "completed");
   assert.equal(completed.output, "ok");
   assert.deepEqual(registry.stats(), { active: 0, queued: 0, total: 2 });
+});
+
+test("approval broker stays internal while pending permission metadata is public", async () => {
+  const broker: PermissionApprovalBroker = { requestApproval: async () => ({ outcome: "approved", scope: "once" }) };
+  const pending: PendingPermissionRequest = {
+    fingerprint: { category: "tool", operation: "call", target: "bash", normalized: "tool:call:bash" },
+    action: "tool:call:bash",
+    reason: "matched ask rule",
+    requestedAt: 1,
+  };
+  const updates: Array<string | undefined> = [];
+  const registry = new SubagentRegistry(1, (run) => updates.push(run.pendingPermission?.action), undefined, async (run, helpers) => {
+    assert.equal(run.approvalBroker, broker);
+    assert.equal((helpers as any).approvalBroker, undefined);
+    run.pendingPermission = pending;
+    helpers.update(run);
+    run.pendingPermission = undefined;
+    helpers.update(run);
+    run.output = "done";
+    run.status = "completed";
+  });
+
+  const { run, completion } = registry.start({
+    agent: testAgent,
+    task: "permission",
+    description: "permission",
+    cwd: "/tmp",
+    parentIdentity,
+    runtime: new AgentRuntimeState(),
+    ctx: {} as any,
+    background: true,
+    approvalBroker: broker,
+  });
+
+  assert.equal((run as any).approvalBroker, undefined);
+  assert.equal(registry.get(run.id)?.approvalBroker, broker);
+  assert.equal((registry.publicRun(registry.get(run.id)!) as any).approvalBroker, undefined);
+
+  await completion;
+
+  assert.ok(updates.includes("tool:call:bash"));
+  assert.equal(registry.publicRun(registry.get(run.id)!).pendingPermission, undefined);
 });
 
 test("restore keeps latest record and marks non-live queued or running records aborted", () => {

@@ -9,7 +9,7 @@ export const builtinAgents: AgentDefinition[] = [
     enabled: true,
     promptMode: "append",
     tools: ["read", "grep", "find", "ls", "bash", "subagent", "get_subagent_result", "steer_subagent"],
-    thinking: "high",
+    thinking: "xhigh",
     prompt: [
       "You are the plan main agent.",
       "Explore and reason carefully, but do not mutate files or system state.",
@@ -17,9 +17,9 @@ export const builtinAgents: AgentDefinition[] = [
       "Produce concise plans, risks, and verification steps.",
     ].join("\n"),
     permission: {
-      default: "ask",
+      default: "allow",
       tools: {
-        default: "ask",
+        default: "allow",
         read: "allow",
         grep: "allow",
         find: "allow",
@@ -33,8 +33,8 @@ export const builtinAgents: AgentDefinition[] = [
       },
       bash: {
         readOnly: true,
-        default: "deny",
-        deny: ["\\brm\\b", "\\bsudo\\b", "\\bchmod\\b", "\\bchown\\b", ">", ">>"],
+        default: "allow",
+        deny: ["rm *", "sudo *", "chmod *", "chown *", ">", ">>"],
       },
       files: {
         default: "ask",
@@ -71,7 +71,7 @@ export const builtinAgents: AgentDefinition[] = [
     enabled: true,
     promptMode: "append",
     tools: ["read", "grep", "find", "ls", "bash", "edit", "write", "subagent", "get_subagent_result", "steer_subagent"],
-    thinking: "high",
+    thinking: "xhigh",
     prompt: [
       "You are the build main agent.",
       "Make focused implementation changes and use permission prompts for risky actions.",

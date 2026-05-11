@@ -100,6 +100,32 @@ export interface ApprovalRecord {
   turnsRemaining?: number;
 }
 
+export type PermissionApprovalScope = "once" | "session";
+
+export type PermissionApprovalResult =
+  | { outcome: "approved"; scope: PermissionApprovalScope }
+  | { outcome: "denied" | "timeout" | "aborted" | "unavailable"; reason?: string };
+
+export interface PermissionApprovalRequest {
+  identity: AgentIdentity;
+  decision: PermissionDecision;
+  message: string;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
+
+export interface PermissionApprovalBroker {
+  requestApproval(request: PermissionApprovalRequest): Promise<PermissionApprovalResult>;
+}
+
+export interface PendingPermissionRequest {
+  fingerprint: ActionFingerprint;
+  action: string;
+  reason: string;
+  matchedRule?: string;
+  requestedAt: number;
+}
+
 export interface AuditEntry {
   id: string;
   timestamp: number;
@@ -140,5 +166,6 @@ export interface SubagentRunRecord {
   toolUses?: number;
   activeTools?: string[];
   queuedPosition?: number;
+  pendingPermission?: PendingPermissionRequest;
   steering: string[];
 }

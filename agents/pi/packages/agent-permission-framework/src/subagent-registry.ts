@@ -1,4 +1,4 @@
-import type { AgentDefinition, AgentIdentity, AuditEntry, PermissionPolicy, SubagentRunRecord } from "./types.ts";
+import type { AgentDefinition, AgentIdentity, AuditEntry, PermissionApprovalBroker, PermissionPolicy, SubagentRunRecord } from "./types.ts";
 import { composePolicies } from "./policy.ts";
 import { AgentRuntimeState } from "./runtime.ts";
 
@@ -15,6 +15,8 @@ export type RunRecordInternal = SubagentRunRecord & {
   inheritContext?: boolean;
   inheritExtensions?: boolean;
   inheritSkills?: boolean;
+  approvalBroker?: PermissionApprovalBroker;
+  approvalTimeoutMs?: number;
 };
 
 export type SubagentExecutorHelpers = {
@@ -103,6 +105,8 @@ export class SubagentRegistry {
     inheritContext?: boolean;
     inheritExtensions?: boolean;
     inheritSkills?: boolean;
+    approvalBroker?: PermissionApprovalBroker;
+    approvalTimeoutMs?: number;
   }): { run: SubagentRunRecord; completion: Promise<SubagentRunRecord> } {
     const runId = id();
     const effectivePolicy = composePolicies(options.parentPolicy, options.agent.permission);
@@ -128,6 +132,8 @@ export class SubagentRegistry {
       inheritContext: options.inheritContext ?? options.agent.inheritContext ?? false,
       inheritExtensions: options.inheritExtensions ?? options.agent.inheritExtensions ?? false,
       inheritSkills: options.inheritSkills ?? options.agent.inheritSkills ?? true,
+      approvalBroker: options.approvalBroker,
+      approvalTimeoutMs: options.approvalTimeoutMs,
     };
     const completion = new Promise<SubagentRunRecord>((resolve) => {
       run.resolve = resolve;
@@ -162,6 +168,8 @@ export class SubagentRegistry {
       inheritContext: _inheritContext,
       inheritExtensions: _inheritExtensions,
       inheritSkills: _inheritSkills,
+      approvalBroker: _approvalBroker,
+      approvalTimeoutMs: _approvalTimeoutMs,
       ...serializable
     } = run;
     const queuedIndex = run.status === "queued" ? this.queue.findIndex((queued) => queued.id === run.id) : -1;

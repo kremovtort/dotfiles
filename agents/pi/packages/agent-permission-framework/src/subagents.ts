@@ -11,7 +11,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { AgentDefinition, SubagentRunRecord } from "./types.ts";
 import { AgentRuntimeState, persistAudit, persistRuntime } from "./runtime.ts";
-import { enforceDecision, evaluateToolCall } from "./enforcement.ts";
+import { createUIApprovalBroker, enforceDecision, evaluateToolCall } from "./enforcement.ts";
 import { withoutRecursiveFrameworkExtension } from "./extension-filter.ts";
 import { evaluateDelegationPermission } from "./policy.ts";
 import { shouldWaitForSubagentResult, waitForSubagentResult } from "./subagent-result-wait.ts";
@@ -109,6 +109,7 @@ function formatTurns(turnCount: number, maxTurns?: number): string {
 }
 
 function describeActivity(run: SubagentRunRecord): string {
+  if (run.pendingPermission) return `waiting for permission: ${run.pendingPermission.action}`;
   if (run.output) return tail(run.output.replace(/\s+/g, " "), 120);
   if (run.error) return `error: ${tail(run.error.replace(/\s+/g, " "), 120)}`;
   return run.toolUses ? "using tools…" : "thinking…";
@@ -213,7 +214,9 @@ function formatRunProgress(run: SubagentRunRecord): string {
   const lines = [`Subagent ${run.agentName} (${run.id}) is ${run.status}${queueSuffix}${parts.length ? ` — ${parts.join(", ")}` : ""}`];
   if (run.status === "queued") lines.push("Waiting for an execution slot.");
   if (run.status === "running" && run.sessionId) lines.push(`Session: ${run.sessionId}`);
-  if (run.output) lines.push("", "Latest output:", tail(run.output));
+  if (run.pendingPermission) {
+    lines.push("", `Waiting for permission: ${run.pendingPermission.action}`, `Reason: ${run.pendingPermission.reason}`);
+  } else if (run.output) lines.push("", "Latest output:", tail(run.output));
   else if (run.error) lines.push("", "Latest error:", tail(run.error));
   else if (run.status === "running") lines.push("", "No assistant output yet; the subagent may be thinking, waiting for provider response, or executing tools.");
   return lines.join("\n");
@@ -298,10 +301,17 @@ async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecu
               childRuntime.activePolicy,
               { includeDelegation: event.toolName !== "subagent" },
             );
-            const result = await enforceDecision(childRuntime, decision, childCtx);
-            const lastAudit = childRuntime.audit.at(-1);
-            if (lastAudit) helpers.audit(lastAudit);
-            return result;
+            return enforceDecision(childRuntime, decision, childCtx, {
+              approvalBroker: run.approvalBroker,
+              allowContextUI: false,
+              approvalTimeoutMs: run.approvalTimeoutMs,
+              signal: run.signal ?? childCtx.signal,
+              onPendingApproval: (pending) => {
+                run.pendingPermission = pending;
+                helpers.update(run);
+              },
+              onAudit: (audit) => helpers.audit(audit),
+            });
           });
         },
       ],
@@ -511,6 +521,7 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
         inheritContext: params.inherit_context,
         inheritExtensions: params.inherit_extensions,
         inheritSkills: params.inherit_skills,
+        approvalBroker: createUIApprovalBroker(ctx),
       });
       if (background) {
         const isQueued = run.status === "queued";

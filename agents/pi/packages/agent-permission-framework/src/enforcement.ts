@@ -6,7 +6,16 @@ import {
   evaluateSkillPermission,
   evaluateToolPermission,
 } from "./policy.ts";
-import type { DelegationRequest, PermissionDecision, PermissionPolicy } from "./types.ts";
+import type {
+  AuditEntry,
+  DelegationRequest,
+  PendingPermissionRequest,
+  PermissionApprovalBroker,
+  PermissionApprovalRequest,
+  PermissionApprovalResult,
+  PermissionDecision,
+  PermissionPolicy,
+} from "./types.ts";
 
 export interface ToolCallLike {
   toolName: string;
@@ -14,12 +23,15 @@ export interface ToolCallLike {
   toolCallId?: string;
 }
 
+type UIRequestOptions = { signal?: AbortSignal; timeout?: number };
+
 export interface EnforcementContextLike {
   cwd: string;
   hasUI?: boolean;
+  signal?: AbortSignal;
   ui?: {
-    confirm?: (title: string, message: string) => Promise<boolean>;
-    select?: (title: string, options: string[]) => Promise<string | undefined>;
+    confirm?: (title: string, message: string, options?: UIRequestOptions) => Promise<boolean>;
+    select?: (title: string, options: string[], requestOptions?: UIRequestOptions) => Promise<string | undefined>;
     notify?: (message: string, level?: "info" | "warning" | "error" | "success") => void;
   };
 }
@@ -129,58 +141,190 @@ export function evaluateToolCall(
   return strictest(decisions);
 }
 
-export async function enforceDecision(
+const DEFAULT_APPROVAL_TIMEOUT_MS = 5 * 60 * 1000;
+
+export interface EnforceDecisionOptions {
+  approvalBroker?: PermissionApprovalBroker;
+  allowContextUI?: boolean;
+  signal?: AbortSignal;
+  approvalTimeoutMs?: number;
+  onPendingApproval?: (pending: PendingPermissionRequest | undefined) => void;
+  onAudit?: (audit: AuditEntry) => void;
+}
+
+function recordAudit(
   runtime: AgentRuntimeState,
   decision: PermissionDecision,
-  ctx: EnforcementContextLike,
-): Promise<{ block?: true; reason?: string } | undefined> {
-  const identity = runtime.activeIdentity;
+  approved: boolean,
+  details: Record<string, unknown> | undefined,
+  options: EnforceDecisionOptions | undefined,
+): AuditEntry {
+  const entry = runtime.addAudit(decision, approved, details);
+  options?.onAudit?.(entry);
+  return entry;
+}
 
-  if (decision.state === "allow" || runtime.hasApproval(identity, decision.fingerprint)) {
-    runtime.addAudit(decision, decision.state === "ask");
-    return undefined;
-  }
-
-  if (decision.state === "deny") {
-    runtime.addAudit(decision, false);
-    ctx.ui?.notify?.(`Permission denied: ${decision.reason}`, "warning");
-    return { block: true, reason: decision.reason };
-  }
-
-  if (ctx.hasUI === false || (!ctx.ui?.select && !ctx.ui?.confirm) || !identity) {
-    const denied: PermissionDecision = { ...decision, state: "deny", reason: `${decision.reason}; denied because no interactive approval is available` };
-    runtime.addAudit(denied, false);
-    return { block: true, reason: denied.reason };
-  }
-
-  const message = [
+function approvalMessage(identity: NonNullable<AgentRuntimeState["activeIdentity"]>, decision: PermissionDecision): string {
+  return [
     `Agent: ${identity.agentName} (${identity.kind})`,
     `Action: ${decision.fingerprint.normalized}`,
     `Decision: ${decision.reason}`,
     decision.matchedRule ? `Rule: ${decision.matchedRule}` : undefined,
   ].filter(Boolean).join("\n");
+}
 
-  const scope = await serializeApproval<"once" | "session" | undefined>(async () => {
-    if (ctx.ui?.select) {
-      const choice = await ctx.ui.select(`Required permission\n\n${message}`, [
-        "Allow once",
-        "Allow for this session",
-        "Deny",
-      ]);
-      if (choice?.startsWith("Allow once")) return "once";
-      if (choice?.startsWith("Allow for this session")) return "session";
-      return undefined;
-    }
-    const approved = await ctx.ui?.confirm?.("Permission required", `${message}\n\nAllow this action once?`);
-    return approved ? "once" : undefined;
-  });
+function unavailableApprovalReason(identity: NonNullable<AgentRuntimeState["activeIdentity"]> | undefined): string {
+  return identity?.kind === "subagent"
+    ? "denied because no parent-visible interactive approval is available for the subagent request"
+    : "denied because no interactive approval is available";
+}
 
-  if (!scope) {
-    runtime.addAudit({ ...decision, state: "deny", reason: `${decision.reason}; denied by user` }, false);
-    return { block: true, reason: "Permission denied by user" };
+export function createUIApprovalBroker(ctx: EnforcementContextLike): PermissionApprovalBroker | undefined {
+  if (ctx.hasUI === false || (!ctx.ui?.select && !ctx.ui?.confirm)) return undefined;
+  return {
+    async requestApproval(request: PermissionApprovalRequest): Promise<PermissionApprovalResult> {
+      if (ctx.ui?.select) {
+        const choice = await ctx.ui.select(`Required permission\n\n${request.message}`, [
+          "Allow once",
+          "Allow for this session",
+          "Deny",
+        ], { signal: request.signal });
+        if (choice?.startsWith("Allow once")) return { outcome: "approved", scope: "once" };
+        if (choice?.startsWith("Allow for this session")) return { outcome: "approved", scope: "session" };
+        return { outcome: "denied", reason: "Permission denied by user" };
+      }
+      const approved = await ctx.ui?.confirm?.("Permission required", `${request.message}\n\nAllow this action once?`, { signal: request.signal });
+      return approved ? { outcome: "approved", scope: "once" } : { outcome: "denied", reason: "Permission denied by user" };
+    },
+  };
+}
+
+async function requestApprovalWithGuards(
+  broker: PermissionApprovalBroker,
+  request: PermissionApprovalRequest,
+): Promise<PermissionApprovalResult> {
+  if (request.signal?.aborted) return { outcome: "aborted", reason: "Permission approval aborted" };
+
+  const controller = new AbortController();
+  const cleanup: Array<() => void> = [];
+  let settledByGuard = false;
+
+  if (request.signal) {
+    const onAbort = () => {
+      settledByGuard = true;
+      controller.abort();
+    };
+    request.signal.addEventListener("abort", onAbort, { once: true });
+    cleanup.push(() => request.signal?.removeEventListener("abort", onAbort));
   }
 
-  runtime.addApproval(identity, decision.fingerprint, scope);
-  runtime.addAudit(decision, true, { approvalScope: scope });
+  const brokerPromise = broker.requestApproval({ ...request, signal: controller.signal }).catch((error): PermissionApprovalResult => ({
+    outcome: settledByGuard ? "aborted" : "unavailable",
+    reason: error instanceof Error ? error.message : String(error),
+  }));
+
+  const races: Array<Promise<PermissionApprovalResult>> = [brokerPromise];
+
+  if (request.signal) {
+    races.push(new Promise<PermissionApprovalResult>((resolve) => {
+      const onAbort = () => {
+        settledByGuard = true;
+        resolve({ outcome: "aborted", reason: "Permission approval aborted" });
+        controller.abort();
+      };
+      request.signal?.addEventListener("abort", onAbort, { once: true });
+      cleanup.push(() => request.signal?.removeEventListener("abort", onAbort));
+    }));
+  }
+
+  if (request.timeoutMs != null && request.timeoutMs > 0) {
+    races.push(new Promise<PermissionApprovalResult>((resolve) => {
+      const timeout = setTimeout(() => {
+        settledByGuard = true;
+        resolve({ outcome: "timeout", reason: `Permission approval timed out after ${request.timeoutMs}ms` });
+        controller.abort();
+      }, request.timeoutMs);
+      cleanup.push(() => clearTimeout(timeout));
+    }));
+  }
+
+  try {
+    return await Promise.race(races);
+  } finally {
+    for (const dispose of cleanup) dispose();
+  }
+}
+
+function denialReasonForApprovalOutcome(decision: PermissionDecision, result: Exclude<PermissionApprovalResult, { outcome: "approved" }>): string {
+  if (result.reason) return result.reason;
+  if (result.outcome === "timeout") return "Permission approval timed out";
+  if (result.outcome === "aborted") return "Permission approval aborted";
+  if (result.outcome === "unavailable") return "Permission approval unavailable";
+  return "Permission denied by user";
+}
+
+export async function enforceDecision(
+  runtime: AgentRuntimeState,
+  decision: PermissionDecision,
+  ctx: EnforcementContextLike,
+  options: EnforceDecisionOptions = {},
+): Promise<{ block?: true; reason?: string } | undefined> {
+  const identity = runtime.activeIdentity;
+
+  if (decision.state === "allow" || runtime.hasApproval(identity, decision.fingerprint)) {
+    recordAudit(runtime, decision, decision.state === "ask", decision.state === "ask" ? { approvalState: "reused" } : undefined, options);
+    return undefined;
+  }
+
+  if (decision.state === "deny") {
+    recordAudit(runtime, decision, false, { approvalState: "not_required" }, options);
+    ctx.ui?.notify?.(`Permission denied: ${decision.reason}`, "warning");
+    return { block: true, reason: decision.reason };
+  }
+
+  if (!identity) {
+    const denied: PermissionDecision = { ...decision, state: "deny", reason: `${decision.reason}; denied because no active agent identity is available` };
+    recordAudit(runtime, denied, false, { approvalState: "unavailable", denialReason: denied.reason }, options);
+    return { block: true, reason: denied.reason };
+  }
+
+  const broker = options.approvalBroker ?? (options.allowContextUI === false ? undefined : createUIApprovalBroker(ctx));
+  if (!broker) {
+    const reason = unavailableApprovalReason(identity);
+    const denied: PermissionDecision = { ...decision, state: "deny", reason: `${decision.reason}; ${reason}` };
+    recordAudit(runtime, denied, false, { approvalState: "unavailable", denialReason: reason }, options);
+    return { block: true, reason: denied.reason };
+  }
+
+  const pending: PendingPermissionRequest = {
+    fingerprint: decision.fingerprint,
+    action: decision.fingerprint.normalized,
+    reason: decision.reason,
+    matchedRule: decision.matchedRule,
+    requestedAt: Date.now(),
+  };
+  const message = approvalMessage(identity, decision);
+  recordAudit(runtime, decision, false, { approvalState: "pending" }, options);
+  options.onPendingApproval?.(pending);
+
+  const result = await serializeApproval(async () => requestApprovalWithGuards(broker, {
+    identity,
+    decision,
+    message,
+    signal: options.signal ?? ctx.signal,
+    timeoutMs: options.approvalTimeoutMs ?? DEFAULT_APPROVAL_TIMEOUT_MS,
+  })).finally(() => {
+    options.onPendingApproval?.(undefined);
+  });
+
+  if (result.outcome !== "approved") {
+    const reason = denialReasonForApprovalOutcome(decision, result);
+    const denied: PermissionDecision = { ...decision, state: "deny", reason: `${decision.reason}; ${reason}` };
+    recordAudit(runtime, denied, false, { approvalState: result.outcome, denialReason: reason }, options);
+    return { block: true, reason: denied.reason };
+  }
+
+  runtime.addApproval(identity, decision.fingerprint, result.scope);
+  recordAudit(runtime, decision, true, { approvalState: "approved", approvalScope: result.scope }, options);
   return undefined;
 }

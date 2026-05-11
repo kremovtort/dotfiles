@@ -62,6 +62,24 @@ test("running subagent activity uses upstream active tool wording before output"
   assert.equal(lines[2], "     ⎿  reading, searching 2 patterns…");
 });
 
+test("running subagent activity shows pending permission before tools or output", () => {
+  const lines = renderSubagentWidgetLines([
+    run({
+      status: "running",
+      activeTools: ["bash"],
+      output: "Older response text",
+      pendingPermission: {
+        fingerprint: { category: "tool", operation: "call", target: "bash", normalized: "tool:call:bash" },
+        action: "tool:call:bash",
+        reason: "matched ask rule",
+        requestedAt: 1,
+      },
+    }),
+  ], new Map(), 0, 200, theme);
+
+  assert.equal(lines[2], "     ⎿  waiting for permission: tool:call:bash");
+});
+
 test("queued subagents render with upstream queued summary", () => {
   const lines = renderSubagentWidgetLines([
     run({ id: "one", status: "queued" }),
