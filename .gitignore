@@ -5,3 +5,4 @@
 .vscode
 .jj
 .cache
+node_modules

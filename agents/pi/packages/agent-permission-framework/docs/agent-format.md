@@ -1,13 +1,42 @@
-# Agent Format
+# Bureau and Agent Configuration Format
 
-Agents are Markdown files with YAML-like frontmatter followed by a prompt body.
+Bureau supports two configuration surfaces:
 
-Locations:
+- Markdown agent files for prompt-heavy agent definitions.
+- `bureau.{json,jsonc,yaml,yml}` files for structured user/project overrides, agent patches, and global permission layers.
+
+## Locations and precedence
+
+Markdown agent files:
 
 - User scope: `~/.pi/agent/agents/*.md`
 - Project scope: nearest `.pi/agents/*.md`, enabled only after `/agent-trust-project` or `--project-agents`
 
-Project definitions override user definitions with the same name only when project-local agents are trusted.
+Bureau config files:
+
+- User scope: `~/.pi/agent/bureau.json`, `~/.pi/agent/bureau.jsonc`, `~/.pi/agent/bureau.yaml`, `~/.pi/agent/bureau.yml`
+- Project scope: nearest `.pi/bureau.json`, `.pi/bureau.jsonc`, `.pi/bureau.yaml`, `.pi/bureau.yml`, enabled only after `/agent-trust-project` or `--project-agents`
+
+Within one user or project scope, bureau selects the first existing file in this order and warns about ignored siblings:
+
+1. `bureau.jsonc`
+2. `bureau.json`
+3. `bureau.yaml`
+4. `bureau.yml`
+
+Overall source precedence from highest to lowest:
+
+1. trusted project `.pi/bureau.{json,jsonc,yaml,yml}`
+2. trusted project `.pi/agents/*.md`
+3. user `~/.pi/agent/bureau.{json,jsonc,yaml,yml}`
+4. user `~/.pi/agent/agents/*.md`
+5. built-in bureau defaults
+
+Project Markdown agents and project bureau config are repository-controlled prompts and permissions. They are not loaded until project agents/config are trusted for the current session.
+
+## Markdown agents
+
+Agents are Markdown files with YAML-like frontmatter followed by a prompt body.
 
 Required fields:
 
@@ -27,12 +56,71 @@ Common optional fields:
 - `enabled: false`
 - `permission:` OpenCode-style nested policy block
 
-Legacy fields:
+Legacy Markdown-only fields:
 
 - `tools`: comma-separated tool names; migrated to `permission.tools` rules for compatibility.
 - `disallowed_tools`: comma-separated deny-list; migrated to `permission.tools` deny rules for compatibility.
 
 New agent definitions should use `permission` as the source of tool availability. Built-in `plan`, `build`, and `ask` set `permission.tools.*` to `allow`, so newly registered/unknown tools are available unless explicitly denied.
+
+## Bureau config files
+
+A bureau config file is a JSON, JSONC, YAML, or YML object with these top-level fields only:
+
+- `agent`: map of agent names to agent patches or new agent definitions.
+- `permission`: global permission layer applied to every effective agent at this source's precedence position.
+
+Example:
+
+```yaml
+agent:
+  build:
+    permission:
+      tools:
+        read:
+          /opt/homebrew/**: allow
+  my-new-agent:
+    kind: main
+    description: Custom coding assistant
+    model: openai-codex/gpt-5.5
+    thinking: xhigh
+    prompt: |
+      You are a powerful coding assistant. Help users with their programming tasks.
+
+permission:
+  tools:
+    new-tool: deny
+  subagents:
+    "*": ask
+```
+
+`agent.<name>` patch entries support these fields:
+
+- `kind`
+- `description`
+- `model`
+- `thinking`
+- `max_turns`
+- `prompt_mode`
+- `inherit_context`
+- `inherit_extensions`
+- `inherit_skills`
+- `run_in_background`
+- `enabled`
+- `prompt`
+- `permission`
+
+For an existing agent, omitted fields keep their previous effective value. For a new agent, `description` and `prompt` are required; `kind` defaults to `subagent` when omitted.
+
+Bureau config uses canonical `permission` only. It does not support `permissions` as an alias and does not support agent-local legacy `tools` or `disallowed_tools` migration fields. Tool rules must be written under `permission.tools`, for example:
+
+```yaml
+permission:
+  tools:
+    new-tool: deny
+```
+
+`permission.new-tool: deny` is invalid and is not treated as shorthand.
 
 ## Permissions
 

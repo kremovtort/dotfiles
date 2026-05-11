@@ -8,7 +8,7 @@ These checks are primarily scriptable through `pi -p`. They exercise the live Pi
 
 1. Run from this repository root.
 2. Restart Pi or run `/reload` before TUI checks after changing this package.
-3. Ensure `agents/pi/settings.json` loads `./packages/agent-permission-framework`.
+3. Ensure `agents/pi/settings.json` loads the local bureau package at `./packages/agent-permission-framework`.
 4. Use a model/API configuration that can run short Pi prompts.
 
 ## Scripted check 1: foreground subagent

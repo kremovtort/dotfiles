@@ -41,6 +41,7 @@ export interface AgentDefinition {
   prompt: string;
   source: AgentSource;
   filePath?: string;
+  configSources?: string[];
   enabled: boolean;
   /** @deprecated Legacy migration input only. Runtime tool availability is derived from permission. */
   tools?: string[];
@@ -62,6 +63,7 @@ export interface AgentIdentity {
   agentName: string;
   kind: AgentKind;
   source: AgentSource;
+  configSources?: string[];
   parentId?: string;
   runId?: string;
   sessionId?: string;

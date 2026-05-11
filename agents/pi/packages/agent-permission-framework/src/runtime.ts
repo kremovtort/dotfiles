@@ -29,6 +29,7 @@ export class AgentRuntimeState {
       agentName: agent.name,
       kind: "main",
       source: agent.source,
+      configSources: agent.configSources,
       policyHash: stablePolicyHash(policy),
       createdAt: Date.now(),
     };
@@ -43,6 +44,7 @@ export class AgentRuntimeState {
       agentName: agent.name,
       kind: "subagent",
       source: agent.source,
+      configSources: agent.configSources,
       parentId: parent?.id,
       runId,
       policyHash: stablePolicyHash(policy),

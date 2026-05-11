@@ -1,7 +1,7 @@
 {
-  "name": "pi-agent-permission-framework",
+  "name": "pi-bureau",
   "version": "0.1.0",
-  "description": "Pi extension package that combines main/subagent runtime identities with deterministic permission enforcement.",
+  "description": "Pi extension package that combines bureau agent configuration with deterministic permission enforcement.",
   "type": "module",
   "license": "MIT",
   "author": "Alexander Makarov <i@kremovtort.ru>",
@@ -46,6 +46,8 @@
     }
   },
   "dependencies": {
-    "typebox": "^1.1.24"
+    "jsonc-parser": "^3.3.1",
+    "typebox": "^1.1.24",
+    "yaml": "^2.7.0"
   }
 }

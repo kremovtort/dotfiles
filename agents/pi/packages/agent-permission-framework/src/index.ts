@@ -63,7 +63,7 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
   });
 
   pi.registerFlag("project-agents", {
-    description: "Allow project-local .pi/agents definitions for this session",
+    description: "Allow project-local .pi/agents and .pi/bureau config for this session",
     type: "boolean",
     default: false,
   });
@@ -74,7 +74,7 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
     const result = discoverAgents({ cwd: ctx.cwd, includeProjectAgents: runtime.trustedProjectAgents }, builtinAgents);
     agents = result.agents;
     for (const ignored of result.ignored) {
-      ctx.ui.notify(`Ignored agent ${ignored.filePath}: ${ignored.reason}`, "warning");
+      ctx.ui.notify(`Ignored bureau/agent config ${ignored.filePath}: ${ignored.reason}`, "warning");
     }
   }
 
@@ -86,6 +86,31 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
     persistRuntime(pi, runtime);
     ctx.ui.setStatus("agent", ctx.ui.theme.fg("accent", `agent:${agent.name}`));
     return agent;
+  }
+
+  async function reactivateCurrentMainAgent(ctx: ExtensionContext): Promise<AgentDefinition | undefined> {
+    const currentName = activeMainAgent?.name ?? (runtime.activeIdentity?.kind === "main" ? runtime.activeIdentity.agentName : undefined);
+    const selected = currentName ? activateAgent(currentName, ctx) : undefined;
+    if (selected) {
+      await applyMainAgentSettings(pi, ctx, selected);
+      return selected;
+    }
+
+    const fallback = findAgent(agents, "build", "main") ?? selectMainAgents(agents)[0];
+    if (fallback) {
+      activeMainAgent = fallback;
+      runtime.activateMain(fallback, fallback.permission);
+      await applyMainAgentSettings(pi, ctx, fallback);
+      ctx.ui.setStatus("agent", ctx.ui.theme.fg("accent", `agent:${fallback.name}`));
+      if (currentName) ctx.ui.notify(`Main agent ${currentName} is unavailable after loading project config; activated ${fallback.name}.`, "warning");
+      return fallback;
+    }
+
+    activeMainAgent = undefined;
+    runtime.activeIdentity = undefined;
+    runtime.activePolicy = undefined;
+    ctx.ui.notify("No main agents are available after loading project config.", "error");
+    return undefined;
   }
 
   registerSubagentTools(pi, subagents, runtime, () => agents, () => cwd);
@@ -119,17 +144,18 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
   });
 
   pi.registerCommand("agent-trust-project", {
-    description: "Enable project-local .pi/agents definitions for this session",
+    description: "Enable project-local .pi/agents and .pi/bureau config for this session",
     handler: async (_args, ctx) => {
       const ok = await ctx.ui.confirm(
-        "Trust project-local agents?",
-        "Project-local .pi/agents definitions are repository-controlled prompts and permissions. Enable them for this session?",
+        "Trust project-local agents/config?",
+        "Project-local .pi/agents definitions and .pi/bureau config are repository-controlled prompts and permissions. Enable them for this session?",
       );
       if (!ok) return;
       runtime.trustedProjectAgents = true;
       reloadAgents(ctx);
+      await reactivateCurrentMainAgent(ctx);
       persistRuntime(pi, runtime);
-      ctx.ui.notify("Project-local agents enabled for this session", "info");
+      ctx.ui.notify("Project-local agents/config enabled for this session", "info");
     },
   });
 
@@ -144,9 +170,10 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
       ctx.ui.notify([
         identity ? `Active: ${identity.agentName} (${identity.kind}, ${identity.source})` : "Active: none",
         `Policy: ${identity?.policyHash ?? "none"}`,
+        identity?.configSources?.length ? `Sources: ${identity.configSources.join(", ")}` : undefined,
         "",
         recent.length ? recent.join("\n") : "No decisions recorded yet.",
-      ].join("\n"), "info");
+      ].filter((line) => line !== undefined).join("\n"), "info");
     },
   });
 
@@ -169,6 +196,7 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
         `Audit: ${entry.id}`,
         entry.identity ? `Agent: ${entry.identity.agentName} (${entry.identity.kind}, ${entry.identity.source})` : "Agent: none",
         `Policy: ${entry.identity?.policyHash ?? "none"}`,
+        entry.identity?.configSources?.length ? `Sources: ${entry.identity.configSources.join(", ")}` : undefined,
         `Decision: ${entry.decision.state}`,
         `Action: ${entry.decision.fingerprint.normalized}`,
         `Reason: ${entry.decision.reason}`,
