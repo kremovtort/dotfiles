@@ -16,6 +16,7 @@ import { withoutRecursiveFrameworkExtension } from "./extension-filter.ts";
 import { deriveActiveToolNames, evaluateDelegationPermission } from "./policy.ts";
 import { shouldWaitForSubagentResult, waitForSubagentResult } from "./subagent-result-wait.ts";
 import { finalSubagentStatus } from "./subagent-status.ts";
+import { createSubagentSessionManager } from "./subagent-session.ts";
 import { SubagentRegistry, type RunRecordInternal, type SubagentExecutorHelpers } from "./subagent-registry.ts";
 export { SubagentRegistry } from "./subagent-registry.ts";
 
@@ -29,7 +30,7 @@ const AgentParams = Type.Object({
   thinking: Type.Optional(Type.String({ description: "Thinking level: off, minimal, low, medium, high, xhigh. Overrides agent default." })),
   max_turns: Type.Optional(Type.Number({ description: "Maximum number of agentic turns before stopping. Omit for unlimited (default).", minimum: 1 })),
   run_in_background: Type.Optional(Type.Boolean({ description: "Set to true to run in background. Returns agent ID immediately. You will be notified on completion." })),
-  resume: Type.Optional(Type.String({ description: "Optional agent ID to resume from. Continues from previous context when the session is still available." })),
+  resume: Type.Optional(Type.String({ description: "Optional agent ID to resume. Running agents receive the prompt as steering; interrupted agents resume from their saved child session file." })),
   inherit_context: Type.Optional(Type.Boolean({ description: "If true, fork parent conversation into the agent. Default: false (fresh context)." })),
   inherit_extensions: Type.Optional(Type.Boolean({ description: "Compatibility option for extension inheritance." })),
   inherit_skills: Type.Optional(Type.Boolean({ description: "Compatibility option for skill inheritance." })),
@@ -88,7 +89,7 @@ type AgentDetails = {
   turnCount?: number;
   maxTurns?: number;
   durationMs: number;
-  status: "queued" | "running" | "background" | "completed" | "steered" | "stopped" | "cancelled" | "error" | "aborted";
+  status: "queued" | "running" | "background" | "completed" | "steered" | "stopped" | "cancelled" | "error" | "aborted" | "interrupted";
   activity?: string;
   spinnerFrame?: number;
   agentId?: string;
@@ -109,6 +110,7 @@ function formatTurns(turnCount: number, maxTurns?: number): string {
 }
 
 function describeActivity(run: SubagentRunRecord): string {
+  if (run.status === "interrupted") return run.resumable ? "interrupted · resumable" : "interrupted";
   if (run.pendingPermission) return `waiting for permission: ${run.pendingPermission.action}`;
   if (run.output) return tail(run.output.replace(/\s+/g, " "), 120);
   if (run.error) return `error: ${tail(run.error.replace(/\s+/g, " "), 120)}`;
@@ -116,7 +118,7 @@ function describeActivity(run: SubagentRunRecord): string {
 }
 
 function detailsFromRun(run: SubagentRunRecord, status?: AgentDetails["status"], spinnerFrame = 0): AgentDetails {
-  const mappedStatus = status ?? (run.status === "failed" ? "error" : run.status === "aborted" ? "aborted" : run.status === "running" ? "running" : run.status === "queued" ? "queued" : run.status === "steered" ? "steered" : "completed");
+  const mappedStatus = status ?? (run.status === "failed" ? "error" : run.status === "aborted" ? "aborted" : run.status === "interrupted" ? "interrupted" : run.status === "running" ? "running" : run.status === "queued" ? "queued" : run.status === "steered" ? "steered" : "completed");
   return {
     displayName: run.agentName,
     description: run.description,
@@ -197,6 +199,11 @@ function renderAgentResult(result: any, { expanded, isPartial }: { expanded?: bo
     return new Text(theme.fg("dim", "■") + (s ? " " + s : "") + "\n" + theme.fg("dim", `  ⎿  ${details.status === "cancelled" ? "Cancelled waiting" : "Stopped"}`), 0, 0);
   }
 
+  if (details.status === "interrupted") {
+    const s = stats(details);
+    return new Text(theme.fg("warning", "⚠") + (s ? " " + s : "") + "\n" + theme.fg("warning", "  ⎿  Interrupted · resumable"), 0, 0);
+  }
+
   const s = stats(details);
   let line = theme.fg("error", "✗") + (s ? " " + s : "");
   line += details.status === "error" ? "\n" + theme.fg("error", `  ⎿  Error: ${details.error ?? "unknown"}`) : "\n" + theme.fg("warning", "  ⎿  Aborted (max turns exceeded)");
@@ -213,7 +220,9 @@ function formatRunProgress(run: SubagentRunRecord): string {
   const queueSuffix = run.status === "queued" && run.queuedPosition ? ` (queue position ${run.queuedPosition})` : "";
   const lines = [`Subagent ${run.agentName} (${run.id}) is ${run.status}${queueSuffix}${parts.length ? ` — ${parts.join(", ")}` : ""}`];
   if (run.status === "queued") lines.push("Waiting for an execution slot.");
-  if (run.status === "running" && run.sessionId) lines.push(`Session: ${run.sessionId}`);
+  if ((run.status === "running" || run.status === "interrupted") && run.sessionId) lines.push(`Session: ${run.sessionId}`);
+  if (run.childSessionFile) lines.push(`Session file: ${run.childSessionFile}`);
+  if (run.status === "interrupted" && run.resumable) lines.push("This subagent was interrupted and can be explicitly resumed by ID.");
   if (run.pendingPermission) {
     lines.push("", `Waiting for permission: ${run.pendingPermission.action}`, `Reason: ${run.pendingPermission.reason}`);
   } else if (run.output) lines.push("", "Latest output:", tail(run.output));
@@ -318,17 +327,25 @@ async function executeSubagentRun(run: RunRecordInternal, helpers: SubagentExecu
     });
     await loader.reload();
 
+    const sessionManager = createSubagentSessionManager(run, ctx, agentDir, SessionManager);
+    helpers.update(run);
+    if (!sessionManager.getSessionName()) {
+      sessionManager.appendSessionInfo(`${agent.name} subagent (${run.id})${run.description ? ` — ${run.description}` : ""}`);
+    }
+
     const { session } = await createAgentSession({
       cwd: run.cwd,
       agentDir,
       model,
       thinkingLevel: run.thinkingOverride ?? agent.thinking,
       resourceLoader: loader,
-      sessionManager: SessionManager.inMemory(run.cwd),
+      sessionManager,
       settingsManager,
     });
     run.session = session;
     run.sessionId = session.sessionId;
+    run.childSessionId = sessionManager.getSessionId();
+    run.childSessionFile = sessionManager.getSessionFile();
     for (const message of run.steering.slice(promptSteeringCount)) {
       await session.steer(message);
     }
@@ -442,6 +459,7 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
       "Launch a specialized subagent with its own context window, system prompt, tools, model, and permissions.",
       "For parallel work, use run_in_background: true on each agent. Foreground calls run sequentially.",
       "Use get_subagent_result for background results and steer_subagent to redirect a running background agent.",
+      "Interrupted subagent runs, such as runs restored after reload/restart, can be resumed by passing their run ID in resume.",
       "Use inherit_context if the agent needs the parent conversation history.",
     ].join("\n"),
     parameters: AgentParams,
@@ -459,11 +477,12 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
       if (params.resume) {
         const existing = registry.get(params.resume);
         if (!existing) return textResult(`Agent not found: "${params.resume}". It may have been cleaned up.`);
-        if (!existing.session || existing.status !== "running") return textResult(`Agent "${params.resume}" has no active session to resume (status: ${existing.status}).`);
+        const agent = getAgents().find((candidate) => candidate.name === existing.agentName && candidate.kind === "subagent") ?? existing.definition;
+        const background = params.run_in_background ?? agent.runInBackground ?? false;
         const decision = evaluateDelegationPermission(runtime.activePolicy, {
           agentName: existing.agentName,
           source: existing.identity.source,
-          background: params.run_in_background === true,
+          background,
           modelOverride: params.model,
           inheritContext: params.inherit_context,
           inheritExtensions: params.inherit_extensions,
@@ -473,8 +492,37 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
         const blocked = await enforceDecision(runtime, decision, ctx);
         persistPermissionSideEffects();
         if (blocked?.block) return textResult(`Permission denied: ${blocked.reason}`, { displayName: existing.agentName, subagentType: existing.agentName, description: params.description, toolUses: existing.toolUses ?? 0, tokens: "", durationMs: 0, status: "error", error: blocked.reason });
+
+        if (existing.status === "interrupted" && existing.resumable) {
+          const resumed = registry.resumeInterrupted(params.resume, {
+            agent,
+            task,
+            description: params.description,
+            parentIdentity: runtime.activeIdentity,
+            runtime,
+            ctx,
+            parentPolicy: runtime.activePolicy,
+            background,
+            modelOverride: params.model,
+            thinkingOverride: params.thinking,
+            maxTurnsOverride: params.max_turns,
+            signal: background ? undefined : signal,
+            inheritContext: params.inherit_context,
+            inheritExtensions: params.inherit_extensions,
+            inheritSkills: params.inherit_skills,
+            approvalBroker: createUIApprovalBroker(ctx),
+          });
+          if (!resumed) return textResult(`Agent "${params.resume}" could not be resumed (status: ${existing.status}).`);
+          if (background) return textResult(`Resumed interrupted agent ${params.resume} in background.`, detailsFromRun(resumed.run, "background"));
+          emitToolProgress(onUpdate, resumed.run.id);
+          const progressTimer = setInterval(() => emitToolProgress(onUpdate, resumed.run.id), 1000);
+          const completed = await resumed.completion.finally(() => clearInterval(progressTimer));
+          return textResult(completed.output || completed.error || "No output.", detailsFromRun(completed));
+        }
+
+        if (!existing.session || existing.status !== "running") return textResult(`Agent "${params.resume}" has no active session to resume (status: ${existing.status}).`);
         await registry.steer(params.resume, task);
-        if (params.run_in_background) return textResult(`Steering message sent to agent ${params.resume}.`, detailsFromRun(registry.publicRun(existing), "background"));
+        if (background) return textResult(`Steering message sent to agent ${params.resume}.`, detailsFromRun(registry.publicRun(existing), "background"));
         const progressTimer = setInterval(() => emitToolProgress(onUpdate, params.resume!), 1000);
         const completed = await new Promise<SubagentRunRecord>((resolve) => {
           const interval = setInterval(() => {
@@ -590,12 +638,18 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
       if (serializable.status === "queued") {
         output += `Agent is queued${serializable.queuedPosition ? ` at position ${serializable.queuedPosition}` : ""}. Waiting for an execution slot; use wait: true or check back later.`;
       } else if (serializable.status === "running") output += "Agent is running. Use wait: true or check back later.";
+      else if (serializable.status === "interrupted") output += `Agent is interrupted${serializable.resumable ? " and resumable" : ""}. ${serializable.output?.trim() || "The live subagent process is gone, but its saved child session can be inspected."}`;
       else if (serializable.status === "failed") output += `Error: ${serializable.error}`;
       else output += serializable.output?.trim() || "No output.";
       if (params.verbose) {
         output += "\n\n--- Agent Details ---\n" + [
           `Run ID: ${serializable.id}`,
           `Session: ${serializable.sessionId ?? "(none)"}`,
+          `Child session: ${serializable.childSessionId ?? "(none)"}`,
+          serializable.childSessionFile ? `Child session file: ${serializable.childSessionFile}` : undefined,
+          serializable.parentSessionId ? `Parent session: ${serializable.parentSessionId}` : undefined,
+          serializable.parentSessionFile ? `Parent session file: ${serializable.parentSessionFile}` : undefined,
+          serializable.status === "interrupted" && serializable.resumable ? `Resume hint: ask the agent to resume subagent run ${serializable.id}.` : undefined,
           `Turns: ${serializable.turnCount ?? 0}${serializable.maxTurns != null ? `/${serializable.maxTurns}` : ""}`,
           `Steering messages: ${serializable.steering.length}`,
           serializable.error ? `Error: ${serializable.error}` : undefined,
@@ -620,6 +674,7 @@ export function registerSubagentTools(pi: ExtensionAPI, registry: SubagentRegist
     async execute(_toolCallId, params) {
       const existing = registry.get(params.agent_id);
       if (!existing) return textResult(`Agent not found: "${params.agent_id}". It may have been cleaned up.`);
+      if (existing.status === "interrupted") return textResult(`Agent "${params.agent_id}" is interrupted, not running. Ask the agent to resume this subagent run by ID instead of steering it.`);
       if (existing.status !== "running") return textResult(`Agent "${params.agent_id}" is not running (status: ${existing.status}). Cannot steer a non-running agent.`);
       const run = await registry.steer(params.agent_id, params.message);
       if (!run) return textResult(`Agent not found: "${params.agent_id}". It may have been cleaned up.`);

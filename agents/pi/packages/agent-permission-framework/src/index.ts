@@ -182,11 +182,19 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
   pi.on("session_start", async (_event, ctx) => {
     const entries = getEntries(ctx);
     restoreRuntimeFromSession(runtime, entries);
-    subagents.restore(entries
+    const restoredSubagents = subagents.restore(entries
       .filter((entry) => entry.type === "custom" && entry.customType === SUBAGENT_RUN_ENTRY)
       .map((entry) => (entry as { data?: unknown }).data)
       .filter((data): data is any => Boolean(data))
     );
+    if (restoredSubagents.interrupted.length > 0 && ctx.hasUI !== false) {
+      const count = restoredSubagents.interrupted.length;
+      ctx.ui.notify(
+        `${count} subagent run${count === 1 ? " was" : "s were"} interrupted and can be resumed.\n` +
+        "Ask the agent to inspect or resume an interrupted subagent run by ID.",
+        "warning",
+      );
+    }
 
     const childRuntimeFile = process.env.PI_AGENT_FRAMEWORK_CHILD;
     if (childRuntimeFile) {

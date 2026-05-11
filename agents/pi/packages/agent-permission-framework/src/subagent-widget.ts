@@ -7,7 +7,7 @@ import type { SubagentRunRecord } from "./types.ts";
 
 const MAX_WIDGET_LINES = 12;
 export const SUBAGENT_WIDGET_SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-const ERROR_STATUSES = new Set(["failed", "aborted", "steered", "stopped", "error"]);
+const ERROR_STATUSES = new Set(["failed", "aborted", "interrupted", "steered", "stopped", "error"]);
 const TOOL_DISPLAY: Record<string, string> = {
   read: "reading",
   bash: "running command",
@@ -92,6 +92,7 @@ function truncateLine(text: string, len = 60): string {
 }
 
 function describeActivity(run: SubagentRunRecord): string {
+  if (run.status === "interrupted") return run.resumable ? "ask the agent to inspect or resume this run" : "interrupted";
   if (run.pendingPermission) return `waiting for permission: ${run.pendingPermission.action}`;
   if (run.activeTools && run.activeTools.length > 0) {
     const groups = new Map<string, number>();
@@ -269,6 +270,9 @@ function renderFinishedLine(run: WidgetRun, theme: ThemeLike): string {
     icon = theme.fg("error", "✗");
     const errMsg = run.error ? `: ${run.error.slice(0, 60)}` : "";
     statusText = theme.fg("error", ` error${errMsg}`);
+  } else if (run.status === "interrupted") {
+    icon = theme.fg("warning", "⚠");
+    statusText = theme.fg("warning", " interrupted · resumable");
   } else {
     icon = theme.fg("error", "✗");
     statusText = theme.fg("warning", " aborted");
@@ -327,6 +331,8 @@ export class SubagentWidget {
     for (const run of runs) {
       if (run.status === "running" || run.status === "queued") {
         this.observedActiveRunIds.add(run.id);
+      } else if (run.status === "interrupted" && run.resumable && run.completedAt && !this.finishedTurnAge.has(run.id)) {
+        this.finishedTurnAge.set(run.id, 0);
       } else if (run.completedAt && this.observedActiveRunIds.has(run.id) && !this.finishedTurnAge.has(run.id)) {
         this.finishedTurnAge.set(run.id, 0);
       }

@@ -118,7 +118,7 @@ test("interactive approval prompt keeps permission details out of select choices
   }
 });
 
-test("interactive approval prompts are serialized for parallel asks", async () => {
+test("interactive approval prompts are serialized for parallel asks in the same context", async () => {
   const state = new AgentRuntimeState();
   state.activeIdentity = {
     id: "main-build-test",
@@ -153,6 +153,51 @@ test("interactive approval prompts are serialized for parallel asks", async () =
   const results = await Promise.all(decisions.map((decision) => enforceDecision(state, decision, ctx)));
   assert.deepEqual(results, [undefined, undefined, undefined]);
   assert.equal(maxActivePrompts, 1);
+});
+
+test("independent approval brokers do not share a global queue", async () => {
+  const slowState = new AgentRuntimeState();
+  slowState.activeIdentity = {
+    id: "main-slow",
+    agentName: "build",
+    kind: "main",
+    source: "builtin",
+    policyHash: "test",
+    createdAt: 1,
+  };
+  const fastState = new AgentRuntimeState();
+  fastState.activeIdentity = { ...slowState.activeIdentity, id: "main-fast" };
+  let releaseSlow!: () => void;
+  const slowBroker: PermissionApprovalBroker = {
+    requestApproval: async () => {
+      slowStartedResolve();
+      await new Promise<void>((innerResolve) => {
+        releaseSlow = innerResolve;
+      });
+      return { outcome: "approved", scope: "once" };
+    },
+  };
+  let slowStartedResolve!: () => void;
+  const slowStarted = new Promise<void>((resolve) => {
+    slowStartedResolve = resolve;
+  });
+  const slowPromise = enforceDecision(slowState, {
+    state: "ask",
+    reason: "slow ask",
+    fingerprint: { category: "tool", operation: "call", target: "slow", normalized: "tool:call:slow" },
+  }, { cwd: "/repo", hasUI: false }, { approvalBroker: slowBroker, approvalTimeoutMs: 1000 });
+  await slowStarted;
+
+  const fastBroker: PermissionApprovalBroker = { requestApproval: async () => ({ outcome: "approved", scope: "once" }) };
+  const fast = await enforceDecision(fastState, {
+    state: "ask",
+    reason: "fast ask",
+    fingerprint: { category: "tool", operation: "call", target: "fast", normalized: "tool:call:fast" },
+  }, { cwd: "/repo", hasUI: false }, { approvalBroker: fastBroker, approvalTimeoutMs: 50 });
+
+  assert.equal(fast, undefined);
+  releaseSlow();
+  assert.equal(await slowPromise, undefined);
 });
 
 const childIdentity = {

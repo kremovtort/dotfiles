@@ -1,6 +1,7 @@
 import type { AgentDefinition, AgentIdentity, AuditEntry, PermissionApprovalBroker, PermissionPolicy, SubagentRunRecord } from "./types.ts";
 import { composePolicies } from "./policy.ts";
 import { AgentRuntimeState } from "./runtime.ts";
+import { hasUsableChildSessionFile, validateChildSessionFile } from "./subagent-session.ts";
 
 export type RunRecordInternal = SubagentRunRecord & {
   session?: any;
@@ -36,7 +37,7 @@ function normalizeMaxTurns(n: number | undefined): number | undefined {
 }
 
 function isTerminalStatus(status: SubagentRunRecord["status"]): boolean {
-  return status === "completed" || status === "failed" || status === "aborted" || status === "steered";
+  return status === "completed" || status === "failed" || status === "aborted" || status === "steered" || status === "interrupted";
 }
 
 export class SubagentRegistry {
@@ -72,7 +73,8 @@ export class SubagentRegistry {
     this.pump();
   }
 
-  restore(runs: SubagentRunRecord[]): void {
+  restore(runs: SubagentRunRecord[]): { interrupted: SubagentRunRecord[] } {
+    const interrupted: SubagentRunRecord[] = [];
     const latest = new Map<string, SubagentRunRecord>();
     for (const run of runs) latest.set(run.id, run);
     for (const run of latest.values()) {
@@ -80,12 +82,24 @@ export class SubagentRegistry {
       if (existing?.session && existing.status === "running") continue;
       const restored: SubagentRunRecord = { ...run };
       if (restored.status === "queued" || restored.status === "running") {
-        restored.status = "aborted";
-        restored.error = `${restored.error ?? ""}\nSubagent run was restored without a live session; it cannot continue.`.trim();
+        restored.activeTools = [];
+        restored.pendingPermission = undefined;
         restored.completedAt = restored.completedAt ?? Date.now();
+        if (hasUsableChildSessionFile(restored.childSessionFile, { childSessionId: restored.childSessionId, cwd: restored.cwd })) {
+          restored.status = "interrupted";
+          restored.resumable = true;
+          restored.error = undefined;
+          restored.output = restored.output || "Subagent run was interrupted and can be resumed by ID.";
+          interrupted.push(restored);
+        } else {
+          restored.status = "aborted";
+          restored.resumable = false;
+          restored.error = `${restored.error ?? ""}\nSubagent run was restored without a live session or durable child session; it cannot continue.`.trim();
+        }
       }
       this.runs.set(run.id, { ...restored, definition: { name: restored.agentName, kind: "subagent", source: restored.identity.source, description: restored.agentName, prompt: "", enabled: true, promptMode: "replace" }, effectivePolicy: {} });
     }
+    return { interrupted: interrupted.map((run) => this.publicRun(run as RunRecordInternal)) };
   }
 
   start(options: {
@@ -139,6 +153,72 @@ export class SubagentRegistry {
       run.resolve = resolve;
     });
     this.runs.set(runId, run);
+    this.queue.push(run);
+    this.notify(run);
+    this.pump();
+    return { run: this.publicRun(run), completion };
+  }
+
+  resumeInterrupted(runId: string, options: {
+    agent: AgentDefinition;
+    task: string;
+    description?: string;
+    parentIdentity: AgentIdentity | undefined;
+    runtime: AgentRuntimeState;
+    ctx: unknown;
+    parentPolicy?: PermissionPolicy;
+    background: boolean;
+    modelOverride?: string;
+    thinkingOverride?: string;
+    maxTurnsOverride?: number;
+    signal?: AbortSignal;
+    inheritContext?: boolean;
+    inheritExtensions?: boolean;
+    inheritSkills?: boolean;
+    approvalBroker?: PermissionApprovalBroker;
+    approvalTimeoutMs?: number;
+  }): { run: SubagentRunRecord; completion: Promise<SubagentRunRecord> } | undefined {
+    const run = this.runs.get(runId);
+    if (!run || run.status !== "interrupted" || !run.resumable) return undefined;
+    const validation = validateChildSessionFile(run.childSessionFile, { childSessionId: run.childSessionId, cwd: run.cwd });
+    if (!validation.ok) {
+      run.status = "aborted";
+      run.resumable = false;
+      run.pendingPermission = undefined;
+      run.activeTools = [];
+      run.completedAt = Date.now();
+      run.error = `Saved child session file is not usable; cannot resume: ${validation.reason}`;
+      this.notify(run);
+      return undefined;
+    }
+
+    const effectivePolicy = composePolicies(options.parentPolicy, options.agent.permission);
+    run.definition = options.agent;
+    run.effectivePolicy = effectivePolicy;
+    run.identity = options.runtime.createChild(options.parentIdentity, options.agent, runId, effectivePolicy);
+    run.agentName = options.agent.name;
+    run.description = options.description ?? run.description;
+    run.task = options.task;
+    run.status = "queued";
+    run.resumable = false;
+    run.pendingPermission = undefined;
+    run.activeTools = [];
+    run.completedAt = undefined;
+    run.startedAt = undefined;
+    run.modelOverride = options.modelOverride;
+    run.thinkingOverride = options.thinkingOverride;
+    run.maxTurnsOverride = options.maxTurnsOverride;
+    run.maxTurns = normalizeMaxTurns(options.maxTurnsOverride ?? options.agent.maxTurns);
+    run.signal = options.signal;
+    run.ctx = options.ctx;
+    run.inheritContext = options.inheritContext ?? options.agent.inheritContext ?? false;
+    run.inheritExtensions = options.inheritExtensions ?? options.agent.inheritExtensions ?? false;
+    run.inheritSkills = options.inheritSkills ?? options.agent.inheritSkills ?? true;
+    run.approvalBroker = options.approvalBroker;
+    run.approvalTimeoutMs = options.approvalTimeoutMs;
+    const completion = new Promise<SubagentRunRecord>((resolve) => {
+      run.resolve = resolve;
+    });
     this.queue.push(run);
     this.notify(run);
     this.pump();

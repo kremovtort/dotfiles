@@ -42,6 +42,7 @@ test("subagent status text matches pi-subagents running and queued wording", () 
     run({ id: "two", status: "running" }),
     run({ id: "three", status: "queued" }),
   ]), "2 running, 1 queued agents");
+  assert.equal(subagentStatusText([run({ status: "interrupted", resumable: true, completedAt: Date.now() })]), undefined);
 });
 
 test("running subagent widget uses copied heading, tree, spinner, stats, and activity layout", () => {
@@ -101,6 +102,14 @@ test("finished runs use upstream linger and icons", () => {
   assert.deepEqual(renderSubagentWidgetLines([failed], new Map([[failed.id, 2]]), 0, 200, theme), []);
 
   assert.match(renderSubagentWidgetLines([steered], new Map([[steered.id, 0]]), 0, 200, theme).join("\n"), /✓ scout.*\(turn limit\)/);
+});
+
+test("interrupted resumable runs render as warning linger without active status", () => {
+  const interrupted = run({ status: "interrupted", resumable: true, completedAt: Date.now() });
+  const lines = renderSubagentWidgetLines([interrupted], new Map([[interrupted.id, 0]]), 0, 200, theme);
+
+  assert.equal(subagentStatusText([interrupted]), undefined);
+  assert.match(lines.join("\n"), /⚠ scout.*interrupted · resumable/);
 });
 
 test("restored terminal runs do not register as fresh finished widget entries", () => {

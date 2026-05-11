@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { withoutRecursiveFrameworkExtension } from "../src/extension-filter.ts";
 import { AgentRuntimeState } from "../src/runtime.ts";
 import { shouldWaitForSubagentResult, waitForSubagentResult } from "../src/subagent-result-wait.ts";
 import { finalSubagentStatus } from "../src/subagent-status.ts";
-import { SubagentRegistry } from "../src/subagent-registry.ts";
+import { SubagentRegistry, type RunRecordInternal } from "../src/subagent-registry.ts";
+import { createSubagentSessionManager, encodeSessionCwd, subagentSessionFile, validateChildSessionFile } from "../src/subagent-session.ts";
 import type { AgentDefinition, AgentIdentity, PermissionApprovalBroker, PendingPermissionRequest, SubagentRunRecord } from "../src/types.ts";
 
 test("max-turn soft-limit wrap-up finalizes as steered", () => {
@@ -98,6 +102,198 @@ function startRun(registry: SubagentRegistry, task: string) {
     background: true,
   });
 }
+
+test("subagent session path helper mirrors Pi cwd encoding and names run/session file", () => {
+  const file = subagentSessionFile("/agent", "/Users/me/repo:work", "parent/session", "agent-123", "session-456");
+  assert.equal(encodeSessionCwd("/Users/me/repo:work"), "--Users-me-repo-work--");
+  assert.equal(file, join("/agent", "subagent-sessions", "--Users-me-repo-work--", "parent-session", "agent-123_session-456.jsonl"));
+});
+
+test("subagent tool descriptions document interrupted resume", () => {
+  const source = readFileSync(new URL("../src/subagents.ts", import.meta.url), "utf8");
+
+  assert.match(source, /interrupted agents resume from their saved child session file/);
+  assert.match(source, /Interrupted subagent runs.*can be resumed by passing their run ID in resume/s);
+});
+
+test("child session validation requires a matching standard session JSONL header", () => {
+  const dir = mkdtempSync(join(tmpdir(), "subagent-validate-"));
+  const valid = join(dir, "valid.jsonl");
+  const empty = join(dir, "empty.jsonl");
+  const malformed = join(dir, "malformed.jsonl");
+  const wrongType = join(dir, "wrong-type.jsonl");
+  const wrongId = join(dir, "wrong-id.jsonl");
+  const wrongCwd = join(dir, "wrong-cwd.jsonl");
+  writeFileSync(valid, `${JSON.stringify({ type: "session", id: "session-valid", timestamp: new Date().toISOString(), cwd: "/repo" })}\n`);
+  writeFileSync(empty, "");
+  writeFileSync(malformed, "not-json\n");
+  writeFileSync(wrongType, `${JSON.stringify({ type: "message", id: "session-valid", cwd: "/repo" })}\n`);
+  writeFileSync(wrongId, `${JSON.stringify({ type: "session", id: "other", cwd: "/repo" })}\n`);
+  writeFileSync(wrongCwd, `${JSON.stringify({ type: "session", id: "session-valid", cwd: "/other" })}\n`);
+
+  assert.equal(validateChildSessionFile(valid, { childSessionId: "session-valid", cwd: "/repo" }).ok, true);
+  assert.equal(validateChildSessionFile(undefined).ok, false);
+  assert.equal(validateChildSessionFile("").ok, false);
+  assert.equal(validateChildSessionFile(join(dir, "missing.jsonl")).ok, false);
+  assert.equal(validateChildSessionFile(dir).ok, false);
+  assert.equal(validateChildSessionFile(empty).ok, false);
+  assert.equal(validateChildSessionFile(malformed).ok, false);
+  assert.equal(validateChildSessionFile(wrongType).ok, false);
+  assert.equal(validateChildSessionFile(wrongId, { childSessionId: "session-valid", cwd: "/repo" }).ok, false);
+  assert.equal(validateChildSessionFile(wrongCwd, { childSessionId: "session-valid", cwd: "/repo" }).ok, false);
+});
+
+test("subagent public run keeps durable metadata but hides live-only fields", () => {
+  const registry = new SubagentRegistry(1, undefined, undefined, async (run) => {
+    run.output = "done";
+    run.status = "completed";
+  });
+  const { run } = registry.start({
+    agent: testAgent,
+    task: "metadata",
+    description: "metadata",
+    cwd: "/tmp",
+    parentIdentity,
+    runtime: new AgentRuntimeState(),
+    ctx: {} as any,
+    background: true,
+    approvalBroker: { requestApproval: async () => ({ outcome: "approved", scope: "once" }) },
+  });
+  const live = registry.get(run.id)!;
+  live.childSessionId = "session-test";
+  live.childSessionFile = "/tmp/session.jsonl";
+  live.parentSessionId = "parent-test";
+  live.parentSessionFile = "/tmp/parent.jsonl";
+  live.resumable = true;
+  const serializable = registry.publicRun(live);
+
+  assert.equal(serializable.childSessionId, "session-test");
+  assert.equal(serializable.childSessionFile, "/tmp/session.jsonl");
+  assert.equal(serializable.parentSessionId, "parent-test");
+  assert.equal(serializable.parentSessionFile, "/tmp/parent.jsonl");
+  assert.equal(serializable.resumable, true);
+  assert.equal((serializable as any).approvalBroker, undefined);
+  assert.equal((serializable as any).session, undefined);
+});
+
+class FakeSessionManager {
+  sessionId: string;
+  sessionFile: string | undefined;
+  fileEntries: Array<Record<string, any>>;
+  cwd: string;
+  sessionDir: string;
+
+  constructor(cwd: string, sessionDir: string, sessionFile?: string) {
+    this.cwd = cwd;
+    this.sessionDir = sessionDir;
+    if (sessionFile) {
+      this.sessionFile = sessionFile;
+      const entries = readFileSync(sessionFile, "utf8").trim().split("\n").filter(Boolean).map((line) => JSON.parse(line));
+      this.fileEntries = entries;
+      this.sessionId = entries.find((entry) => entry.type === "session")?.id ?? "loaded-session";
+    } else {
+      this.sessionId = "fake-session";
+      this.fileEntries = [{ type: "session", id: this.sessionId, timestamp: new Date().toISOString(), cwd }];
+      this.sessionFile = join(sessionDir, `${this.sessionId}.jsonl`);
+    }
+  }
+
+  static create(cwd: string, sessionDir?: string) {
+    return new FakeSessionManager(cwd, sessionDir ?? tmpdir());
+  }
+
+  static open(path: string, sessionDir?: string, cwdOverride?: string) {
+    return new FakeSessionManager(cwdOverride ?? "/tmp", sessionDir ?? tmpdir(), path);
+  }
+
+  getSessionId() {
+    return this.sessionId;
+  }
+
+  getSessionFile() {
+    return this.sessionFile;
+  }
+
+  getSessionName() {
+    return this.fileEntries.find((entry) => entry.type === "session_info")?.name;
+  }
+
+  appendSessionInfo(name: string) {
+    return this.appendEntry({ type: "session_info", name });
+  }
+
+  appendMessage(message: any) {
+    return this.appendEntry({ type: "message", message });
+  }
+
+  private appendEntry(entry: Record<string, any>) {
+    const id = `entry-${this.fileEntries.length}`;
+    const fullEntry = { id, parentId: null, timestamp: new Date().toISOString(), ...entry };
+    if (this.fileEntries.length === 1 && this.sessionFile) writeFileSync(this.sessionFile, `${JSON.stringify(this.fileEntries[0])}\n`);
+    this.fileEntries.push(fullEntry);
+    if (this.sessionFile) appendFileSync(this.sessionFile, `${JSON.stringify(fullEntry)}\n`);
+    return id;
+  }
+}
+
+function childRun(overrides: Partial<RunRecordInternal> = {}): RunRecordInternal {
+  return {
+    id: "agent-jsonl",
+    agentName: "scout",
+    task: "persist",
+    status: "running",
+    output: "",
+    identity: { ...parentIdentity, id: "child-jsonl", kind: "subagent", parentId: parentIdentity.id, runId: "agent-jsonl" },
+    cwd: "/repo",
+    steering: [],
+    definition: testAgent,
+    effectivePolicy: {},
+    ...overrides,
+  };
+}
+
+const parentSessionCtx = {
+  sessionManager: {
+    getSessionId: () => "parent-jsonl",
+    getSessionFile: () => "/tmp/parent.jsonl",
+  },
+} as any;
+
+test("subagent SessionManager writes standard JSONL entries under child namespace", () => {
+  const dir = mkdtempSync(join(tmpdir(), "subagent-session-"));
+  const run = childRun();
+  const manager = createSubagentSessionManager(run, parentSessionCtx, dir, FakeSessionManager);
+  manager.appendSessionInfo("scout subagent (agent-jsonl)");
+  manager.appendMessage({ role: "user", content: [{ type: "text", text: "Task: persist" }] } as any);
+  manager.appendMessage({ role: "assistant", content: [{ type: "text", text: "done" }] } as any);
+
+  assert.equal(run.childSessionId, "fake-session");
+  assert.equal(run.parentSessionId, "parent-jsonl");
+  assert.match(run.childSessionFile ?? "", /subagent-sessions.*parent-jsonl.*agent-jsonl_fake-session\.jsonl$/);
+  assert.ok(existsSync(run.childSessionFile!));
+  const entries = readFileSync(run.childSessionFile!, "utf8").trim().split("\n").map((line) => JSON.parse(line));
+  assert.equal(entries[0].type, "session");
+  assert.equal(entries[0].id, "fake-session");
+  assert.equal(entries[0].parentSession, "/tmp/parent.jsonl");
+  assert.equal(entries[1].type, "session_info");
+  assert.deepEqual(entries.slice(2).map((entry) => entry.message.role), ["user", "assistant"]);
+});
+
+test("subagent SessionManager path override fails loudly for incompatible manager shapes", () => {
+  const dir = mkdtempSync(join(tmpdir(), "subagent-incompatible-session-"));
+  const incompatibleFactory = {
+    create: () => ({
+      getSessionId: () => "fake-session",
+      getSessionFile: () => undefined,
+    }),
+    open: FakeSessionManager.open,
+  } as any;
+
+  assert.throws(
+    () => createSubagentSessionManager(childRun(), parentSessionCtx, dir, incompatibleFactory),
+    /expected sessionFile field/,
+  );
+});
 
 test("parallel background runs synchronously register independent IDs and queue over capacity", async () => {
   const gates = [deferred(), deferred(), deferred()];
@@ -268,7 +464,7 @@ test("approval broker stays internal while pending permission metadata is public
   assert.equal(registry.publicRun(registry.get(run.id)!).pendingPermission, undefined);
 });
 
-test("restore keeps latest record and marks non-live queued or running records aborted", () => {
+test("restore keeps latest record and marks non-live queued or running records interrupted when resumable", () => {
   const identity: AgentIdentity = {
     id: "child-scout-test",
     agentName: "scout",
@@ -290,19 +486,97 @@ test("restore keeps latest record and marks non-live queued or running records a
     steering: [],
   };
 
+  const dir = mkdtempSync(join(tmpdir(), "subagent-restore-"));
+  const childSessionFile = join(dir, "agent-stale-running_session-agent-stale-running.jsonl");
+  const invalidChildSessionFile = join(dir, "agent-invalid_session-agent-invalid.jsonl");
+  writeFileSync(childSessionFile, JSON.stringify({ type: "session", id: "session-agent-stale-running", timestamp: new Date().toISOString(), cwd: "/tmp" }) + "\n");
+  writeFileSync(invalidChildSessionFile, "not-json\n");
+
   const registry = new SubagentRegistry(1);
-  registry.restore([
+  const restored = registry.restore([
     base,
     { ...base, status: "running", startedAt: 2 },
     { ...base, status: "completed", startedAt: 2, completedAt: 3, output: "latest" },
     { ...base, id: "agent-stale-queued", status: "queued", identity: { ...identity, id: "child-stale-queued", runId: "agent-stale-queued" } },
-    { ...base, id: "agent-stale-running", status: "running", identity: { ...identity, id: "child-stale-running", runId: "agent-stale-running" } },
+    { ...base, id: "agent-invalid", status: "running", childSessionFile: invalidChildSessionFile, childSessionId: "session-agent-invalid", identity: { ...identity, id: "child-invalid", runId: "agent-invalid" } },
+    { ...base, id: "agent-stale-running", status: "running", childSessionFile, childSessionId: "session-agent-stale-running", pendingPermission: { fingerprint: { category: "tool", operation: "call", target: "bash", normalized: "tool:call:bash" }, action: "tool:call:bash", reason: "ask", requestedAt: 1 }, identity: { ...identity, id: "child-stale-running", runId: "agent-stale-running" } },
   ]);
 
   assert.equal(registry.get("agent-restored")?.status, "completed");
   assert.equal(registry.get("agent-restored")?.output, "latest");
   assert.equal(registry.get("agent-stale-queued")?.status, "aborted");
-  assert.match(registry.get("agent-stale-queued")?.error ?? "", /without a live session/);
-  assert.equal(registry.get("agent-stale-running")?.status, "aborted");
-  assert.deepEqual(registry.stats(), { active: 0, queued: 0, total: 3 });
+  assert.match(registry.get("agent-stale-queued")?.error ?? "", /without a live session or durable child session/);
+  assert.equal(registry.get("agent-invalid")?.status, "aborted");
+  assert.match(registry.get("agent-invalid")?.error ?? "", /without a live session or durable child session/);
+  assert.equal(registry.get("agent-stale-running")?.status, "interrupted");
+  assert.equal(registry.get("agent-stale-running")?.resumable, true);
+  assert.equal(registry.get("agent-stale-running")?.pendingPermission, undefined);
+  assert.deepEqual(restored.interrupted.map((run) => run.id), ["agent-stale-running"]);
+  assert.deepEqual(registry.stats(), { active: 0, queued: 0, total: 4 });
+});
+
+test("interrupted run can be explicitly resumed without changing denied resumes", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "subagent-resume-"));
+  const childSessionFile = join(dir, "agent-resume_session-agent-resume.jsonl");
+  const corruptedSessionFile = join(dir, "agent-corrupt_session-agent-corrupt.jsonl");
+  writeFileSync(childSessionFile, JSON.stringify({ type: "session", id: "session-agent-resume", timestamp: new Date().toISOString(), cwd: "/tmp" }) + "\n");
+  writeFileSync(corruptedSessionFile, JSON.stringify({ type: "session", id: "session-agent-corrupt", timestamp: new Date().toISOString(), cwd: "/tmp" }) + "\n");
+  const identity: AgentIdentity = {
+    id: "child-resume",
+    agentName: "scout",
+    kind: "subagent",
+    source: "builtin",
+    parentId: parentIdentity.id,
+    runId: "agent-resume",
+    policyHash: "test",
+    createdAt: 1,
+  };
+  const registry = new SubagentRegistry(1, undefined, undefined, async (run) => {
+    run.output = `resumed:${run.task}`;
+    run.status = "completed";
+  });
+  registry.restore([
+    { id: "agent-resume", agentName: "scout", task: "old", status: "running", output: "old", identity, cwd: "/tmp", steering: [], childSessionFile, childSessionId: "session-agent-resume" },
+    { id: "agent-corrupt", agentName: "scout", task: "old", status: "running", output: "old", identity: { ...identity, id: "child-corrupt", runId: "agent-corrupt" }, cwd: "/tmp", steering: [], childSessionFile: corruptedSessionFile, childSessionId: "session-agent-corrupt" },
+  ]);
+
+  assert.equal(registry.get("agent-resume")?.status, "interrupted");
+  assert.equal(registry.get("agent-corrupt")?.status, "interrupted");
+  writeFileSync(corruptedSessionFile, "not-json\n");
+  const missing = registry.resumeInterrupted("missing", {
+    agent: testAgent,
+    task: "nope",
+    parentIdentity,
+    runtime: new AgentRuntimeState(),
+    ctx: {} as any,
+    background: true,
+  });
+  assert.equal(missing, undefined);
+
+  const corruptResume = registry.resumeInterrupted("agent-corrupt", {
+    agent: testAgent,
+    task: "continue",
+    parentIdentity,
+    runtime: new AgentRuntimeState(),
+    ctx: {} as any,
+    background: true,
+  });
+  assert.equal(corruptResume, undefined);
+  assert.equal(registry.get("agent-corrupt")?.status, "aborted");
+  assert.match(registry.get("agent-corrupt")?.error ?? "", /not usable/);
+
+  const resumed = registry.resumeInterrupted("agent-resume", {
+    agent: testAgent,
+    task: "continue",
+    parentIdentity,
+    runtime: new AgentRuntimeState(),
+    ctx: {} as any,
+    background: true,
+  });
+  assert.ok(resumed);
+  assert.equal(resumed.run.status, "running");
+  assert.equal(resumed.run.childSessionFile, childSessionFile);
+  const completed = await resumed.completion;
+  assert.equal(completed.status, "completed");
+  assert.equal(completed.output, "resumed:continue");
 });

@@ -144,7 +144,7 @@ export interface SubagentRunRecord {
   agentName: string;
   description?: string;
   task: string;
-  status: "queued" | "running" | "completed" | "failed" | "aborted" | "steered";
+  status: "queued" | "running" | "completed" | "failed" | "aborted" | "steered" | "interrupted";
   startedAt?: number;
   completedAt?: number;
   output: string;
@@ -153,6 +153,12 @@ export interface SubagentRunRecord {
   cwd: string;
   pid?: number;
   sessionId?: string;
+  childSessionId?: string;
+  childSessionFile?: string;
+  parentSessionId?: string;
+  parentSessionFile?: string;
+  resumable?: boolean;
+  resumedFromRunId?: string;
   turnCount?: number;
   maxTurns?: number;
   toolUses?: number;

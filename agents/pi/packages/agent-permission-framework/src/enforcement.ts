@@ -99,14 +99,14 @@ function primaryTargetForTool(toolName: string, input: Record<string, unknown>, 
   return inputString(input, ["skill", "skill_name", "skillName", "query", "pattern", "glob", "url", "uri", "command", "name"]) ?? stableInputString(input);
 }
 
-let approvalQueue: Promise<void> = Promise.resolve();
+const approvalQueues = new WeakMap<PermissionApprovalBroker, Promise<void>>();
 
-async function serializeApproval<T>(fn: () => Promise<T>): Promise<T> {
-  const previous = approvalQueue;
+async function serializeApprovalForBroker<T>(broker: PermissionApprovalBroker, fn: () => Promise<T>): Promise<T> {
+  const previous = approvalQueues.get(broker) ?? Promise.resolve();
   let release!: () => void;
-  approvalQueue = new Promise<void>((resolve) => {
+  approvalQueues.set(broker, new Promise<void>((resolve) => {
     release = resolve;
-  });
+  }));
   await previous.catch(() => undefined);
   try {
     return await fn();
@@ -114,6 +114,8 @@ async function serializeApproval<T>(fn: () => Promise<T>): Promise<T> {
     release();
   }
 }
+
+const uiApprovalBrokers = new WeakMap<object, PermissionApprovalBroker>();
 
 function strictest(decisions: PermissionDecision[]): PermissionDecision {
   return decisions.reduce((current, next) => {
@@ -197,7 +199,10 @@ function unavailableApprovalReason(identity: NonNullable<AgentRuntimeState["acti
 
 export function createUIApprovalBroker(ctx: EnforcementContextLike): PermissionApprovalBroker | undefined {
   if (ctx.hasUI === false || (!ctx.ui?.select && !ctx.ui?.confirm)) return undefined;
-  return {
+  const cacheKey = (ctx.ui ?? ctx) as object;
+  const cached = uiApprovalBrokers.get(cacheKey);
+  if (cached) return cached;
+  const broker: PermissionApprovalBroker = {
     async requestApproval(request: PermissionApprovalRequest): Promise<PermissionApprovalResult> {
       if (ctx.ui?.select) {
         const choice = await ctx.ui.select(`Required permission\n\n${request.message}`, [
@@ -213,6 +218,8 @@ export function createUIApprovalBroker(ctx: EnforcementContextLike): PermissionA
       return approved ? { outcome: "approved", scope: "once" } : { outcome: "denied", reason: "Permission denied by user" };
     },
   };
+  uiApprovalBrokers.set(cacheKey, broker);
+  return broker;
 }
 
 async function requestApprovalWithGuards(
@@ -323,7 +330,7 @@ export async function enforceDecision(
   recordAudit(runtime, decision, false, { approvalState: "pending" }, options);
   options.onPendingApproval?.(pending);
 
-  const result = await serializeApproval(async () => requestApprovalWithGuards(broker, {
+  const result = await serializeApprovalForBroker(broker, async () => requestApprovalWithGuards(broker, {
     identity,
     decision,
     message,
