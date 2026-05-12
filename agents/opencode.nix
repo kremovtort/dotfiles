@@ -8,7 +8,6 @@
 }:
 let
   configDir = ".config/opencode";
-  magicContextVersion = "0.17.2";
 in
 {
   home.sessionVariables = {
@@ -75,11 +74,11 @@ in
       autoupdate = false;
 
       plugin = [
-        "@mohak34/opencode-notifier@0.2.4"
-        "cc-safety-net@0.8.2"
-        "opencode-direnv@1.1.1"
-        "@plannotator/opencode@0.19.10"
-        "@cortexkit/opencode-magic-context@${magicContextVersion}"
+        "@mohak34/opencode-notifier@latest"
+        "cc-safety-net@latest"
+        "opencode-direnv@latest"
+        "@plannotator/opencode@latest"
+        "@cortexkit/opencode-magic-context@latest"
         "opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply"
       ];
 
@@ -169,7 +168,7 @@ in
 
     tui = {
       plugin = [
-        "@cortexkit/opencode-magic-context@${magicContextVersion}"
+        "@cortexkit/opencode-magic-context@latest"
       ];
 
       keybinds = {

@@ -24,7 +24,7 @@ MIT notice requirement:
 - Package: `pi-permission-system`
 - License: MIT
 - Copyright: Copyright (c) 2026 MasuRii
-- Adapted areas: agent-local `permission:` frontmatter model, deterministic permission states, tool-call gating, bash/file-specific checks, approval prompts, forwarding/runtime context ideas, and audit/explain behavior.
+- Adapted areas: agent-local `permission:` frontmatter model, deterministic permission states, tool-call gating, bash/file-specific checks, approval prompts, forwarding/runtime context ideas, and audit/explain behhttps://github.com/gotgenes/pi-permission-system/blob/main/docs/event-api.mdavior.
 
 MIT notice requirement:
 

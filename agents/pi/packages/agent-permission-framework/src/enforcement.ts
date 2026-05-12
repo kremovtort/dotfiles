@@ -1,4 +1,6 @@
 import type { AgentRuntimeState } from "./runtime.ts";
+import { PermissionApprovalComponent, type HighlightCodeFn } from "./permission-approval-ui.ts";
+import { formatApprovalFallbackMessage } from "./permission-display.ts";
 import {
   evaluateBashPermission,
   evaluateDelegationPermission,
@@ -32,6 +34,10 @@ export interface EnforcementContextLike {
   ui?: {
     confirm?: (title: string, message: string, options?: UIRequestOptions) => Promise<boolean>;
     select?: (title: string, options: string[], requestOptions?: UIRequestOptions) => Promise<string | undefined>;
+    custom?: <T>(
+      factory: (tui: any, theme: any, keybindings: any, done: (result: T) => void) => any,
+      options?: { overlay?: boolean; overlayOptions?: unknown; onHandle?: (handle: unknown) => void },
+    ) => Promise<T>;
     notify?: (message: string, level?: "info" | "warning" | "error" | "success") => void;
   };
 }
@@ -183,12 +189,16 @@ function recordAudit(
 }
 
 function approvalMessage(identity: NonNullable<AgentRuntimeState["activeIdentity"]>, decision: PermissionDecision): string {
-  return [
-    `Agent: ${identity.agentName} (${identity.kind})`,
-    `Action: ${decision.fingerprint.normalized}`,
-    `Decision: ${decision.reason}`,
-    decision.matchedRule ? `Rule: ${decision.matchedRule}` : undefined,
-  ].filter(Boolean).join("\n");
+  return formatApprovalFallbackMessage(identity, decision);
+}
+
+let highlightCodePromise: Promise<HighlightCodeFn | undefined> | undefined;
+
+function loadHighlightCode(): Promise<HighlightCodeFn | undefined> {
+  highlightCodePromise ??= import("@earendil-works/pi-coding-agent")
+    .then((module) => typeof module.highlightCode === "function" ? module.highlightCode as HighlightCodeFn : undefined)
+    .catch(() => undefined);
+  return highlightCodePromise;
 }
 
 function unavailableApprovalReason(identity: NonNullable<AgentRuntimeState["activeIdentity"]> | undefined): string {
@@ -198,20 +208,47 @@ function unavailableApprovalReason(identity: NonNullable<AgentRuntimeState["acti
 }
 
 export function createUIApprovalBroker(ctx: EnforcementContextLike): PermissionApprovalBroker | undefined {
-  if (ctx.hasUI === false || (!ctx.ui?.select && !ctx.ui?.confirm)) return undefined;
+  if (ctx.hasUI === false || (!ctx.ui?.custom && !ctx.ui?.select && !ctx.ui?.confirm)) return undefined;
   const cacheKey = (ctx.ui ?? ctx) as object;
   const cached = uiApprovalBrokers.get(cacheKey);
   if (cached) return cached;
   const broker: PermissionApprovalBroker = {
     async requestApproval(request: PermissionApprovalRequest): Promise<PermissionApprovalResult> {
+      if (ctx.ui?.custom) {
+        const highlightCode = await loadHighlightCode();
+        return await ctx.ui.custom<PermissionApprovalResult>((tui, theme, keybindings, done) => {
+          const component = new PermissionApprovalComponent({
+            identity: request.identity,
+            decision: request.decision,
+            theme,
+            keybindings,
+            highlightCode,
+            getRows: () => typeof tui?.terminal?.rows === "number" ? tui.terminal.rows : 24,
+            onDone: done,
+          });
+          const requestRender = () => tui?.requestRender?.();
+          const onAbort = () => done({ outcome: "aborted", reason: "Permission approval aborted" });
+          request.signal?.addEventListener("abort", onAbort, { once: true });
+          return {
+            render: (width: number) => component.render(width),
+            handleInput: (data: string) => {
+              component.handleInput(data);
+              requestRender();
+            },
+            invalidate: () => component.invalidate(),
+            dispose: () => request.signal?.removeEventListener("abort", onAbort),
+          };
+        });
+      }
+
       if (ctx.ui?.select) {
-        const choice = await ctx.ui.select(`Required permission\n\n${request.message}`, [
-          "Allow once",
-          "Allow for this session",
+        const choice = await ctx.ui.select(request.message, [
           "Deny",
+          "Allow once",
+          "Allow session",
         ], { signal: request.signal });
         if (choice?.startsWith("Allow once")) return { outcome: "approved", scope: "once" };
-        if (choice?.startsWith("Allow for this session")) return { outcome: "approved", scope: "session" };
+        if (choice?.startsWith("Allow session")) return { outcome: "approved", scope: "session" };
         return { outcome: "denied", reason: "Permission denied by user" };
       }
       const approved = await ctx.ui?.confirm?.("Permission required", `${request.message}\n\nAllow this action once?`, { signal: request.signal });

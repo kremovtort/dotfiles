@@ -93,7 +93,7 @@ test("interactive approval prompt keeps permission details out of select choices
       select: async (prompt: string, options: string[]) => {
         capturedPrompt = prompt;
         capturedOptions = options;
-        return "Allow for this session";
+        return "Allow session";
       },
     },
   };
@@ -107,14 +107,15 @@ test("interactive approval prompt keeps permission details out of select choices
   const result = await enforceDecision(state, decision, ctx);
 
   assert.equal(result, undefined);
-  assert.match(capturedPrompt, /Required permission/);
+  assert.match(capturedPrompt, /Permission required/);
   assert.match(capturedPrompt, /Agent: build \(main\)/);
-  assert.match(capturedPrompt, /Action: tool:call:write/);
-  assert.match(capturedPrompt, /Decision: matched ask rule/);
+  assert.match(capturedPrompt, /Action: tool write/);
+  assert.match(capturedPrompt, /Reason: matched ask rule/);
   assert.match(capturedPrompt, /Rule: tools\.write/);
-  assert.deepEqual(capturedOptions, ["Allow once", "Allow for this session", "Deny"]);
+  assert.match(capturedPrompt, /sha256:[a-f0-9]{8}/);
+  assert.deepEqual(capturedOptions, ["Deny", "Allow once", "Allow session"]);
   for (const option of capturedOptions) {
-    assert.doesNotMatch(option, /Agent:|Action:|Decision:|Rule:/);
+    assert.doesNotMatch(option, /Agent:|Action:|Reason:|Rule:/);
   }
 });
 

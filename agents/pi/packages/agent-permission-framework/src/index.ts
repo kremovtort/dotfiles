@@ -4,6 +4,7 @@ import { AgentRuntimeState, persistAudit, persistRuntime, restoreRuntimeFromSess
 import { builtinAgents } from "./builtins.ts";
 import { discoverAgents, findAgent, selectMainAgents } from "./agents.ts";
 import { enforceDecision, evaluateToolCall } from "./enforcement.ts";
+import { formatAuditActionSummary } from "./permission-display.ts";
 import { deriveActiveToolNames, stablePolicyHash } from "./policy.ts";
 import { registerSubagentTools, SUBAGENT_RUN_ENTRY, SubagentRegistry } from "./subagents.ts";
 import { SubagentWidget } from "./subagent-widget.ts";
@@ -165,7 +166,7 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
       const identity = runtime.activeIdentity;
       const recent = runtime.audit.slice(-10).map((entry) => {
         const icon = entry.decision.state === "allow" ? "✓" : entry.decision.state === "ask" ? "?" : "✗";
-        return `${icon} ${entry.id} ${entry.decision.fingerprint.normalized} — ${entry.decision.reason}`;
+        return `${icon} ${entry.id} ${formatAuditActionSummary(entry.decision.fingerprint, 120)} — ${entry.decision.reason}`;
       });
       ctx.ui.notify([
         identity ? `Active: ${identity.agentName} (${identity.kind}, ${identity.source})` : "Active: none",
@@ -198,7 +199,7 @@ export default function agentPermissionFramework(pi: ExtensionAPI): void {
         `Policy: ${entry.identity?.policyHash ?? "none"}`,
         entry.identity?.configSources?.length ? `Sources: ${entry.identity.configSources.join(", ")}` : undefined,
         `Decision: ${entry.decision.state}`,
-        `Action: ${entry.decision.fingerprint.normalized}`,
+        `Action: ${formatAuditActionSummary(entry.decision.fingerprint, 120)}`,
         `Reason: ${entry.decision.reason}`,
         entry.decision.matchedRule ? `Rule: ${entry.decision.matchedRule}` : undefined,
         entry.approved ? "Approved: yes" : "Approved: no",
