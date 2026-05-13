@@ -93,7 +93,9 @@ test("external directory uses top-level permission guard", () => {
 
   assert.equal(evaluateExternalDirectoryPermission(permissions, "/nix/store/abc", "/repo", true).state, "allow");
   assert.equal(evaluateExternalDirectoryPermission(permissions, "/private/secret", "/repo", true).state, "deny");
-  assert.equal(evaluateFilePermission(permissions, "read", "/outside/file", "/repo", true).state, "ask");
+  const fileDecision = evaluateFilePermission(permissions, "read", "/outside/file", "/repo", true);
+  assert.equal(fileDecision.state, "ask");
+  assert.equal(fileDecision.fingerprint.normalized, "file:external_directory:read:/outside/file");
 });
 
 test("subagents policy considers project-local and override targets", () => {

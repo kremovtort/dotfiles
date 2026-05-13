@@ -66,11 +66,69 @@ test("bash command guard denies despite generic bash tool access", () => {
 
 test("file external-directory guard combines with tool permission", () => {
   const decision = evaluateToolCall(
-    runtime(policy({ "*": "allow", tools: { read: "allow" }, external_directory: { "*": "ask" } })),
+    runtime(policy({ "*": "allow", tools: { read: "allow" }, external_directory: { "/tmp/**": "ask" } })),
     { toolName: "read", input: { path: "/tmp/outside.txt" } },
     { cwd: "/repo", hasUI: true },
   );
   assert.equal(decision.state, "ask");
+  assert.equal(decision.matchedRule, "external_directory:/tmp/**");
+  assert.equal(decision.fingerprint.normalized, "file:external_directory:read:/tmp/outside.txt");
+});
+
+test("external-directory guard keeps matching path-only while fingerprint includes concrete tool", () => {
+  const decision = evaluateToolCall(
+    runtime(policy({ "*": "allow", tools: { grep: "allow" }, external_directory: { "/tmp/**": "ask" } })),
+    { toolName: "grep", input: { path: "/tmp/logs/app.log", pattern: "ERROR" } },
+    { cwd: "/repo", hasUI: true },
+  );
+
+  assert.equal(decision.state, "ask");
+  assert.equal(decision.matchedRule, "external_directory:/tmp/**");
+  assert.equal(decision.fingerprint.normalized, "file:external_directory:grep:/tmp/logs/app.log");
+});
+
+test("external-directory approvals are scoped by concrete file tool and path", async () => {
+  const state = runtime(policy({ "*": "allow", tools: { read: "allow", write: "allow" }, external_directory: { "/tmp/**": "ask" } }));
+  state.activeIdentity = {
+    id: "main-build-test",
+    agentName: "build",
+    kind: "main",
+    source: "builtin",
+    policyHash: "test",
+    createdAt: 1,
+  };
+
+  const readDecision = evaluateToolCall(
+    state,
+    { toolName: "read", input: { path: "/tmp/outside.txt" } },
+    { cwd: "/repo", hasUI: false },
+  );
+  const writeDecision = evaluateToolCall(
+    state,
+    { toolName: "write", input: { path: "/tmp/outside.txt", content: "new" } },
+    { cwd: "/repo", hasUI: false },
+  );
+  assert.equal(readDecision.fingerprint.normalized, "file:external_directory:read:/tmp/outside.txt");
+  assert.equal(writeDecision.fingerprint.normalized, "file:external_directory:write:/tmp/outside.txt");
+
+  let prompts = 0;
+  const broker: PermissionApprovalBroker = {
+    requestApproval: async (request) => {
+      prompts++;
+      assert.equal(request.decision.fingerprint.normalized, "file:external_directory:read:/tmp/outside.txt");
+      return { outcome: "approved", scope: "session" };
+    },
+  };
+
+  assert.equal(await enforceDecision(state, readDecision, { cwd: "/repo", hasUI: false }, { approvalBroker: broker }), undefined);
+  assert.equal(prompts, 1);
+
+  assert.equal(await enforceDecision(state, readDecision, { cwd: "/repo", hasUI: false }), undefined);
+  assert.equal(prompts, 1);
+
+  const writeResult = await enforceDecision(state, writeDecision, { cwd: "/repo", hasUI: false });
+  assert.equal(writeResult?.block, true);
+  assert.match(writeResult?.reason ?? "", /no interactive approval is available/);
 });
 
 test("interactive approval prompt keeps permission details out of select choices", async () => {

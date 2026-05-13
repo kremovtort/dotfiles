@@ -62,6 +62,21 @@ function toolDecision(toolName: string, target: string): PermissionDecision {
   };
 }
 
+function externalFileDecision(toolName: string, target: string): PermissionDecision {
+  const fingerprintTarget = `${toolName}:${target}`;
+  return {
+    state: "ask",
+    reason: `external path ${target} resolved to ask`,
+    matchedRule: "external_directory:/tmp/**",
+    fingerprint: {
+      category: "file",
+      operation: "external_directory",
+      target: fingerprintTarget,
+      normalized: `file:external_directory:${fingerprintTarget}`,
+    },
+  };
+}
+
 test("permission approval component renders compact stacked layout with preview before decisions", () => {
   const { component } = makeComponent("python <<'PY'\nimport os\nPY", 18);
   const lines = component.render(70);
@@ -160,4 +175,18 @@ test("permission approval component uses compact view for non-bash tool requests
   assert.doesNotMatch(text, /Ctrl\+O/);
   assert.doesNotMatch(text, /hl:/);
   assert.ok(lines.some((line) => line.includes("│") && line.includes("Target: nvim/plugins/lsp.nix")));
+});
+
+test("permission approval component shows concrete external file tool and path", () => {
+  for (const toolName of ["read", "write", "edit"]) {
+    const { component } = makeDecisionComponent(externalFileDecision(toolName, "/tmp/outside.txt"), 30);
+    const lines = component.render(120);
+    const text = lines.join("\n");
+
+    assert.match(text, new RegExp(`Request: tool ${toolName}`));
+    assert.match(text, /Target: \/tmp\/outside\.txt/);
+    assert.doesNotMatch(text, /Request: file external_directory/);
+    assert.doesNotMatch(text, /u\/d scroll/);
+    assert.doesNotMatch(text, /Ctrl\+O/);
+  }
 });

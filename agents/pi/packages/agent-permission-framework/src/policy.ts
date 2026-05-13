@@ -247,19 +247,33 @@ export function normalizePathForPolicy(cwd: string, rawPath: string): { absolute
   };
 }
 
+export function makeExternalDirectoryFingerprint(
+  normalizedPath: string,
+  fileToolOrOperation?: string,
+): ActionFingerprint {
+  const target = fileToolOrOperation ? `${fileToolOrOperation}:${normalizedPath}` : normalizedPath;
+  return makeFingerprint("file", "external_directory", target);
+}
+
 export function evaluateExternalDirectoryPermission(
   policy: PermissionPolicy | undefined,
   rawPath: string,
   cwd: string,
   hasUI: boolean,
+  fileToolOrOperation?: string,
 ): PermissionDecision {
   const normalized = normalizePathForPolicy(cwd, rawPath);
   if (!normalized.external) {
-    return decision("allow", `${normalized.projectRelative} is inside the project`, makeFingerprint("file", "external_directory", normalized.projectRelative));
+    return decision("allow", `${normalized.projectRelative} is inside the project`, makeExternalDirectoryFingerprint(normalized.projectRelative));
   }
   const fallback = defaultDecision(policy, hasUI);
   const result = evaluateRule(policy?.external_directory, [normalized.absolute], fallback, "external_directory");
-  return decision(result.state, `external path ${normalized.absolute} resolved to ${result.state}`, makeFingerprint("file", "external_directory", normalized.absolute), result.rule);
+  return decision(
+    result.state,
+    `external path ${normalized.absolute} resolved to ${result.state}`,
+    makeExternalDirectoryFingerprint(normalized.absolute, fileToolOrOperation),
+    result.rule,
+  );
 }
 
 export function evaluateFilePermission(
@@ -273,7 +287,7 @@ export function evaluateFilePermission(
   const target = normalized.external ? normalized.absolute : normalized.projectRelative;
   const toolDecision = evaluateToolPermission(policy, operation, hasUI, target);
   if (!normalized.external) return toolDecision;
-  return strictestDecision(toolDecision, evaluateExternalDirectoryPermission(policy, rawPath, cwd, hasUI));
+  return strictestDecision(toolDecision, evaluateExternalDirectoryPermission(policy, rawPath, cwd, hasUI, operation));
 }
 
 function stableStringify(value: unknown): string {

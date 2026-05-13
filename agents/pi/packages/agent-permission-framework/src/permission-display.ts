@@ -83,6 +83,8 @@ export function parseNormalizedAction(value: string): ParsedAction {
   };
 }
 
+const FILE_TOOL_NAMES = new Set(["read", "write", "edit", "grep", "find", "ls"]);
+
 function stripToolPrefix(parsed: ParsedAction): { sourceText: string; actionLabel: string; language?: string } {
   if (parsed.category === "bash") {
     return { sourceText: parsed.target, actionLabel: "bash exec", language: "bash" };
@@ -94,6 +96,15 @@ function stripToolPrefix(parsed: ParsedAction): { sourceText: string; actionLabe
     const toolTarget = toolSeparator >= 0 ? parsed.target.slice(toolSeparator + 1) : parsed.target;
     if (toolName === "bash") return { sourceText: toolTarget, actionLabel: "bash exec", language: "bash" };
     return { sourceText: toolTarget, actionLabel: `tool ${toolName || "call"}` };
+  }
+
+  if (parsed.category === "file" && parsed.operation === "external_directory") {
+    const accessSeparator = parsed.target.indexOf(":");
+    const fileToolOrOperation = accessSeparator >= 0 ? parsed.target.slice(0, accessSeparator) : undefined;
+    const externalPath = accessSeparator >= 0 ? parsed.target.slice(accessSeparator + 1) : parsed.target;
+    if (fileToolOrOperation && FILE_TOOL_NAMES.has(fileToolOrOperation)) {
+      return { sourceText: externalPath, actionLabel: `tool ${fileToolOrOperation}` };
+    }
   }
 
   return { sourceText: parsed.target || `${parsed.category}:${parsed.operation}`, actionLabel: `${parsed.category} ${parsed.operation}` };

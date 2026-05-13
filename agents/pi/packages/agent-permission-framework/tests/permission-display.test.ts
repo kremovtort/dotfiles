@@ -57,6 +57,37 @@ test("non-bash tool display strips duplicated tool prefix from target", () => {
   assert.match(display.summary, /^tool read: nvim\/plugins\/lsp\.nix/);
 });
 
+test("tool-aware external directory display shows concrete file tool and path", () => {
+  const display = createPermissionDisplay("file:external_directory:read:/tmp/outside:file.txt");
+
+  assert.equal(display.actionLabel, "tool read");
+  assert.equal(display.sourceText, "/tmp/outside:file.txt");
+  assert.match(display.summary, /^tool read: \/tmp\/outside:file\.txt/);
+  assert.doesNotMatch(display.summary, /file external_directory/);
+});
+
+test("fallback and audit summaries use concrete external file action", () => {
+  const decision: PermissionDecision = {
+    state: "ask",
+    reason: "external path /tmp/outside.txt resolved to ask",
+    matchedRule: "external_directory:/tmp/**",
+    fingerprint: {
+      category: "file",
+      operation: "external_directory",
+      target: "write:/tmp/outside.txt",
+      normalized: "file:external_directory:write:/tmp/outside.txt",
+    },
+  };
+
+  const message = formatApprovalFallbackMessage({ agentName: "build", kind: "main" }, decision, { width: 80 });
+  const audit = formatAuditActionSummary(decision.fingerprint, 80);
+
+  assert.match(message, /Action: tool write: \/tmp\/outside\.txt/);
+  assert.match(audit, /tool write: \/tmp\/outside\.txt/);
+  assert.doesNotMatch(message, /Action: file external_directory/);
+  assert.doesNotMatch(audit, /file external_directory/);
+});
+
 test("audit action summary is compact but correlatable", () => {
   const command = `${"x".repeat(200)}\n${"y".repeat(200)}`;
   const summary = formatAuditActionSummary({

@@ -159,7 +159,7 @@ export function evaluateToolCall(
   const filePath = filePathForTool(event.input);
   if (operation && filePath) {
     const normalized = normalizePathForPolicy(ctx.cwd, filePath);
-    if (normalized.external) decisions.push(evaluateExternalDirectoryPermission(policy, filePath, ctx.cwd, hasUI));
+    if (normalized.external) decisions.push(evaluateExternalDirectoryPermission(policy, filePath, ctx.cwd, hasUI, event.toolName));
   }
 
   return strictest(decisions);
