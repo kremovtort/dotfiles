@@ -8,7 +8,7 @@
   plugins.blink-cmp = {
     enable = true;
     settings = {
-      snippets.preset = ''default'';
+      snippets.preset = "default";
       appearance = {
         use_nvim_cmp_as_default = false;
         nerd_font_variant = "mono";
@@ -26,6 +26,7 @@
         default = [
           "lsp"
           "supermaven"
+          "cursortab"
           "path"
           "snippets"
           "buffer"
@@ -35,6 +36,13 @@
             name = "supermaven";
             module = "blink.compat.source";
             score_offset = 100;
+          };
+          cursortab = {
+            name = "cursortab";
+            module = "cursortab.blink";
+            async = true;
+            timeout_ms = 5000;
+            score_offset = 50;
           };
         };
       };

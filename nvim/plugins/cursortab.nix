@@ -29,6 +29,13 @@ in
 
   extraConfigLua = lib.mkAfter ''
     require("cursortab").setup({
+      keymaps = {
+        accept = false, -- Let blink.cmp manage <Tab>
+      },
+      blink = {
+        enabled = true,
+        ghost_text = false,
+      },
       provider = {
         type = "mercuryapi",
         api_key_env = "MERCURY_AI_TOKEN",
