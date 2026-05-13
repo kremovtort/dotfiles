@@ -238,6 +238,8 @@ in
     enableZshIntegration = true;
   };
 
+  programs.nushell.enable = true;
+
   programs.tealdeer.enable = true;
 
   programs.zoxide = {

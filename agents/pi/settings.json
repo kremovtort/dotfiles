@@ -3,16 +3,16 @@
   "defaultModel": "gpt-5.5",
   "defaultThinkingLevel": "xhigh",
   "packages": [
-    "npm:@plannotator/pi-extension",
-    "npm:pi-websearch-tavily",
-    "npm:@cortexkit/pi-magic-context",
-    "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@aliou/pi-processes",
-    "npm:pi-tool-display",
-    "npm:pi-smart-fetch",
-    "npm:pi-mermaid",
+    "npm:@cortexkit/pi-magic-context",
+    "npm:@plannotator/pi-extension",
+    "npm:@tintinweb/pi-subagents",
+    "npm:pi-ask-user",
+    "npm:pi-hashline-readmap",
     "npm:pi-mcp-adapter",
-    "npm:@tintinweb/pi-subagents"
+    "npm:pi-mermaid",
+    "npm:pi-smart-fetch",
+    "npm:pi-websearch-tavily"
   ],
   "lastChangelogVersion": "0.74.0",
   "terminal": {
