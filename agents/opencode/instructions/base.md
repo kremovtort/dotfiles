@@ -2,6 +2,27 @@
 
 These rules are injected globally for OpenCode sessions and are also installed as Pi global instructions via `agents/pi.nix`.
 
+## Never scan full Arcadia
+
+Arcadia is a very large monorepository, usually located at `~/arcadia` or
+`/codenv/arcadia`, and it may be mounted as a virtual filesystem.
+
+Do not run recursive `find`, `grep`, `rg`, or script-based searches over:
+
+- the whole Arcadia checkout, e.g. `~/arcadia` or `/codenv/arcadia`;
+- parent directories that may contain Arcadia, e.g. `~`, `/Users/<user>`,
+  `/codenv`, or `/`.
+
+Allowed patterns:
+
+- search only the current project/repository;
+- search a specific known subdirectory inside Arcadia, e.g.
+  `~/arcadia/devtools`;
+- when using shell search near Arcadia, prefer filesystem-bounded commands such
+  as `rg --one-file-system <pattern> <specific-path>`.
+
+If unsure whether a broad path may include Arcadia, ask or narrow the path first.
+
 ## Never discard unrelated changes
 
 - Never discard unrelated changes just because they look “extra”.
@@ -20,13 +41,13 @@ The parent agent owns interpretation and final decisions. Subagents collect and 
 
 #### OpenCode
 
-- Delegate to the named subagent, for example `@scout`, `@docs-digger`, `@codemodder`, or `@openspec-reviewer-gpt`.
+- Delegate to the named subagent, for example `@scout`, `@researcher`, `@codemodder`, or `@openspec-reviewer-gpt`.
 - Send a single JSON object matching that subagent's input contract; no prose wrapper.
 
 #### Pi with `npm:@tintinweb/pi-subagents`
 
 - Use the `Agent` tool.
-- Set `subagent_type` to the custom agent filename, for example `scout`, `docs-digger`, `codemodder`, `openspec-reviewer-gpt`, `openspec-reviewer-glm`, or `openspec-reviewer-kimi`.
+- Set `subagent_type` to the custom agent filename, for example `scout`, `researcher`, `codemodder`, `openspec-reviewer-gpt`, `openspec-reviewer-glm`, or `openspec-reviewer-kimi`.
 - Put the formatted JSON payload in the `prompt` string and do not add prose around it.
 - Use a short `description` of 3-5 words.
 - Do not set `schedule` unless the user explicitly asked for delayed or recurring execution.
@@ -49,7 +70,7 @@ Agent({
 - Keep prompts tiny and task-focused; do not paste large context blobs.
 - To pass local context, use inline refs: `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based).
   - Examples: `@agents/opencode/instructions/base.md`, `@agents/opencode/instructions/base.md:23:60`, `@agents/opencode/instructions/base.md::<Subagent usage>`.
-- Subagents normally do not invoke other subagents. Only OpenSpec reviewer variants may call `scout` or `docs-digger` for focused evidence gathering.
+- Subagents normally do not invoke other subagents. Only OpenSpec reviewer variants may call `scout` or `researcher` for focused evidence gathering.
 - For build/test/lint execution in Pi, prefer the `process` tool for long-running/noisy commands. There is no custom `runner` subagent in this repository unless one is added later.
 
 ## Subagent roles and contracts
@@ -73,7 +94,7 @@ Input contract:
 }
 ```
 
-### `docs-digger`
+### `researcher`
 
 - Purpose: documentation research for authoritative, quotable evidence with minimal context bloat.
 - Delegate when the parent needs source-backed facts: CLI flag semantics, API behavior, config options, standards/spec details, or error interpretation from official docs.
@@ -133,7 +154,7 @@ Input contract:
 - Purpose: independent read-only review of one OpenSpec change and its implementation.
 - Delegate from OpenSpec review workflows when you need multiple model perspectives.
 - Each reviewer must load/follow the shared `openspec-reviewer` skill and return Markdown findings using that skill's output format.
-- Reviewers may use `scout` or `docs-digger` only for focused evidence gathering. They must not edit files or ask subagents to edit.
+- Reviewers may use `scout` or `researcher` only for focused evidence gathering. They must not edit files or ask subagents to edit.
 
 Input contract:
 
@@ -159,7 +180,7 @@ Input contract:
 
 - If the task needs codebase discovery (“where is X?”, “who calls Y?”, “find config for Z?”), delegate to `scout` early.
 - In the parent agent, do at most one discovery tool call before delegating to `scout`, unless the answer is trivial.
-- If the task needs external documentation research, delegate to `docs-digger`.
+- If the task needs external documentation research, delegate to `researcher`.
 - If the task is a repetitive mechanical refactor, delegate to `codemodder` with an explicit rule set.
 - If the task needs independent OpenSpec review, run the reviewer variants in parallel and synthesize their findings in the parent.
 - For full review/bug-finding, `scout` is only evidence gathering; the parent does analysis and validation.

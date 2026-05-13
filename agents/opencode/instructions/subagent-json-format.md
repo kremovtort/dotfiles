@@ -21,7 +21,7 @@ The `Agent` tool's `prompt` parameter is a string. Put only the formatted JSON o
 
 ```js
 Agent({
-  subagent_type: "docs-digger",
+  subagent_type: "researcher",
   description: "Check Nix docs",
   prompt:
     '{\n  "q": "What does builtins.readFile return in Nix?",\n  "limit": 4\n}',

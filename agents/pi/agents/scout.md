@@ -1,11 +1,11 @@
 ---
 description: Fast read-only codebase discovery and call-path tracing subagent.
 display_name: Scout
-tools: read, grep, find, ls
+tools: read, grep, find, ls, bash
 extensions: true
-disallowed_tools: bash, edit, write, Agent, process, ask_user_question, ast_grep_replace
-model: openai-codex/gpt-5.5
-thinking: low
+disallowed_tools: edit, write, Agent, process, ask_user_question
+model: openai-codex/gpt-5.4-mini
+thinking: high
 max_turns: 30
 prompt_mode: replace
 inherit_context: false

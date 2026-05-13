@@ -6,7 +6,6 @@ extensions: true
 skills: openspec-reviewer
 disallowed_tools: edit, write, ast_grep_replace, process, ask_user_question
 model: opencode-go/kimi-k2.6
-thinking: high
 max_turns: 80
 prompt_mode: replace
 inherit_context: false

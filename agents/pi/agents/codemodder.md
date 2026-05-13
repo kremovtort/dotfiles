@@ -1,11 +1,10 @@
 ---
 description: Deterministic mechanical-edit subagent for large repetitive refactors.
 display_name: Codemodder
-tools: read, edit, grep, find, ls
+tools: read, write, edit, grep, find, ls
 extensions: true
-disallowed_tools: bash, write, Agent, web_search, web_fetch, process, ask_user_question
+disallowed_tools: bash, Agent, web_search, web_fetch, process, ask_user_question
 model: opencode-go/minimax-m2.7
-thinking: minimal
 max_turns: 60
 prompt_mode: replace
 inherit_context: false

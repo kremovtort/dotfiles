@@ -40,13 +40,13 @@
         "i"
         "x"
       ];
-      key = "<c-.>";
+      key = "<leader>aa";
       action.__raw = ''function() require("sidekick.cli").focus({ name = "pi" }) end'';
       options.desc = "Sidekick Focus Pi";
     }
     {
       mode = "n";
-      key = "<leader>aa";
+      key = "<d-a>";
       action.__raw = ''function() require("sidekick.cli").toggle({ name = "pi", focus = true }) end'';
       options.desc = "Sidekick Toggle Pi";
     }
