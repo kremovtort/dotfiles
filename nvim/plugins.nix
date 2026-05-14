@@ -44,11 +44,11 @@
     ./plugins/zoxide.nix
 
     ./plugins/quickfix.nix
-    ./plugins/sidekick.nix
+    # ./plugins/sidekick.nix
 
     # opencode.nvim frontend disabled; standalone opencode CLI remains configured elsewhere.
     # ./plugins/opencode/provider-sudo-tee.nix
-    # ./plugins/opencode/provider-nickvandyke.nix
+    ./plugins/opencode/provider-nickvandyke.nix
     ./plugins/dropbar.nix
     ./plugins/tabterm.nix
   ];

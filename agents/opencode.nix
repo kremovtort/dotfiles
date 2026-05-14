@@ -11,7 +11,6 @@ let
 in
 {
   home.sessionVariables = {
-    MORPH_API_KEY = "\$(cat ${config.sops.secrets.morphllm-key.path} 2> /dev/null || true)";
     OPENCODE_ENABLE_EXA = 1;
   };
 
@@ -22,7 +21,7 @@ in
 
     cache_ttl = {
       default = "5m";
-      "openai/gpt-5.5" = "30m";
+      "openai/gpt-5.5" = "5m";
     };
 
     protected_tags = 30;
@@ -32,7 +31,7 @@ in
       fallback_models = ["opencode-go/glm-5.1"];
     };
 
-    nudge_interval_tokens = 25000;
+    nudge_interval_tokens = 20000;
 
     dreamer = {
       enabled = true;
@@ -75,16 +74,13 @@ in
 
       plugin = [
         "@mohak34/opencode-notifier@latest"
-        "cc-safety-net@latest"
-        "opencode-direnv@latest"
         "@plannotator/opencode@latest"
         "@cortexkit/opencode-magic-context@latest"
-        "opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply"
+        "opencode-direnv@latest"
       ];
 
       instructions = [
         "~/.config/opencode/instructions/*"
-        "~/.cache/opencode/packages/opencode-morph-fast-apply@github:JRedeker/opencode-morph-fast-apply/node_modules/opencode-morph-fast-apply/instructions/morph-tools.md"
       ];
 
       compaction = {
@@ -172,7 +168,9 @@ in
       ];
 
       keybinds = {
-        leader = "ctrl+x,ctrl+ч";
+        # OpenCode 1.15 validates `leader` as a single key stroke, not a
+        # comma-separated alternative list like regular keybinds.
+        leader = "ctrl+x";
         app_exit = "ctrl+d,ctrl+в,<leader>q,<leader>й";
         editor_open = "<leader>e,<leader>у";
         theme_list = "<leader>t,<leader>е";

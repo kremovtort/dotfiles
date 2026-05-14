@@ -12,7 +12,9 @@
     "npm:pi-mcp-adapter",
     "npm:pi-mermaid",
     "npm:pi-smart-fetch",
-    "npm:pi-websearch-tavily"
+    "npm:pi-websearch-tavily",
+    "npm:pi-qmd",
+    "npm:pi-agent-browser"
   ],
   "lastChangelogVersion": "0.74.0",
   "terminal": {

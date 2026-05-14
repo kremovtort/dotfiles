@@ -15,6 +15,11 @@
       url = "github:ast-grep/claude-skill";
       flake = false;
     };
+
+    openspecSchemas = {
+      url = "github:intent-driven-dev/openspec-schemas";
+      flake = false;
+    };
   };
 
   outputs =
@@ -31,6 +36,7 @@
         imports = [
           ./opencode.nix
           ./pi.nix
+          ./openspec.nix
         ];
 
         home.packages = [

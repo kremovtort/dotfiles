@@ -1,9 +1,24 @@
 {
+  agents,
   agentsInputs,
   config,
+  lib,
   system,
   ...
 }:
+let
+  localSkillDirs = lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./skills);
+
+  localSkillFiles = lib.mapAttrs' (name: _: {
+    name = ".pi/agent/skills/${name}";
+    value.source = agents + "/skills/${name}";
+  }) localSkillDirs;
+
+  flakeSkillFiles = {
+    ".pi/agent/skills/ast-grep".source = agentsInputs.astGrepClaudeSkill + "/ast-grep/skills/ast-grep";
+    ".pi/agent/skills/skill-creator".source = agentsInputs.anthropicSkills + "/skills/skill-creator";
+  };
+in
 {
   home.packages = [
     agentsInputs.llm-agents.packages.${system}.pi
@@ -27,9 +42,6 @@
       (builtins.readFile ./opencode/instructions/subagent-json-format.md)
     ];
 
-    ".pi/agent/skills".source =
-      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/agents/skills";
-
     ".pi/agent/magic-context.jsonc".text = builtins.toJSON {
       "$schema" =
         "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
@@ -38,9 +50,12 @@
 
       cache_ttl = {
         default = "5m";
-        "openai-codex/gpt-5.5" = "30m";
+        "openai-codex/gpt-5.5" = "5m";
       };
-
+      nudge_interval_tokens = 7500;
+      iteration_nudge_threshold = 8;
+      execute_threshold_percentage = 50;
+      auto_drop_tool_age = 60;
       protected_tags = 20;
 
       historian = {
@@ -48,7 +63,6 @@
         fallback_models = [ "opencode-go/glm-5.1" ];
       };
 
-      nudge_interval_tokens = 15000;
 
       dreamer = {
         enabled = true;
@@ -65,6 +79,8 @@
         model = "Xenova/all-MiniLM-L6-v2";
       };
     };
-  };
+  }
+  // flakeSkillFiles
+  // localSkillFiles;
 
 }

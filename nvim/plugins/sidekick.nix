@@ -19,8 +19,25 @@
       cli = {
         picker = "snacks";
         tools.pi = { };
-
         win = {
+          config.__raw = ''
+            function(terminal)
+              if terminal.tool.name ~= "pi" then
+                return
+              end
+
+              terminal.opts.keys.pass_ctrl_o = {
+                "<c-o>",
+                function(t)
+                  if t.job and t:is_running() then
+                    vim.api.nvim_chan_send(t.job, string.char(15))
+                  end
+                end,
+                mode = "n",
+                desc = "Pass Ctrl-O to Pi",
+              }
+            end
+          '';
           split.width = 0.5;
 
           # Sidekick maps its terminal to SidekickChat, which links to
@@ -36,16 +53,18 @@
     {
       mode = [
         "n"
-        "t"
-        "i"
-        "x"
       ];
       key = "<leader>aa";
       action.__raw = ''function() require("sidekick.cli").focus({ name = "pi" }) end'';
       options.desc = "Sidekick Focus Pi";
     }
     {
-      mode = "n";
+      mode = [
+        "n"
+        "t"
+        "i"
+        "x"
+      ];
       key = "<d-a>";
       action.__raw = ''function() require("sidekick.cli").toggle({ name = "pi", focus = true }) end'';
       options.desc = "Sidekick Toggle Pi";
