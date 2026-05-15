@@ -5,6 +5,11 @@ darwin-rebuild-switch:
 home-manager-switch:
   nix run .#home-manager -- switch --flake .
 
+update-flakes:
+  nix flake update --flake ./agents
+  nix flake update --flake ./nvim
+  nix flake update --flake .
+
 [linux]
 switch: home-manager-switch setup-shell
 
@@ -22,13 +27,11 @@ switch TARGET="":
   just setup-shell
 
 [linux]
-upgrade:
-  nix flake update --flake .
+upgrade: update-flakes update-opencode-vim
   just switch
 
 [macos]
-upgrade:
-  nix flake update --flake .
+upgrade: update-flakes update-opencode-vim
   just switch
   brew update
   brew upgrade

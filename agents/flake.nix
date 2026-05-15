@@ -16,6 +16,11 @@
       flake = false;
     };
 
+    qmd = {
+      url = "github:tobi/qmd";
+      flake = false;
+    };
+
     openspecSchemas = {
       url = "github:intent-driven-dev/openspec-schemas";
       flake = false;
@@ -39,8 +44,9 @@
           ./openspec.nix
         ];
 
-        home.packages = [
-          inputs.llm-agents.packages.${system}.openspec
+        home.packages = with inputs.llm-agents.packages.${system}; [
+          openspec
+          qmd
         ];
       };
     in

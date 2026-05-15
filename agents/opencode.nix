@@ -2,12 +2,15 @@
   agents,
   agentsInputs,
   config,
+  lib,
   pkgs,
   system,
   ...
 }:
 let
   configDir = ".config/opencode";
+  localSkillDirs = lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./skills);
+  localSkills = lib.mapAttrs (name: _: agents + "/skills/${name}") localSkillDirs;
   opencodeVim = import ./opencode-vim { inherit agentsInputs pkgs system; };
 in
 {
@@ -49,6 +52,10 @@ in
   home.file."${configDir}/instructions/subagent-json-format.md".source =
     ./opencode/instructions/subagent-json-format.md;
 
+  home.packages = with pkgs; [
+    snip
+  ];
+
   programs.bun.enable = true; # need for plannotator
 
   programs.opencode = {
@@ -57,16 +64,11 @@ in
     agents = ./opencode/agents;
     commands = ./commands;
     skills = {
-      vcs-detect = agents + "/skills/vcs-detect";
-      jujutsu = agents + "/skills/jujutsu";
-      add-nixvim-plugin = agents + "/skills/add-nixvim-plugin";
-      openspec-review = agents + "/skills/openspec-review";
-      openspec-review-plan = agents + "/skills/openspec-review-plan";
-      openspec-review-apply-fixes = agents + "/skills/openspec-review-apply-fixes";
-      openspec-reviewer = agents + "/skills/openspec-reviewer";
       ast-grep = agentsInputs.astGrepClaudeSkill + "/ast-grep/skills/ast-grep";
       skill-creator = agentsInputs.anthropicSkills + "/skills/skill-creator";
-    };
+      qmd = agentsInputs.qmd + "/skills/qmd";
+    }
+    // localSkills;
 
     settings = {
       "$schema" = "https://opencode.ai/config.json";
@@ -74,10 +76,12 @@ in
       autoupdate = false;
 
       plugin = [
-        "@mohak34/opencode-notifier@latest"
-        "@plannotator/opencode@latest"
-        "@cortexkit/opencode-magic-context@latest"
-        "opencode-direnv@latest"
+        "@mohak34/opencode-notifier"
+        "@plannotator/opencode"
+        "@cortexkit/opencode-magic-context"
+        "opencode-direnv"
+        "opencode-pty"
+        "opencode-hashline"
       ];
 
       instructions = [
@@ -95,8 +99,6 @@ in
         write."/nix/store/**" = "deny";
         websearch = "allow";
       };
-
-      vim_system_clipboard_register = true;
 
       mcp = {
         context7 = {
@@ -172,12 +174,10 @@ in
 
     tui = {
       plugin = [
-        "@cortexkit/opencode-magic-context@latest"
+        "@cortexkit/opencode-magic-context"
       ];
 
       keybinds = {
-        # OpenCode 1.15 validates `leader` as a single key stroke, not a
-        # comma-separated alternative list like regular keybinds.
         leader = "ctrl+x";
         app_exit = "ctrl+d,ctrl+в,<leader>q,<leader>й";
         editor_open = "<leader>e,<leader>у";
@@ -244,7 +244,7 @@ in
         terminal_suspend = "ctrl+z,ctrl+я";
         tips_toggle = "<leader>h,<leader>р";
       };
-
+      vim_system_clipboard_register = true;
       theme = "catppuccin-espresso";
     };
   };

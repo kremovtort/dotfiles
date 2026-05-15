@@ -179,6 +179,7 @@ in
 
   programs.git = {
     enable = true;
+    settings.init.defaultBranch = "main";
     settings.user.name = userName;
     settings.user.email = userEmail;
   };
