@@ -60,8 +60,9 @@ let
         0.66
         0.75
       ];
-      animation_speed = 35;
+      animation_speed = 20;
       sliver_width = 1;
+      horizontal_mouse_warp = -1;
     };
     bindings = {
       window_focus_west = "cmd + ctrl - h";
@@ -90,6 +91,7 @@ let
       sensitivity = 1;
       deceleration = 3;
       gesture.fingers_count = 3;
+      vertical = true;
     };
     decorations.inactive.dim = {
       opacity = -0.015;
