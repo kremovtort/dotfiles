@@ -8,6 +8,7 @@
 }:
 let
   configDir = ".config/opencode";
+  opencodeVim = import ./opencode-vim { inherit agentsInputs pkgs system; };
 in
 {
   home.sessionVariables = {
@@ -28,7 +29,7 @@ in
 
     historian = {
       model = "openai/gpt-5.5";
-      fallback_models = ["opencode-go/glm-5.1"];
+      fallback_models = [ "opencode-go/glm-5.1" ];
     };
 
     nudge_interval_tokens = 20000;
@@ -52,7 +53,7 @@ in
 
   programs.opencode = {
     enable = true;
-    package = agentsInputs.llm-agents.packages.${system}.opencode;
+    package = opencodeVim;
     agents = ./opencode/agents;
     commands = ./commands;
     skills = {
@@ -88,7 +89,14 @@ in
         auto = false;
       };
 
-      permission.websearch = "allow";
+      permission = {
+        external_directory."/nix/store/**" = "allow";
+        read."/nix/store/**" = "allow";
+        write."/nix/store/**" = "deny";
+        websearch = "allow";
+      };
+
+      vim_system_clipboard_register = true;
 
       mcp = {
         context7 = {
@@ -231,6 +239,7 @@ in
         session_child_cycle = "ctrl+],ctrl+ъ";
         session_child_cycle_reverse = "ctrl+[,ctrl+х";
         input_delete_word_backward = "ctrl+w,ctrl+ц,ctrl+backspace,alt+backspace";
+        input_force_submit = "alt+return";
         session_parent = "ctrl+o,ctrl+щ";
         terminal_suspend = "ctrl+z,ctrl+я";
         tips_toggle = "<leader>h,<leader>р";

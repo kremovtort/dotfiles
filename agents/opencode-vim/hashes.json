@@ -1,0 +1,9 @@
+{
+  "version": "1.15.0-ocv.3.51",
+  "hashes": {
+    "aarch64-darwin": "sha256-FRU9h1l38MYn2/n8elXP8UYbamejbsy0NLEwWr70PRA=",
+    "x86_64-darwin": "sha256-WuTyCMnCMSruQ1CZSFJgLc3lv82HiHGOVSErNEIgA4k=",
+    "aarch64-linux": "sha256-xO+xas1wAeUAvn7u+fx9s+ZP37Cxyt6Kmb0bVut37co=",
+    "x86_64-linux": "sha256-hF+xCXav1MggYOTkP/w+IGVphiuUd9l7JXot6ucY43o="
+  }
+}
