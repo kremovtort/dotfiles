@@ -31,6 +31,7 @@
     ./plugins/render-markdown.nix
 
     ./plugins/haskell.nix
+    ./plugins/rustaceanvim.nix
 
     ./plugins/repeat.nix
     ./plugins/auto-session.nix
