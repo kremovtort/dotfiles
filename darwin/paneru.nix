@@ -62,7 +62,6 @@ let
       ];
       animation_speed = 20;
       sliver_width = 1;
-      horizontal_mouse_warp = -1;
     };
     bindings = {
       window_focus_west = "cmd + ctrl - h";
