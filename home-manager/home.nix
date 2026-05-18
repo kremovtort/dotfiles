@@ -82,6 +82,8 @@ in
 
   home.file = {
     ".clickhouse-client".source = "${self}/clickhouse-client";
+    ".config/ghostty/themes/catppuccin-espresso".source =
+      "${self}/catppuccin/ghostty-theme-catppuccin-espresso";
     ".config/opencode/themes/catppuccin-espresso.json".source =
       "${self}/catppuccin/opencode-theme-catppuccin-espresso.json";
     ".config/ov/config.yaml".source = "${self}/ov.yaml";
@@ -175,6 +177,28 @@ in
     enable = true;
     enableZshIntegration = true;
     tmux.enableShellIntegration = true;
+  };
+
+  programs.ghostty = {
+    enable = true;
+    enableZshIntegration = true;
+    package = if isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+    settings = {
+      theme = "catppuccin-espresso";
+      shell-integration-features = true;
+      font-family = "JetBrainsMono Nerd Font Mono";
+      font-size = 11.5;
+      macos-titlebar-style = "tabs";
+      macos-option-as-alt = true;
+      clipboard-read = "allow";
+      clipboard-write = "allow";
+      clipboard-paste-protection = false;
+      keybind = [
+        "super+left_bracket=text:\\x1b[91;9u" # Cmd+[ -> <D-[>
+        "super+right_bracket=text:\\x1b[93;9u" # Cmd+] -> <D-]>
+        "super+apostrophe=text:\\x1b[39;9u" # Cmd+' -> <D-'>
+      ];
+    };
   };
 
   programs.git = {
