@@ -77,7 +77,7 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
    Launch these subagents concurrently with the same JSON payload:
    - `openspec-reviewer-gpt`
    - `openspec-reviewer-glm`
-   - `openspec-reviewer-kimi`
+   - `openspec-reviewer-qwen`
 
    Runtime notes:
    - OpenCode: use the subagent/task mechanism with the payload as the direct JSON object.
@@ -137,7 +137,7 @@ Return Markdown with these sections:
 
 ### P1 Must Fix: <title>
 
-- Source reviewers: <gpt|glm|kimi>
+- Source reviewers: <gpt|glm|qwen>
 - Evidence: `<path>:<line>` and/or OpenSpec artifact reference.
 - Why it matters: <impact>.
 - Recommended fix: <minimal fix>.
@@ -155,7 +155,7 @@ Return Markdown with these sections:
 
 - OpenSpec change: `<name>`
 - Implementation location: `<kind>: <value>`
-- Reviewers run: GPT, GLM, Kimi
+- Reviewers run: GPT, GLM, Qwen
 - Limitations: <missing data/tools, if any>
 
 ## Next Step

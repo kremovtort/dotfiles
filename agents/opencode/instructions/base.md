@@ -31,6 +31,10 @@ If unsure whether a broad path may include Arcadia, ask or narrow the path first
 - If build/generated output, such as `flake.lock`, changes unexpectedly, keep it as a separate change. The user decides whether to discard it.
 - Only discard changes when the user explicitly asked you to do it.
 
+## File edits
+
+- Prefer `hashline_edit` for targeted edits when hashline references are available; use `apply_patch` only when `hashline_edit` is unavailable or unsuitable.
+
 ## Subagent usage
 
 Use subagents by default for mechanical I/O work: heavy search, documentation lookup, repetitive codemods, independent review passes, and other tasks that can bloat the parent context.
