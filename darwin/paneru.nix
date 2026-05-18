@@ -54,14 +54,14 @@ let
       focus_follows_mouse = false;
       mouse_follows_focus = false;
       preset_column_widths = [
-        0.25
         0.33
         0.5
-        0.66
-        0.75
+        0.67
+        1
       ];
+      window_resize_cycle = false;
       animation_speed = 20;
-      sliver_width = 1;
+      sliver_width = 2;
     };
     bindings = {
       window_focus_west = "cmd + ctrl - h";
@@ -79,7 +79,6 @@ let
       window_manage = "cmd + alt - t";
       window_stack = "alt + ctrl - ]";
       window_unstack = "alt + ctrl - [";
-      quit = "ctrl + alt - q";
     };
     windows.all = {
       title = ".*";
