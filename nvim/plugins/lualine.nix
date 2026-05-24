@@ -153,8 +153,8 @@
             separator = "";
             padding = {
               left = 1;
-              right = 0;
             };
+            draw_empty = false;
           }
           {
             __unkeyed-1.__raw = ''
@@ -229,7 +229,7 @@
               end
             '';
             padding = {
-              left = 1;
+              left = 0;
               right = 1;
             };
             separator = "%#LualineCSeparator#%*";

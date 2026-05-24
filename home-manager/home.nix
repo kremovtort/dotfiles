@@ -62,6 +62,7 @@ in
     pkgs.kubernetes-helm
     pkgs.jetbrains-mono
     pkgs.nerd-fonts.jetbrains-mono
+    pkgs.nerd-fonts.symbols-only
     pkgs.nixd
     pkgs.nixfmt
     pkgs.nodejs
@@ -186,8 +187,9 @@ in
     settings = {
       theme = "catppuccin-espresso";
       shell-integration-features = true;
-      font-family = "JetBrainsMono Nerd Font Mono";
-      font-size = 11.5;
+      font-family = [ "JetBrains Mono" "Symbols Nerd Font Mono" ];
+      font-size = 12;
+      adjust-icon-height = "-55%";
       macos-titlebar-style = "tabs";
       macos-option-as-alt = true;
       clipboard-read = "allow";

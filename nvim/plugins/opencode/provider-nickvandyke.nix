@@ -134,7 +134,7 @@ in
         "t"
         "x"
       ];
-      key = "<D-a>";
+      key = "<A-a>";
       action.__raw = ''
         function()
           require("opencode").toggle()

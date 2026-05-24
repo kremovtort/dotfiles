@@ -207,8 +207,8 @@
     }
     {
       mode = "n";
-      key = "<D-,>";
-      action.__raw = "function() require('snacks').picker.buffers({ focus = 'list' }) end";
+      key = "<A-,>";
+      action.__raw = "function() require('snacks').picker.buffers() end";
       options.desc = "Buffers (focus list)";
     }
     {

@@ -38,8 +38,8 @@
             method = "textDocument/documentSymbol",
           }))
       end
-
     '';
+    icons.ui.bar.separator = "  ";
   };
 
   colorschemes.catppuccin.settings.integrations.dropbar.enable = true;
