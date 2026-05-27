@@ -4,12 +4,12 @@
     enable = true;
 
     # Sidekick's nixpkgs package pulls Copilot LSP as a runtime dependency.
-    # This configuration is CLI-only for Pi, so avoid the unfree Copilot runtime.
+    # This configuration is CLI-only for OpenCode, so avoid the unfree Copilot runtime.
     package = pkgs.vimPlugins.sidekick-nvim.overrideAttrs (_old: {
       runtimeDeps = [ ];
     });
     settings = {
-      # CLI-only mode: use Sidekick for Pi, not Copilot NES.
+      # CLI-only mode: use Sidekick for OpenCode, not Copilot NES.
       nes.enabled = false;
 
       # NixVim currently checks this assertion path for Sidekick NES; keep it
@@ -18,11 +18,11 @@
 
       cli = {
         picker = "snacks";
-        tools.pi = { };
+        tools.opencode = { };
         win = {
           config.__raw = ''
             function(terminal)
-              if terminal.tool.name ~= "pi" then
+              if terminal.tool.name ~= "opencode" then
                 return
               end
 
@@ -34,11 +34,11 @@
                   end
                 end,
                 mode = "n",
-                desc = "Pass Ctrl-O to Pi",
+                desc = "Pass Ctrl-O to OpenCode",
               }
             end
           '';
-          split.width = 0.5;
+          split.width = 121;
 
           # Sidekick maps its terminal to SidekickChat, which links to
           # NormalFloat by default. Keep the split visually identical to
@@ -55,8 +55,8 @@
         "n"
       ];
       key = "<leader>aa";
-      action.__raw = ''function() require("sidekick.cli").focus({ name = "pi" }) end'';
-      options.desc = "Sidekick Focus Pi";
+      action.__raw = ''function() require("sidekick.cli").focus({ name = "opencode" }) end'';
+      options.desc = "Sidekick Focus OpenCode";
     }
     {
       mode = [
@@ -65,9 +65,9 @@
         "i"
         "x"
       ];
-      key = "<d-a>";
-      action.__raw = ''function() require("sidekick.cli").toggle({ name = "pi", focus = true }) end'';
-      options.desc = "Sidekick Toggle Pi";
+      key = "<A-a>";
+      action.__raw = ''function() require("sidekick.cli").toggle({ name = "opencode", focus = true }) end'';
+      options.desc = "Sidekick Toggle OpenCode";
     }
     {
       mode = "n";
@@ -75,19 +75,19 @@
       action.__raw = ''
         function()
           require("sidekick.cli").select({
-            filter = { name = "pi", installed = true },
+            filter = { name = "opencode", installed = true },
             focus = true,
             auto = true,
           })
         end
       '';
-      options.desc = "Select Pi CLI";
+      options.desc = "Select OpenCode CLI";
     }
     {
       mode = "n";
       key = "<leader>ad";
-      action.__raw = ''function() require("sidekick.cli").close({ name = "pi" }) end'';
-      options.desc = "Detach Pi CLI Session";
+      action.__raw = ''function() require("sidekick.cli").close({ name = "opencode" }) end'';
+      options.desc = "Detach OpenCode CLI Session";
     }
     {
       mode = [
@@ -95,20 +95,20 @@
         "x"
       ];
       key = "<leader>at";
-      action.__raw = ''function() require("sidekick.cli").send({ name = "pi", msg = "{this}" }) end'';
-      options.desc = "Send This to Pi";
+      action.__raw = ''function() require("sidekick.cli").send({ name = "opencode", msg = "{this}" }) end'';
+      options.desc = "Send This to OpenCode";
     }
     {
       mode = "n";
       key = "<leader>af";
-      action.__raw = ''function() require("sidekick.cli").send({ name = "pi", msg = "{file}" }) end'';
-      options.desc = "Send File to Pi";
+      action.__raw = ''function() require("sidekick.cli").send({ name = "opencode", msg = "{file}" }) end'';
+      options.desc = "Send File to OpenCode";
     }
     {
       mode = "x";
       key = "<leader>av";
-      action.__raw = ''function() require("sidekick.cli").send({ name = "pi", msg = "{selection}" }) end'';
-      options.desc = "Send Visual Selection to Pi";
+      action.__raw = ''function() require("sidekick.cli").send({ name = "opencode", msg = "{selection}" }) end'';
+      options.desc = "Send Visual Selection to OpenCode";
     }
     {
       mode = [
@@ -121,13 +121,13 @@
           require("sidekick.cli").prompt({
             cb = function(_, text)
               if text then
-                require("sidekick.cli").send({ name = "pi", text = text })
+                require("sidekick.cli").send({ name = "opencode", text = text })
               end
             end,
           })
         end
       '';
-      options.desc = "Sidekick Select Pi Prompt";
+      options.desc = "Sidekick Select OpenCode Prompt";
     }
   ];
 }
