@@ -35,6 +35,13 @@ If unsure whether a broad path may include Arcadia, ask or narrow the path first
 
 - Prefer `hashline_edit` for targeted edits when hashline references are available; use `apply_patch` only when `hashline_edit` is unavailable or unsuitable.
 
+## Ground assumptions
+
+- Actively ground hypotheses and assumptions in observable evidence before relying on them.
+- For non-trivial claims, verify against files, command output, documentation, tests, prior context, or external sources such as official docs and the internet instead of continuing from a guess.
+- When local/project context is insufficient or likely stale, use available web/documentation research tools to check external sources before deciding.
+- When evidence is incomplete, say what is known, what is assumed, and either gather more context or ask a focused question.
+
 ## Subagent usage
 
 Use subagents by default for mechanical I/O work: heavy search, documentation lookup, repetitive codemods, independent review passes, and other tasks that can bloat the parent context.
