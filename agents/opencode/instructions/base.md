@@ -52,13 +52,13 @@ The parent agent owns interpretation and final decisions. Subagents collect and 
 
 #### OpenCode
 
-- Delegate to the named subagent, for example `@scout`, `@researcher`, `@codemodder`, or `@openspec-reviewer-gpt`.
+- Delegate to the named subagent, for example `@scout`, `@researcher`, or `@openspec-reviewer-gpt`.
 - Send a single JSON object matching that subagent's input contract; no prose wrapper.
 
 #### Pi with `npm:@tintinweb/pi-subagents`
 
 - Use the `Agent` tool.
-- Set `subagent_type` to the custom agent filename, for example `scout`, `researcher`, `codemodder`, `openspec-reviewer-gpt`, `openspec-reviewer-glm`, or `openspec-reviewer-kimi`.
+- Set `subagent_type` to the custom agent filename, for example `scout`, `researcher`, `openspec-reviewer-gpt`, or `openspec-reviewer-minimax`.
 - Put the formatted JSON payload in the `prompt` string and do not add prose around it.
 - Use a short `description` of 3-5 words.
 - Do not set `schedule` unless the user explicitly asked for delayed or recurring execution.
@@ -124,48 +124,13 @@ Input contract:
 }
 ```
 
-### `codemodder`
-
-- Purpose: deterministic mechanical edits for large repetitive refactors.
-- Delegate only for broad but simple transformations that follow explicit rules.
-- Use `mode="plan"` before `mode="apply"` unless the user explicitly asks for direct application and the rule is low risk.
-- Hard scope: mechanical edits only. No architecture decisions, no tests/builds, no VCS operations.
-- Output: one machine-readable JSON object with result, counts, changed paths, skipped items, manual follow-ups, and idempotency remainder.
-
-Input contract:
-
-```json
-{
-  "goal": "what to transform",
-  "mode": "plan|apply",
-  "include": ["glob"],
-  "exclude": ["glob"],
-  "edits": [
-    {
-      "id": "rule-id",
-      "kind": "ast_replace|regex_replace|literal_replace",
-      "lang": "optional",
-      "pattern": "match",
-      "rewrite": "replacement"
-    }
-  ],
-  "safety": {
-    "max_files": 200,
-    "max_edits_per_file": 50,
-    "allow_new_files": false,
-    "allow_delete_files": false,
-    "stop_on_ambiguous": true
-  },
-  "focus": "optional keywords/paths"
-}
-```
-
-### `openspec-reviewer-gpt`, `openspec-reviewer-glm`, `openspec-reviewer-kimi`
+### `openspec-reviewer-gpt`, `openspec-reviewer-minimax`
 
 - Purpose: independent read-only review of one OpenSpec change and its implementation.
 - Delegate from OpenSpec review workflows when you need multiple model perspectives.
 - Each reviewer must load/follow the shared `openspec-reviewer` skill and return Markdown findings using that skill's output format.
 - Reviewers may use `scout` or `researcher` only for focused evidence gathering. They must not edit files or ask subagents to edit.
+- Keep the payload compact. Reviewers load OpenSpec artifacts and inspect the requested diff/location themselves with read-only tools.
 
 Input contract:
 
@@ -176,13 +141,6 @@ Input contract:
     "kind": "working-copy|jj-revset|jj-bookmark|git-branch|git-commit|git-range|github-pr|arc-review|patch|custom",
     "value": "user-provided location or command details"
   },
-  "artifacts": {
-    "proposal": ["path"],
-    "design": ["path"],
-    "specs": ["path"],
-    "tasks": ["path"]
-  },
-  "diff_context": "optional summary or command output from the orchestrator",
   "focus": "optional review focus"
 }
 ```
@@ -192,6 +150,5 @@ Input contract:
 - If the task needs codebase discovery (“where is X?”, “who calls Y?”, “find config for Z?”), delegate to `scout` early.
 - In the parent agent, do at most one discovery tool call before delegating to `scout`, unless the answer is trivial.
 - If the task needs external documentation research, delegate to `researcher`.
-- If the task is a repetitive mechanical refactor, delegate to `codemodder` with an explicit rule set.
 - If the task needs independent OpenSpec review, run the reviewer variants in parallel and synthesize their findings in the parent.
 - For full review/bug-finding, `scout` is only evidence gathering; the parent does analysis and validation.

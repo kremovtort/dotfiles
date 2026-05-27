@@ -1,23 +1,25 @@
 ---
 name: openspec-review
-description: Review an OpenSpec change by asking where the implementation changes live, running three reviewer subagents in parallel, verifying their findings, prioritizing confirmed issues, and offering to plan fixes.
+description: Review an OpenSpec change by asking where the implementation changes live, running reviewer subagents in parallel, verifying their findings, prioritizing confirmed issues, and offering to plan fixes.
 ---
 
 # OpenSpec Review
 
-Review an OpenSpec change and its implementation with three independent reviewer subagents.
+Review an OpenSpec change and its implementation with independent reviewer subagents.
 
-## Required First Step
+## Required First Steps
 
-Before reading diffs or launching reviewers, explicitly ask where the implementation changes are located.
+Before reading diffs, asking for the review location, or launching reviewers, load and follow `vcs-detect` using the current runtime context.
+
+After VCS detection, explicitly ask where the implementation changes are located.
 
 If the environment provides a built-in tool for asking the user a question, use that tool for this location prompt instead of asking only in plain assistant text.
 
-Ask an open-ended question such as:
+Ask with awareness of the current context and detected VCS. If conversation context already mentions a likely implementation location, ask the user to confirm or correct it instead of ignoring that context. Otherwise ask an open-ended question such as:
 
 > Where are the implementation changes for this OpenSpec change? Examples: current working copy, current jj change, jj revset/bookmark, git branch, git commit/range, GitHub PR URL/number, Arc review/branch, patch file, or a custom read-only diff command.
 
-Do not infer this silently from the current branch/bookmark. The user must confirm the review location.
+Do not infer this silently from the current branch/bookmark, detected VCS, or conversation context. The user must confirm the review location.
 
 ## Inputs
 
@@ -35,13 +37,21 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
 
 ## Workflow
 
-1. **Ask for implementation location**
+1. **Detect VCS before VCS commands or location prompt**
+
+   Load and follow `vcs-detect` before any VCS command and before asking where the implementation changes are located.
+
+   Use the detected VCS and the agent's current conversation/task context to make the location prompt specific and useful.
+
+2. **Ask for implementation location**
 
    Use the question above. If the runtime exposes a dedicated ask-user/question tool, use it for this prompt. Capture the answer as `location.kind` and `location.value`.
 
-2. **Detect VCS before VCS commands**
+   If the current context already names a likely location, include it as a suggested default and ask for confirmation or correction. If no likely location is present, ask the open-ended question with examples relevant to the detected VCS first.
 
-   Load and follow `vcs-detect` before any VCS command.
+3. **Respect detected VCS for later VCS commands**
+
+   Continue using the `vcs-detect` result before running any VCS command.
 
    Support:
    - Git working copy, branch, commit, range, or PR.
@@ -49,39 +59,26 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
    - Arc or monorepo review locations when the user provides the command/location.
    - Patch files and custom read-only diff commands.
 
-3. **Load OpenSpec artifacts**
+4. **Prepare compact reviewer scope**
 
-   Run:
+   Do not collect or inline OpenSpec artifact contents, status JSON, command output, or diffs into the reviewer payload.
 
-   ```bash
-   openspec status --change "<name>" --json
-   openspec instructions apply --change "<name>" --json
-   ```
+   The reviewer subagents have read-only filesystem and VCS access. They must load the OpenSpec artifacts and inspect the requested diff/location themselves.
 
-   Read every artifact path listed in `contextFiles`, including proposal, design, specs, and tasks when present.
-
-4. **Collect read-only diff context**
-
-   Use the confirmed location and detected VCS.
-
-   Prefer read-only commands:
-   - Git: `git status`, `git diff`, `git show`, `git log`.
-   - jj: `jj status`, `jj diff`, `jj show`, `jj log`.
-   - GitHub PR: use `gh pr view` and read-only diff/status commands.
-   - Arc/custom: use the exact read-only location or command the user provided.
+   Only pass the confirmed change name, the user-confirmed implementation location, and optional focus. If the user provided extra scope constraints, include them inside `location.value` instead of pasting command output.
 
    Never mutate VCS state. Do not commit, push, reset, checkout/restore, abandon, rebase, squash, split, submit, or land.
 
-5. **Run three reviewers in parallel**
+5. **Run reviewers in parallel**
 
-   Launch these subagents concurrently with the same JSON payload:
+   Launch these subagents concurrently with the same compact JSON payload:
    - `openspec-reviewer-gpt`
-   - `openspec-reviewer-glm`
-   - `openspec-reviewer-qwen`
+   - `openspec-reviewer-minimax`
 
    Runtime notes:
    - OpenCode: use the subagent/task mechanism with the payload as the direct JSON object.
    - Pi with `npm:@tintinweb/pi-subagents`: use one `Agent` tool call per reviewer in the same assistant tool-use message, set `subagent_type` to the reviewer name, and put the formatted payload JSON in `prompt`; prefer `run_in_background: true` for parallel review.
+   - Do not add artifact lists, diff summaries, command output, or file contents to the payload.
 
    Payload shape:
 
@@ -92,13 +89,6 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
        "kind": "<kind>",
        "value": "<user answer>"
      },
-     "artifacts": {
-       "proposal": ["<paths>"],
-       "design": ["<paths>"],
-       "specs": ["<paths>"],
-       "tasks": ["<paths>"]
-     },
-     "diff_context": "<concise read-only diff/scope summary>",
      "focus": "<optional focus>"
    }
    ```
@@ -114,7 +104,7 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
    - Reject false positives explicitly.
    - Downgrade uncertain claims instead of overstating them.
 
-   Use `scout` yourself if you need extra project-pattern discovery to validate a finding. Use `docs-digger` only for source-backed external facts. In Pi, call them through `Agent` with the same JSON-payload-in-`prompt` convention.
+   Use `scout` yourself if you need extra project-pattern discovery to validate a finding. Use `researcher` only for source-backed external facts. In Pi, call them through `Agent` with the same JSON-payload-in-`prompt` convention.
 
 7. **Prioritize confirmed findings**
 
@@ -137,7 +127,7 @@ Return Markdown with these sections:
 
 ### P1 Must Fix: <title>
 
-- Source reviewers: <gpt|glm|qwen>
+- Source reviewers: <gpt|minimax>
 - Evidence: `<path>:<line>` and/or OpenSpec artifact reference.
 - Why it matters: <impact>.
 - Recommended fix: <minimal fix>.
@@ -155,7 +145,7 @@ Return Markdown with these sections:
 
 - OpenSpec change: `<name>`
 - Implementation location: `<kind>: <value>`
-- Reviewers run: GPT, GLM, Qwen
+- Reviewers run: GPT, Minimax
 - Limitations: <missing data/tools, if any>
 
 ## Next Step

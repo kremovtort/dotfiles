@@ -1,5 +1,6 @@
 ---
 description: OpenSpec change and implementation reviewer using Qwen.
+disable: true
 mode: subagent
 model: opencode-go/qwen3.7-max
 temperature: 0.1

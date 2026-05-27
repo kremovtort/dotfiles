@@ -6,13 +6,8 @@
 
     llm-agents.url = "github:numtide/llm-agents.nix";
 
-    anthropicSkills = {
-      url = "github:anthropics/skills";
-      flake = false;
-    };
-
     astGrepClaudeSkill = {
-      url = "github:ast-grep/claude-skill";
+      url = "github:ast-grep/agent-skill";
       flake = false;
     };
 
@@ -40,11 +35,11 @@
 
         imports = [
           ./opencode.nix
-          ./pi.nix
           ./openspec.nix
         ];
 
         home.packages = with inputs.llm-agents.packages.${system}; [
+          codegraph
           openspec
           qmd
         ];

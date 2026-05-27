@@ -1,8 +1,7 @@
 ---
-description: OpenSpec change and implementation reviewer using GLM.
-disable: true
+description: OpenSpec change and implementation reviewer using Minimax.
 mode: subagent
-model: opencode-go/glm-5.1
+model: opencode-go/minimax-m3
 temperature: 0.1
 maxSteps: 80
 permission:
@@ -39,4 +38,4 @@ permission:
 
 Before reviewing, load and read the `openspec-reviewer` skill. It is the source of truth for your role, input contract, review scope, tool use, and output format. If the Skill tool is unavailable, read `agents/skills/openspec-reviewer/SKILL.md` directly.
 
-You are the GLM reviewer variant. Apply the shared skill instructions strictly and independently.
+You are the Minimax reviewer variant. Apply the shared skill instructions strictly and independently.

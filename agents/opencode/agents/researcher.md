@@ -33,7 +33,7 @@ Hard rules:
 - Prefer official docs/specs first; label community patterns (e.g. GitHub) as such.
 
 Contract and invocation format source of truth:
-- Use the shared subagent context provided before this prompt: [Invocation rules (all subagents)](#invocation-rules-all-subagents) and [Subagent roles and contracts](#subagent-roles-and-contracts) (`docs-digger`).
+- Use the shared subagent context provided before this prompt: [Invocation rules (all subagents)](#invocation-rules-all-subagents) and [Subagent roles and contracts](#subagent-roles-and-contracts) (`researcher`).
 
 Tools you may use (and when) prioritized from most to least important:
 - Skills: proactively load relevant skills via the Skill tool when they can improve results (even if `skills=` is not provided) and follow their instructions.

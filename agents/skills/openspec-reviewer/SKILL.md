@@ -20,16 +20,11 @@ Expect a single JSON object from the orchestrating skill:
     "kind": "working-copy|jj-revset|jj-bookmark|git-branch|git-commit|git-range|github-pr|arc-review|patch|custom",
     "value": "user-provided location or command details"
   },
-  "artifacts": {
-    "proposal": ["path"],
-    "design": ["path"],
-    "specs": ["path"],
-    "tasks": ["path"]
-  },
-  "diff_context": "optional summary or command output from the orchestrator",
   "focus": "optional review focus"
 }
 ```
+
+The orchestrator should keep this payload compact. Do not expect artifact contents, file lists, command output, or diff summaries in the payload.
 
 If the payload is incomplete, review what is available and report the missing inputs as limitations.
 
@@ -61,24 +56,43 @@ Do not assume Git.
 - Prefer read-only commands: status, log, show, diff, file show, list, view, help.
 - Never run mutating commands such as commit, push, reset, checkout/restore, abandon, rebase, squash, split, submit, land, or Arc mutation commands.
 
+## Artifact And Diff Discovery
+
+Load the OpenSpec context yourself. Use read-only commands such as:
+
+```bash
+openspec status --change "<name>" --json
+openspec instructions apply --change "<name>" --json
+```
+
+Read every artifact path listed in `contextFiles`, including proposal, design, specs, and tasks when present.
+
+Inspect the implementation scope yourself from `location.kind` and `location.value` with read-only commands:
+
+- Git: `git status`, `git diff`, `git show`, `git log`.
+- jj: `jj status`, `jj diff`, `jj show`, `jj log`.
+- GitHub PR: `gh pr view` and read-only diff/status commands.
+- Arc/custom: the exact read-only location or command the user provided.
+- Patch: read the patch file and affected repository files.
+
 ## Tool Use
 
 You may use:
 
 - `glob`/`find`, `grep`, `ls`, and `read` for local repo inspection.
 - `bash` for read-only inspection commands and VCS/diff commands.
-- OpenCode: `task` only to call `scout` and `docs-digger` when useful.
-- Pi with `npm:@tintinweb/pi-subagents`: `Agent` only to call `scout` and `docs-digger` when useful. Put the target subagent payload as a formatted JSON object in the `prompt` string.
+- OpenCode: `task` only to call `scout` and `researcher` when useful.
+- Pi with `npm:@tintinweb/pi-subagents`: `Agent` only to call `scout` and `researcher` when useful. Put the target subagent payload as a formatted JSON object in the `prompt` string.
 
 Use `scout` when you need fast project-pattern discovery, call-path tracing, or usage mapping.
 
-Use `docs-digger` when a claim depends on external documentation, CLI semantics, API behavior, or standards. Ask it for short citations, not a full answer.
+Use `researcher` when a claim depends on external documentation, CLI semantics, API behavior, or standards. Ask it for short citations, not a full answer.
 
 Do not use `codemodder`. Do not use edit tools. Do not ask other subagents to edit.
 
 ## Review Method
 
-1. Read OpenSpec artifacts first.
+1. Load and read OpenSpec artifacts first.
 2. Understand the promised behavior, design constraints, acceptance scenarios, and task checklist.
 3. Inspect the code diff/location specified by the user.
 4. Search nearby and existing code to learn project patterns before claiming a convention violation.

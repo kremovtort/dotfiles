@@ -35,7 +35,11 @@ in
       fallback_models = [ "opencode-go/glm-5.1" ];
     };
 
-    nudge_interval_tokens = 20000;
+    nudge_interval_tokens = 20 * 1000;
+
+    execute_threshold_tokens = {
+      "openai/gpt-5.5" = 200 * 1000;
+    };
 
     dreamer = {
       enabled = true;
@@ -65,7 +69,6 @@ in
     commands = ./commands;
     skills = {
       ast-grep = agentsInputs.astGrepClaudeSkill + "/ast-grep/skills/ast-grep";
-      skill-creator = agentsInputs.anthropicSkills + "/skills/skill-creator";
       qmd = agentsInputs.qmd + "/skills/qmd";
     }
     // localSkills;
@@ -126,6 +129,16 @@ in
             "npx"
             "-y"
             "@just-every/mcp-read-website-fast"
+          ];
+        };
+
+        codegraph = {
+          type = "local";
+          enabled = true;
+          command = [
+            "codegraph"
+            "serve"
+            "--mcp"
           ];
         };
       };
