@@ -66,7 +66,10 @@
 
     # Window navigation (disabled in floating windows)
     {
-      mode = "n";
+      mode = [
+        "n"
+        "i"
+      ];
       key = "<C-h>";
       action.__raw = ''
         function()
@@ -81,7 +84,10 @@
       };
     }
     {
-      mode = "n";
+      mode = [
+        "n"
+        "i"
+      ];
       key = "<C-j>";
       action.__raw = ''
         function()
@@ -96,7 +102,10 @@
       };
     }
     {
-      mode = "n";
+      mode = [
+        "n"
+        "i"
+      ];
       key = "<C-k>";
       action.__raw = ''
         function()
@@ -111,7 +120,10 @@
       };
     }
     {
-      mode = "n";
+      mode = [
+        "n"
+        "i"
+      ];
       key = "<C-l>";
       action.__raw = ''
         function()

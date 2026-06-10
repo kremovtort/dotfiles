@@ -61,7 +61,6 @@ in
     pkgs.jq
     pkgs.kind
     pkgs.kubectl
-    pkgs.kubernetes-helm
     pkgs.jetbrains-mono
     pkgs.nerd-fonts.jetbrains-mono
     pkgs.nerd-fonts.symbols-only

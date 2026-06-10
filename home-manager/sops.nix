@@ -12,6 +12,7 @@
   home.sessionVariables.VMCTL_TOKEN = ''$(cat "${config.sops.secrets.vmctl-token.path}")'';
   home.sessionVariables.MERCURY_AI_TOKEN = ''$(cat "${config.sops.secrets.mercury-ai-token.path}")'';
   home.sessionVariables.TAVILY_API_KEY = ''$(cat "${config.sops.secrets.tavily-api-key.path}")'';
+  home.sessionVariables.ZAI_API_KEY = ''$(cat "${config.sops.secrets.zai-api-key.path}")'';
 
   home.packages = [
     pkgs.age
