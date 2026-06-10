@@ -32,6 +32,7 @@
 
     ./plugins/haskell.nix
     ./plugins/rustaceanvim.nix
+    ./plugins/likec4.nix
 
     ./plugins/repeat.nix
     ./plugins/auto-session.nix

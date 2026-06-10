@@ -56,6 +56,11 @@
       flake = false;
     };
 
+    plugins-likec4-nvim = {
+      url = "github:likec4/likec4.nvim";
+      flake = false;
+    };
+
   };
 
   outputs =

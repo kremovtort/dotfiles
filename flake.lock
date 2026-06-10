@@ -514,6 +514,7 @@
         "plugins-async-nvim": "plugins-async-nvim",
         "plugins-cursortab-nvim": "plugins-cursortab-nvim",
         "plugins-direnv-nvim": "plugins-direnv-nvim",
+        "plugins-likec4-nvim": "plugins-likec4-nvim",
         "plugins-opencode-nvim": "plugins-opencode-nvim",
         "plugins-seeker-nvim": "plugins-seeker-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
@@ -635,6 +636,22 @@
       "original": {
         "owner": "NotAShelf",
         "repo": "direnv.nvim",
+        "type": "github"
+      }
+    },
+    "plugins-likec4-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1775578336,
+        "narHash": "sha256-4hUTUj9txEkomTZxrgPaja2wo5KMSRowJI2mvhv/Vd4=",
+        "owner": "likec4",
+        "repo": "likec4.nvim",
+        "rev": "cf307c70ce76e6c0bb638121733d87a246bceefd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "likec4",
+        "repo": "likec4.nvim",
         "type": "github"
       }
     },
