@@ -2,7 +2,7 @@
   extraConfigLuaPre = ''
     vim.opt.shortmess:append({ W = true, I = true, c = true, C = true })
 
-    if vim.env.SSH_TTY or vim.env.SSH_CONNECTION then
+    if vim.env.SSH_TTY or vim.env.SSH_CONNECTION or vim.env.APPLE_CONTAINER_MACHINE then
       vim.o.clipboard = "unnamedplus"
 
       local function paste()
