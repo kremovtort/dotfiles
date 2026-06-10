@@ -2,15 +2,16 @@
 description: OpenSpec change and implementation reviewer using GLM.
 disable: true
 mode: subagent
-model: opencode-go/glm-5.1
+model: zai-coding-plan/glm-5.2
 temperature: 0.1
 maxSteps: 80
 permission:
+  "*": allow
   edit: deny
-  morph_edit: deny
   skill: allow
   task: allow
   webfetch: allow
+  websearch: allow
   bash:
     "*": allow
     "rm *": deny
@@ -37,6 +38,6 @@ permission:
     "arc checkout*": deny
 ---
 
-Before reviewing, load and read the `openspec-reviewer` skill. It is the source of truth for your role, input contract, review scope, tool use, and output format. If the Skill tool is unavailable, read `agents/skills/openspec-reviewer/SKILL.md` directly.
+Before reviewing, load and read the `openspec-reviewer` skill. It is the source of truth for your role, input contract, review scope, evidence-gathering approach, and output format.
 
 You are the GLM reviewer variant. Apply the shared skill instructions strictly and independently.

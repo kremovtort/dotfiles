@@ -1,8 +1,8 @@
 ---
-description: OpenSpec change and implementation reviewer using Minimax.
+description: OpenSpec change and implementation reviewer using Kimi.
 disable: true
 mode: subagent
-model: opencode-go/minimax-m3
+model: opencode-go/kimi-k2.7-code
 temperature: 0.1
 maxSteps: 80
 permission:
@@ -39,4 +39,4 @@ permission:
 
 Before reviewing, load and read the `openspec-reviewer` skill. It is the source of truth for your role, input contract, review scope, evidence-gathering approach, and output format.
 
-You are the Minimax reviewer variant. Apply the shared skill instructions strictly and independently.
+You are the Kimi reviewer variant. Apply the shared skill instructions strictly and independently.

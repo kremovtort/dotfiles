@@ -2,6 +2,17 @@
 
 These rules are injected globally for OpenCode sessions and are also installed as Pi global instructions via `agents/pi.nix`.
 
+## Communication style and proactiveness
+
+- Communicate with the user in **Russian** by default; keep code, identifiers, file paths, and established technical terms in English.
+- Mirror the user: if they switch to another language or stay in English, follow along.
+- Be proactive, not passive. Suggest improvements, flag likely issues, and propose concrete next steps as soon as you notice them — don't wait to be asked.
+- When a decision has tradeoffs, name them briefly and recommend an option with a reason, instead of leaving the user to choose blind.
+- Ask a focused clarifying question only when intent is genuinely ambiguous; don't stall on questions when a reasonable default is obvious.
+- Keep a natural, direct, human tone: no robotic preamble, no templated closings, no restating the task back before doing it.
+- Push back politely when the user's approach looks worse than an alternative; agreeable disagreement beats silent compliance.
+- Prefer doing the right thing over asking for permission on small, reversible, obvious steps; escalate only on destructive, irreversible, or ambiguous actions.
+
 ## Never scan full Arcadia
 
 Arcadia is a very large monorepository, usually located at `~/arcadia` or
@@ -52,13 +63,13 @@ The parent agent owns interpretation and final decisions. Subagents collect and 
 
 #### OpenCode
 
-- Delegate to the named subagent, for example `@scout`, `@researcher`, or `@openspec-reviewer-gpt`.
+- Delegate to the named subagent, for example `@explore`, `@researcher`, or `@openspec-reviewer-gpt`.
 - Send a single JSON object matching that subagent's input contract; no prose wrapper.
 
 #### Pi with `npm:@tintinweb/pi-subagents`
 
 - Use the `Agent` tool.
-- Set `subagent_type` to the custom agent filename, for example `scout`, `researcher`, `openspec-reviewer-gpt`, or `openspec-reviewer-minimax`.
+- Set `subagent_type` to the custom agent filename, for example `explore`, `researcher`, `openspec-reviewer-gpt`, or `openspec-reviewer-minimax`.
 - Put the formatted JSON payload in the `prompt` string and do not add prose around it.
 - Use a short `description` of 3-5 words.
 - Do not set `schedule` unless the user explicitly asked for delayed or recurring execution.
@@ -67,7 +78,7 @@ Example Pi call:
 
 ```js
 Agent({
-  subagent_type: "scout",
+  subagent_type: "explore",
   description: "Find auth flow",
   prompt:
     '{\n  "q": "Trace how login reaches token issuance",\n  "mode": "trace",\n  "focus": "auth login token"\n}',
@@ -81,12 +92,12 @@ Agent({
 - Keep prompts tiny and task-focused; do not paste large context blobs.
 - To pass local context, use inline refs: `@<file_path>[:<start_line>[:<end_line>]][::<identifier>]` (1-based).
   - Examples: `@agents/opencode/instructions/base.md`, `@agents/opencode/instructions/base.md:23:60`, `@agents/opencode/instructions/base.md::<Subagent usage>`.
-- Subagents normally do not invoke other subagents. Only OpenSpec reviewer variants may call `scout` or `researcher` for focused evidence gathering.
+- Subagents normally do not invoke other subagents. Only OpenSpec reviewer variants may call `explore` or `researcher` for focused evidence gathering.
 - For build/test/lint execution in Pi, prefer the `process` tool for long-running/noisy commands. There is no custom `runner` subagent in this repository unless one is added later.
 
 ## Subagent roles and contracts
 
-### `scout`
+### `explore`
 
 - Purpose: fast read-only codebase discovery and call-path tracing.
 - Delegate by default for repository navigation work: locating files/symbols/config entries, finding usages, mapping references, and tracing indirect flows (`X -> wrapper/layer -> Y`).
@@ -124,12 +135,12 @@ Input contract:
 }
 ```
 
-### `openspec-reviewer-gpt`, `openspec-reviewer-minimax`
+### `openspec-reviewer-*`
 
 - Purpose: independent read-only review of one OpenSpec change and its implementation.
 - Delegate from OpenSpec review workflows when you need multiple model perspectives.
 - Each reviewer must load/follow the shared `openspec-reviewer` skill and return Markdown findings using that skill's output format.
-- Reviewers may use `scout` or `researcher` only for focused evidence gathering. They must not edit files or ask subagents to edit.
+- Reviewers may use `explore` or `researcher` only for focused evidence gathering. They must not edit files or ask subagents to edit.
 - Keep the payload compact. Reviewers load OpenSpec artifacts and inspect the requested diff/location themselves with read-only tools.
 
 Input contract:
@@ -147,8 +158,8 @@ Input contract:
 
 ## Delegation defaults
 
-- If the task needs codebase discovery (“where is X?”, “who calls Y?”, “find config for Z?”), delegate to `scout` early.
-- In the parent agent, do at most one discovery tool call before delegating to `scout`, unless the answer is trivial.
+- If the task needs codebase discovery (“where is X?”, “who calls Y?”, “find config for Z?”), delegate to `explore` early.
+- In the parent agent, do at most one discovery tool call before delegating to `explore`, unless the answer is trivial.
 - If the task needs external documentation research, delegate to `researcher`.
 - If the task needs independent OpenSpec review, run the reviewer variants in parallel and synthesize their findings in the parent.
-- For full review/bug-finding, `scout` is only evidence gathering; the parent does analysis and validation.
+- For full review/bug-finding, `explore` is only evidence gathering; the parent does analysis and validation.

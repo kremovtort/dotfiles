@@ -2,7 +2,7 @@
 description: OpenSpec change and implementation reviewer using GPT.
 mode: subagent
 model: openai/gpt-5.5-fast
-reasoningEffort: xhigh
+reasoningEffort: high
 temperature: 0.1
 maxSteps: 80
 permission:
@@ -37,6 +37,6 @@ permission:
     "arc checkout*": deny
 ---
 
-Before reviewing, load and read the `openspec-reviewer` skill. It is the source of truth for your role, input contract, review scope, tool use, and output format. If the Skill tool is unavailable, read `agents/skills/openspec-reviewer/SKILL.md` directly.
+Before reviewing, load and read the `openspec-reviewer` skill. It is the source of truth for your role, input contract, review scope, evidence-gathering approach, and output format.
 
 You are the GPT reviewer variant. Apply the shared skill instructions strictly and independently.

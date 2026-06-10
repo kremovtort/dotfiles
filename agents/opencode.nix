@@ -23,23 +23,11 @@ in
       "https://raw.githubusercontent.com/cortexkit/opencode-magic-context/master/assets/magic-context.schema.json";
     enabled = true;
 
-    cache_ttl = {
-      default = "5m";
-      "openai/gpt-5.5" = "5m";
-    };
-
-    protected_tags = 30;
-
     historian = {
       model = "openai/gpt-5.5";
-      fallback_models = [ "opencode-go/glm-5.1" ];
     };
 
-    nudge_interval_tokens = 20 * 1000;
-
-    execute_threshold_tokens = {
-      "openai/gpt-5.5" = 200 * 1000;
-    };
+    execute_threshold_tokens."zai-coding-plan/glm-5.2" = 200 * 1000;
 
     dreamer = {
       enabled = true;
@@ -48,18 +36,13 @@ in
 
     sidekick = {
       enabled = true;
-      model = "opencode-go/minimax-m2.7";
+      model = "opencode-go/minimax-m3";
     };
   };
 
   home.file."${configDir}/instructions/base.md".source = ./opencode/instructions/base.md;
   home.file."${configDir}/instructions/subagent-json-format.md".source =
     ./opencode/instructions/subagent-json-format.md;
-
-  home.packages = with pkgs; [
-    snip
-  ];
-
   programs.bun.enable = true; # need for plannotator
 
   programs.opencode = {
@@ -68,7 +51,8 @@ in
     agents = ./opencode/agents;
     commands = ./commands;
     skills = {
-      ast-grep = agentsInputs.astGrepClaudeSkill + "/ast-grep/skills/ast-grep";
+      ast-grep = agentsInputs.astGrepSkill + "/ast-grep/skills/ast-grep";
+      skill-creator = agentsInputs.openaiSkills + "/skills/.system/skill-creator";
       qmd = agentsInputs.qmd + "/skills/qmd";
     }
     // localSkills;
@@ -82,9 +66,8 @@ in
         "@mohak34/opencode-notifier"
         "@plannotator/opencode"
         "@cortexkit/opencode-magic-context"
+        # "@cortexkit/aft-opencode"
         "opencode-direnv"
-        "opencode-pty"
-        # "opencode-hashline"
       ];
 
       instructions = [
@@ -96,12 +79,20 @@ in
         auto = false;
       };
 
-      permission = {
-        external_directory."/nix/store/**" = "allow";
-        read."/nix/store/**" = "allow";
-        write."/nix/store/**" = "deny";
-        websearch = "allow";
-      };
+      permission =
+        let
+          readonly = dir: {
+            external_directory.${dir} = "allow";
+            read.${dir} = "allow";
+            write.${dir} = "deny";
+          };
+        in
+        {
+          websearch = "allow";
+          "codegraph_*" = "allow";
+        }
+        // readonly "/nix/store/**"
+        // readonly "~/.cargo/registry/**";
 
       mcp = {
         context7 = {
@@ -141,6 +132,29 @@ in
             "--mcp"
           ];
         };
+
+        vision = {
+          type = "local";
+          enabled = true;
+          command = [
+            "npx"
+            "-y"
+            "@z_ai/mcp-server"
+          ];
+          environment = {
+            Z_AI_MODE = "ZAI";
+            Z_AI_API_KEY = "{file:${config.sops.secrets.zai-api-key.path}}";
+          };
+        };
+
+        zread = {
+          type = "remote";
+          enabled = true;
+          url = "https://api.z.ai/api/mcp/zread/mcp";
+          headers = {
+            Authorization = "Bearer {file:${config.sops.secrets.zai-api-key.path}}";
+          };
+        };
       };
 
       agent = {
@@ -168,9 +182,8 @@ in
 
         general = {
           model = "openai/gpt-5.5";
-          reasoningEffort = "xhigh";
+          reasoningEffort = "high";
         };
-        explore.disable = true;
       };
 
       provider = {
@@ -179,6 +192,8 @@ in
         opencode.options.apiKey = "{file:${config.sops.secrets.opencode-api-key.path}}";
 
         opencode-go.options.apiKey = "{file:${config.sops.secrets.opencode-api-key.path}}";
+
+        zai-coding-plan.options.apiKey = "{file:${config.sops.secrets.zai-api-key.path}}";
       };
 
       lsp = false;

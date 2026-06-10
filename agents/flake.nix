@@ -6,8 +6,13 @@
 
     llm-agents.url = "github:numtide/llm-agents.nix";
 
-    astGrepClaudeSkill = {
+    astGrepSkill = {
       url = "github:ast-grep/agent-skill";
+      flake = false;
+    };
+
+    openaiSkills = {
+      url = "github:openai/skills";
       flake = false;
     };
 

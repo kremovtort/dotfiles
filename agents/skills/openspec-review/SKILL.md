@@ -103,7 +103,7 @@ If the OpenSpec change name is missing or ambiguous, select it after the locatio
    - Reject false positives explicitly.
    - Downgrade uncertain claims instead of overstating them.
 
-   Use `scout` yourself if you need extra project-pattern discovery to validate a finding. Use `researcher` only for source-backed external facts. In Pi, call them through `Agent` with the same JSON-payload-in-`prompt` convention.
+   Use `explore` yourself if you need extra project-pattern discovery to validate a finding. Use `researcher` only for source-backed external facts. In Pi, call them through `Agent` with the same JSON-payload-in-`prompt` convention.
 
 7. **Prioritize confirmed findings**
 

@@ -1,9 +1,9 @@
 {
-  "version": "1.16.2-ocv.4.0",
+  "version": "1.17.8-ocv.4.1",
   "hashes": {
-    "aarch64-darwin": "sha256-tAIWFNbYImc7F6Agd3q50VFzOpNhwMa4LfVsl+Cr6KM=",
-    "x86_64-darwin": "sha256-zuCb0Sugo/yRRyD1SClZm+OlGRBGWtBgX6hX83K9PRc=",
-    "aarch64-linux": "sha256-LBwaDvO3ZYNXx2cXdUTNNfGP1S29/M2VbjQLujWVYBI=",
-    "x86_64-linux": "sha256-EJifR7mmGebh1Czaa1sAyh+zOUIxijd2nYNKSSrhhdQ="
+    "aarch64-darwin": "sha256-5mljUWZ+hq8afG0TMpta1vwpWGISdXeGg55vPvKep6g=",
+    "x86_64-darwin": "sha256-1ub6X18e51z1eB+tjTB5kX3B8ffGyw7a+3RHXoKAcLM=",
+    "aarch64-linux": "sha256-A9w9DuaamPXlK/OqkoU4wu8ARAwQSBiGAl6T1+d2nNE=",
+    "x86_64-linux": "sha256-tL8UKMll77pca9rDxFktfXPPAQF4PpjirZP3s8NF3tU="
   }
 }

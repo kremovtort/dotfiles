@@ -1,8 +1,8 @@
 ---
-description: OpenSpec change and implementation reviewer using Minimax.
-disable: true
+description: OpenSpec change and implementation reviewer using DeepSeek.
+disable: false
 mode: subagent
-model: opencode-go/minimax-m3
+model: opencode-go/deepseek-v4-pro
 temperature: 0.1
 maxSteps: 80
 permission:
@@ -39,4 +39,4 @@ permission:
 
 Before reviewing, load and read the `openspec-reviewer` skill. It is the source of truth for your role, input contract, review scope, evidence-gathering approach, and output format.
 
-You are the Minimax reviewer variant. Apply the shared skill instructions strictly and independently.
+You are the Qwen reviewer variant. Apply the shared skill instructions strictly and independently.
