@@ -33,18 +33,13 @@ in
       ];
       font-size = 12;
       adjust-icon-height = "-55%";
-      macos-titlebar-style = "tabs";
+      macos-titlebar-style = "hidden";
       macos-option-as-alt = true;
       clipboard-read = "allow";
       clipboard-write = "allow";
       clipboard-paste-protection = false;
       window-padding-balance = true;
       window-padding-color = "extend";
-      keybind = [
-        "super+left_bracket=text:\\x1b[91;9u" # Cmd+[ -> <D-[>
-        "super+right_bracket=text:\\x1b[93;9u" # Cmd+] -> <D-]>
-        "super+apostrophe=text:\\x1b[39;9u" # Cmd+' -> <D-'>
-      ];
     };
   };
 }
