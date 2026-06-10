@@ -147,28 +147,29 @@ in
         plan = {
           mode = "primary";
           model = "openai/gpt-5.5";
-          reasoningEffort = "high";
+          reasoningEffort = "xhigh";
         };
 
         build = {
           mode = "primary";
           model = "openai/gpt-5.5";
-          reasoningEffort = "high";
-          tools.morph_edit = true;
+          reasoningEffort = "xhigh";
         };
 
         ask = {
           mode = "primary";
           model = "openai/gpt-5.5";
-          reasoningEffort = "high";
+          reasoningEffort = "xhigh";
           description = "Answer questions and analyze without editing code";
           permission = {
             edit = "deny";
-            bash = "allow";
           };
         };
 
-        general.disable = true;
+        general = {
+          model = "openai/gpt-5.5";
+          reasoningEffort = "xhigh";
+        };
         explore.disable = true;
       };
 
