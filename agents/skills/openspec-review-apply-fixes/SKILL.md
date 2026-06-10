@@ -1,11 +1,11 @@
 ---
 name: openspec-review-apply-fixes
-description: Apply an approved OpenSpec review fix plan, keeping changes scoped to confirmed findings and related refactoring.
+description: Apply an approved OpenSpec review fix plan or directly apply confirmed recommended fixes, keeping changes scoped to review findings.
 ---
 
 # Apply OpenSpec Review Fixes
 
-Implement an approved fix/refactoring plan produced by `openspec-review-plan`.
+Implement either an approved fix/refactoring plan produced by `openspec-review-plan` or the direct recommended fixes from a confirmed `openspec-review` result.
 
 ## Required Inputs
 
@@ -13,16 +13,23 @@ Before editing, ensure you have:
 
 - OpenSpec change name.
 - Implementation location/scope.
-- Approved fix plan.
 - Confirmed findings to address.
+- One of:
+  - Approved repair design and fix plan from `openspec-review-plan`.
+  - Explicit user choice to apply the recommended fixes directly from the latest `openspec-review` result.
 
-If the plan is not clearly approved, stop and ask the user to approve or adjust it.
+If neither an approved plan nor explicit direct-apply choice is present, stop and ask the user to choose either design-and-plan-first or direct recommended-fix application.
 
 ## Workflow
 
-1. **Load context**
+1. **Load context and mode**
 
-   Read the approved plan and confirmed review findings from the conversation or provided file.
+   Determine which apply mode the user chose:
+
+   - Planned mode: apply the approved repair design and fix plan from `openspec-review-plan`.
+   - Direct mode: apply the latest `openspec-review` confirmed findings using each finding's recommended fix as the scope.
+
+   Read the approved plan when in planned mode, or the latest confirmed review findings when in direct mode.
 
    Reload OpenSpec artifacts when needed:
 
@@ -41,23 +48,25 @@ If the plan is not clearly approved, stop and ask the user to approve or adjust 
 
    Re-check the current diff/location before editing so you do not overwrite unrelated user or agent changes.
 
-   If unrelated changes touch the same files and conflict with the approved plan, ask how to proceed.
+   If unrelated changes touch the same files and conflict with the chosen scope, ask how to proceed.
 
 4. **Apply fixes in priority order**
 
    - Fix P0/P1 issues first.
    - Keep each change minimal and tied to a confirmed finding.
+   - In planned mode, follow the approved design and fix plan.
+   - In direct mode, apply only the review report's recommended fixes and do not introduce new design/refactor work.
    - Reuse existing project abstractions before adding new helpers.
    - Avoid unrelated cleanup.
-   - Update OpenSpec artifacts/tasks only when the approved plan requires it or implementation reality must be synchronized.
+   - Update OpenSpec artifacts/tasks only when the planned scope requires it, the direct recommended fix explicitly calls for it, or implementation reality must be synchronized.
 
 5. **Refactor only inside scope**
 
-   Perform refactors only when they directly address confirmed findings, reduce duplicated/reinvented code, or are necessary to keep the fix coherent.
+   Perform refactors only when they directly address confirmed findings, reduce duplicated/reinvented code, or are necessary to keep the fix coherent. In direct mode, refactor only when a recommended fix explicitly requires it.
 
 6. **Validate**
 
-   Run checks from the approved plan when feasible:
+   Run checks from the chosen scope when feasible:
 
    - OpenSpec commands.
    - Project tests/build/lint.
@@ -69,6 +78,7 @@ If the plan is not clearly approved, stop and ask the user to approve or adjust 
 
    Summarize:
 
+   - Apply mode used: planned or direct.
    - Findings fixed.
    - Files changed.
    - Validation run and result.
@@ -76,8 +86,8 @@ If the plan is not clearly approved, stop and ask the user to approve or adjust 
 
 ## Guardrails
 
-- Do not edit without an approved plan.
-- Do not broaden scope beyond confirmed findings and approved refactors.
+- Do not edit without either an approved plan or an explicit direct-apply choice.
+- Do not broaden scope beyond confirmed findings and approved plan or direct recommended fixes.
 - Do not discard unrelated changes.
 - Do not use destructive VCS commands.
 - Do not commit or push unless the user explicitly asks.

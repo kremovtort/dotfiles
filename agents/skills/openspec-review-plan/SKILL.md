@@ -1,13 +1,15 @@
 ---
 name: openspec-review-plan
-description: Plan fixes and refactoring for an OpenSpec change from confirmed reviewer findings without editing code.
+description: Design and plan fixes/refactoring for an OpenSpec change from confirmed reviewer findings without editing code.
 ---
 
 # OpenSpec Review Fix Plan
 
-Create a repair and refactoring plan from confirmed `openspec-review` findings.
+Create a repair design and refactoring/fix plan from confirmed `openspec-review` findings.
 
-This skill plans only. Do not edit files.
+Use this skill when the user chooses the design-and-plan-first branch after `openspec-review`.
+
+This skill designs and plans only. Do not edit files.
 
 ## Inputs
 
@@ -45,7 +47,15 @@ Do not plan from unverified reviewer claims unless the user explicitly asks for 
 
    Use only read-only commands while planning.
 
-4. **Build a minimal fix plan**
+4. **Build a minimal repair design and fix plan**
+
+   Start with the repair design:
+
+   - Findings addressed and intended behavior.
+   - Constraints and non-goals.
+   - Artifact/spec updates needed to keep OpenSpec coherent.
+   - Code approach and refactor boundaries.
+   - Validation strategy.
 
    Preserve reviewer priorities and separate work into:
 
@@ -73,6 +83,7 @@ Do not plan from unverified reviewer claims unless the user explicitly asks for 
 
 The plan must include:
 
+- Repair design: intended behavior, artifact/spec impact, code approach, refactor boundaries, and validation strategy.
 - Goals and non-goals.
 - Ordered implementation steps.
 - Mapping from each step to review finding IDs/priorities.
@@ -80,7 +91,7 @@ The plan must include:
 - Validation commands/checks.
 - Risks or questions, only if they affect implementation.
 
-End by asking whether to apply the plan with `openspec-review-apply-fixes`.
+End by asking whether to apply the approved design and plan with `openspec-review-apply-fixes`.
 
 ## Guardrails
 
