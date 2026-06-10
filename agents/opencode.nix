@@ -27,7 +27,7 @@ in
       model = "openai/gpt-5.5";
     };
 
-    execute_threshold_tokens."zai-coding-plan/glm-5.2" = 200 * 1000;
+    execute_threshold_tokens."zai-coding-plan/glm-5.2" = 160 * 1000;
 
     dreamer = {
       enabled = true;
@@ -181,7 +181,7 @@ in
         };
 
         general = {
-          model = "openai/gpt-5.5";
+          model = "openai/gpt-5.5-fast";
           reasoningEffort = "high";
         };
       };
