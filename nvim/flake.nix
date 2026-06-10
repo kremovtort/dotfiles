@@ -10,7 +10,7 @@
     };
 
     tabterm = {
-      url = "path:./plugins/tabterm";
+      url = "github:kremovtort/tabterm.nvim";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixvim.follows = "nixvim";
     };
