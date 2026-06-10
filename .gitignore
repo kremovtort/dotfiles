@@ -5,4 +5,5 @@
 .vscode
 .jj
 .cache
+.codegraph
 node_modules
