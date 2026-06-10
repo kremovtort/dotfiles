@@ -117,7 +117,12 @@
             source = "explorer",
             jump = {close = true},
             auto_close = true,
-            layout = {preset = "default", preview = "preview"},
+            layout = {
+              preset = function()
+                return vim.o.columns >= 120 and "default" or "vertical"
+              end,
+              preview = "preview",
+            },
             win = {
               list = {
                 keys = {
