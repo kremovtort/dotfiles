@@ -53,5 +53,6 @@
     # ./plugins/opencode/provider-nickvandyke.nix
     ./plugins/dropbar.nix
     ./plugins/tabterm.nix
+    ./plugins/vim-maximizer.nix
   ];
 }

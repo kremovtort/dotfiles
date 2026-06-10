@@ -61,6 +61,11 @@
       flake = false;
     };
 
+    plugins-vim-maximizer = {
+      url = "github:szw/vim-maximizer";
+      flake = false;
+    };
+
   };
 
   outputs =
