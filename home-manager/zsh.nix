@@ -20,8 +20,8 @@
     shellAliases = {
       "codenv" = "ya tool codenv";
       "cdi" = "zoxide query -a -i";
+      "h" = "herdr";
       "zi" = ''cd "$(zoxide query -a -i)"'';
-      "zj" = "zellij";
       "vi" = "nvim";
       "vim" = "nvim";
     };
