@@ -6,15 +6,24 @@
 }:
 let
   isDarwin = system == "aarch64-darwin";
+  ghostty = if isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
 in
 {
   home.file.".config/ghostty/themes/catppuccin-espresso".source =
     "${self}/catppuccin/ghostty-theme-catppuccin-espresso";
+  
+  home.packages = [
+    ghostty.terminfo
+  ];
+
+  programs.zsh.envExtra = ''
+    export TERMINFO_DIRS="$HOME/.terminfo:$HOME/.nix-profile/share/terminfo:/usr/share/terminfo:/etc/terminfo:/lib/terminfo"
+  '';
 
   programs.ghostty = {
     enable = true;
     enableZshIntegration = true;
-    package = if isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+    package = ghostty;
     settings = {
       theme = "catppuccin-espresso";
       shell-integration-features = true;
