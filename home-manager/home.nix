@@ -45,6 +45,16 @@ in
     (pkgs.writeShellScriptBin "sg" ''
       ast-grep $@
     '')
+    (lib.mkIf isDarwin (
+      pkgs.writeShellScriptBin "lnx" ''
+        container machine run \
+          -e USER \
+          -e LOGNAME \
+          -e COLORTERM="$${COLORTERM:-}" \
+          -e TERM \
+          -e APPLE_CONTAINER_MACHINE=1
+      ''
+    ))
     pkgs.bat
     pkgs.bash-language-server
     pkgs.bottom
@@ -119,6 +129,7 @@ in
     PAGER = "ov";
     MANPAGER = "ov";
     OPENCODE_API_KEY = "\$(cat ${config.sops.secrets.opencode-api-key.path})";
+    SHELL = lib.mkIf (!isDarwin) "/home/kremovtort/.nix-profile/bin/zsh";
   };
 
   programs.atuin = {

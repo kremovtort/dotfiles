@@ -8,7 +8,7 @@
 
     settings = {
       # Place jj-starship near the default VCS position (right after $directory)
-      format = "$username$hostname$localip$shlvl$singularity$kubernetes$directory\${custom.jj}$all";
+      format = "$username$hostname$env_var$localip$shlvl$singularity$kubernetes$directory\${custom.jj}$all";
 
       git_branch.disabled = true;
       git_status.disabled = true;
@@ -17,6 +17,13 @@
         when = "jj-starship detect";
         shell = [ "jj-starship" ];
         format = "$output ";
+      };
+
+      env_var.APPLE_CONTAINER_MACHINE = {
+        variable = "APPLE_CONTAINER_MACHINE";
+        symbol = "";
+        format = "[$symbol container]($style) in ";
+        style = "green";
       };
 
       buf.format = "(with [$symbol($version )]($style))";
