@@ -52,6 +52,7 @@ in
     pkgs.devcontainer
     pkgs.docker
     pkgs.fd
+    pkgs.gitu
     pkgs.gnumake
     pkgs.htop
     pkgs.hydra-check

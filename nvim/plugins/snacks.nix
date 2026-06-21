@@ -151,7 +151,7 @@
       action.__raw = ''
         function()
           local Snacks = require("snacks")
-          local term = rawget(_G, "__jjui_term")
+          local term = rawget(_G, "__vcsui_term")
 
           if term and term:buf_valid() then
             term:toggle()
@@ -161,14 +161,19 @@
             return
           end
 
-          term = Snacks.terminal.open("jjui", {
+          local cwd = vim.fs.normalize((vim.uv or vim.loop).cwd() or ".")
+          local has_jj = vim.fs.find(".jj", { path = cwd, upward = true })[1] ~= nil
+          local has_git = vim.fs.find(".git", { path = cwd, upward = true })[1] ~= nil
+          local cmd = (not has_jj and has_git) and "gitu" or "jjui"
+
+          term = Snacks.terminal.open(cmd, {
             auto_close = false,
             auto_insert = true,
             start_insert = true,
           })
 
           term:on("TermClose", function(self)
-            _G.__jjui_term = nil
+            _G.__vcsui_term = nil
 
             if type(vim.v.event) == "table" and vim.v.event.status == 0 then
               self:close()
@@ -176,10 +181,10 @@
             end
           end, { buf = true })
 
-          _G.__jjui_term = term
+          _G.__vcsui_term = term
         end
       '';
-      options.desc = "jjui (float)";
+      options.desc = "VCS UI (float)";
     }
     {
       mode = "n";
