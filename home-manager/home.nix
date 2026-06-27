@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   pkgs,
   lib,
   system,
@@ -25,6 +26,7 @@ in
     ./starship.nix
     ./wezterm.nix
     ./ghostty.nix
+    ./herdr.nix
   ];
 
   home.username = "kremovtort";

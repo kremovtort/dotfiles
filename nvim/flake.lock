@@ -111,11 +111,11 @@
     "plugins-cursortab-nvim": {
       "flake": false,
       "locked": {
-        "lastModified": 1780837182,
-        "narHash": "sha256-qDia3kxilOE/dqK4DvQBQEuw7gBzoZ95lQJMxdJq9oE=",
+        "lastModified": 1782627358,
+        "narHash": "sha256-mvhtmCPiWe47AIHlb8gk5F44MBbYo3stS72pVIS0M+4=",
         "owner": "cursortab",
         "repo": "cursortab.nvim",
-        "rev": "bee28b566c15f4b46a3b4a9878762986d1f630bb",
+        "rev": "3cf471f2b235ca50068a979831d2ff19452cad33",
         "type": "github"
       },
       "original": {
@@ -159,11 +159,11 @@
     "plugins-opencode-nvim": {
       "flake": false,
       "locked": {
-        "lastModified": 1782350987,
-        "narHash": "sha256-kTHupjI8tq2ZJvRyBB9zsHPFsEVFv4M/TqMarAFIDSM=",
+        "lastModified": 1782480813,
+        "narHash": "sha256-+xZuUvfpBvETGp5dI4xDb6bUgXvHPCAL57K0JGMKr/4=",
         "owner": "nickjvandyke",
         "repo": "opencode.nvim",
-        "rev": "f5f2abe94e85a06ed956418404572210eec91119",
+        "rev": "43adb10f21403adeec5980e73305fff29195e36b",
         "type": "github"
       },
       "original": {
@@ -185,6 +185,23 @@
       "original": {
         "owner": "2KAbhishek",
         "repo": "seeker.nvim",
+        "type": "github"
+      }
+    },
+    "plugins-sidekick-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782397522,
+        "narHash": "sha256-sbf5Hq5QduEWlXxE5wpwK/YhwTZp0thMMZI0EMkgUCw=",
+        "owner": "rmarganti",
+        "repo": "sidekick.nvim",
+        "rev": "abec9a0d745bcc7d62f4031a0beb2f5d5d0dd434",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rmarganti",
+        "ref": "herdr",
+        "repo": "sidekick.nvim",
         "type": "github"
       }
     },
@@ -262,6 +279,7 @@
         "plugins-likec4-nvim": "plugins-likec4-nvim",
         "plugins-opencode-nvim": "plugins-opencode-nvim",
         "plugins-seeker-nvim": "plugins-seeker-nvim",
+        "plugins-sidekick-nvim": "plugins-sidekick-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
         "plugins-vcsigns-nvim": "plugins-vcsigns-nvim",
         "plugins-vim-maximizer": "plugins-vim-maximizer",

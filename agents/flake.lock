@@ -100,16 +100,18 @@
         "blueprint": "blueprint",
         "bun2nix": "bun2nix",
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
         "systems": "systems",
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1782366663,
-        "narHash": "sha256-hcxEl/eWQQaYkUqygP4ca8S7WlX9c6vqgvQCqtV3vuw=",
+        "lastModified": 1782641020,
+        "narHash": "sha256-MAK64OUHNGK9LtTSifi4HtCMoZSsHotrKWYdAKtR94U=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "5f9d86061f538b3f5f3568583c001fb9c0705b71",
+        "rev": "8c011befc8413c46f359f242cd226a9195092958",
         "type": "github"
       },
       "original": {
@@ -119,22 +121,6 @@
       }
     },
     "nixpkgs": {
-      "locked": {
-        "lastModified": 1782118813,
-        "narHash": "sha256-BnbXO5s5EhV89lLXMAGCzPdEN5a6vNqvMk71obeTEUw=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "b3c092d3c36d91e2f61f3dfb39a159f180a56659",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_2": {
       "locked": {
         "lastModified": 1782175435,
         "narHash": "sha256-EMzXKmnOtBQ2MnvpiNOm7E+kOMvdPrIKaeg52Tip2Uk=",
@@ -169,11 +155,11 @@
     "openspecSchemas": {
       "flake": false,
       "locked": {
-        "lastModified": 1782354633,
-        "narHash": "sha256-E0js/RJqQiQjCjqiAkS3xe+IAmq/xbd9dT5kzx3lkoM=",
+        "lastModified": 1782463373,
+        "narHash": "sha256-jD9YFcJYH4vtxca5ltmkwijzz9dslvpE3wt0rQ4Nifo=",
         "owner": "intent-driven-dev",
         "repo": "openspec-schemas",
-        "rev": "1456b0c2b7b6e382d8034ae53bc6c517f8d071f5",
+        "rev": "87ec4decf3151b0d7d10b7bf0f6ad9c7e74eccc0",
         "type": "github"
       },
       "original": {
@@ -202,7 +188,7 @@
       "inputs": {
         "astGrepSkill": "astGrepSkill",
         "llm-agents": "llm-agents",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs",
         "openaiSkills": "openaiSkills",
         "openspecSchemas": "openspecSchemas",
         "qmd": "qmd"

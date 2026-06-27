@@ -12,6 +12,11 @@
     karabinix.url = "github:pepegar/karabinix";
     jj-starship.url = "github:dmmulroy/jj-starship";
 
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     paneru = {
       url = "github:karinushka/paneru";
       inputs.nixpkgs.follows = "nixpkgs";

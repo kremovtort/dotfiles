@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, nvimInputs, ... }:
 {
   plugins.sidekick = {
     enable = true;
@@ -6,6 +6,7 @@
     # Sidekick's nixpkgs package pulls Copilot LSP as a runtime dependency.
     # This configuration is CLI-only for OpenCode, so avoid the unfree Copilot runtime.
     package = pkgs.vimPlugins.sidekick-nvim.overrideAttrs (_old: {
+      src = nvimInputs.plugins-sidekick-nvim;
       runtimeDeps = [ ];
     });
     settings = {
@@ -18,6 +19,11 @@
 
       cli = {
         picker = "snacks";
+        mux = {
+          backend = "herdr";
+          enabled = true;
+          create = "split";
+        };
         tools.opencode = { };
         win = {
           config.__raw = ''
