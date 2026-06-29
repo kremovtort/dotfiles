@@ -611,6 +611,7 @@
         "plugins-sidekick-nvim": "plugins-sidekick-nvim",
         "plugins-vclib-nvim": "plugins-vclib-nvim",
         "plugins-vcsigns-nvim": "plugins-vcsigns-nvim",
+        "plugins-vim-herdr-navigation": "plugins-vim-herdr-navigation",
         "plugins-vim-maximizer": "plugins-vim-maximizer",
         "plugins-virtual-types-nvim": "plugins-virtual-types-nvim",
         "tabterm": "tabterm"
@@ -826,6 +827,22 @@
       "original": {
         "owner": "algmyr",
         "repo": "vcsigns.nvim",
+        "type": "github"
+      }
+    },
+    "plugins-vim-herdr-navigation": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782649130,
+        "narHash": "sha256-vUUt46jiK6ZsPH8D13/+IIlqT3KbFliPJkNplsVqiQo=",
+        "owner": "paulbkim-dev",
+        "repo": "vim-herdr-navigation",
+        "rev": "53e318c772c4d3b7fbd904ac43bcf3e5b5d8b244",
+        "type": "github"
+      },
+      "original": {
+        "owner": "paulbkim-dev",
+        "repo": "vim-herdr-navigation",
         "type": "github"
       }
     },

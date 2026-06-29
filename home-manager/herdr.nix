@@ -1,6 +1,8 @@
 {
   pkgs,
   inputs,
+  lib,
+  config,
   system,
   ...
 }:
@@ -29,9 +31,27 @@ let
 
     SSH_AUTH_SOCK="$sock" exec ${herdr}/bin/herdr "$@"
   '';
+
+  # Editor side of vim-herdr-navigation is fetched by the nvim flake; reuse the
+  # same source for the herdr-side registration so both stay in lockstep.
+  herdrNavigationSrc = inputs.nvim.inputs.plugins-vim-herdr-navigation;
 in
 {
   home.packages = [
     herdrWrapper
   ];
+
+  # herdr config lives in the working tree (herdr/config.toml) and is linked
+  # out-of-store so it stays editable in place while being tracked by VCS.
+  # herdr writes config.toml in place (verified empirically), preserving the symlink.
+  home.file.".config/herdr/config.toml".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/home-manager/herdr/config.toml";
+
+  # Register the herdr side of vim-herdr-navigation. herdr plugins live outside
+  # the Nix profile, so gate registration by home-manager activation: unlink any
+  # stale entry first (old Nix store path), then link the current source.
+  home.activation.herdrNavigationPlugin = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    $DRY_RUN_CMD ${herdr}/bin/herdr plugin unlink vim-herdr-navigation 2>/dev/null || true
+    $DRY_RUN_CMD ${herdr}/bin/herdr plugin link ${herdrNavigationSrc}
+  '';
 }

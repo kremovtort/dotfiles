@@ -71,6 +71,11 @@
       flake = false;
     };
 
+    plugins-vim-herdr-navigation = {
+      url = "github:paulbkim-dev/vim-herdr-navigation";
+      flake = false;
+    };
+
   };
 
   outputs =
